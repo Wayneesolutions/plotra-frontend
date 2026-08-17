@@ -33,7 +33,7 @@ export default function ForgotPassword() {
               <path d="M3 9.5L12 3l9 6.5V21H15v-6H9v6H3V9.5Z" fill="#0c1b2e" />
             </svg>
           </div>
-          <span style={S.brand}>PropertyPro</span>
+          <span style={S.brand}>WayneState Pro</span>
         </div>
 
         <h1 style={S.title}>Forgot your password?</h1>

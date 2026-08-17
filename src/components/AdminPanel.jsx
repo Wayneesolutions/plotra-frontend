@@ -292,7 +292,7 @@ export default function AdminPanel() {
               </svg>
             </div>
             <div>
-              <div style={S.logoName}>PropertyPro</div>
+              <div style={S.logoName}>WayneState Pro</div>
               <div style={S.logoBadge}>Super Admin</div>
             </div>
           </div>

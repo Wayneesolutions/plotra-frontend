@@ -12,6 +12,8 @@ import LandingPage from './components/LandingPage.jsx';
 // NEW — gap #4: password reset flow
 import ForgotPassword from './components/ForgotPassword.jsx';
 import ResetPassword from './components/ResetPassword.jsx';
+// NEW — internal ops panel (leads/WhatsApp inbox, documents, AI calls, site visits)
+import OpsPanel from './components/OpsPanel.jsx';
 
 export default function App() {
   return (
@@ -34,6 +36,14 @@ export default function App() {
           }
         />
         <Route path="/p/:slug" element={<PropertyView />} />
+        <Route
+          path="/dashboard/ops"
+          element={
+            <PrivateRoute>
+              <OpsPanel />
+            </PrivateRoute>
+          }
+        />
         <Route path="/request-access" element={<RequestAccess />} />
         <Route
           path="/admin"

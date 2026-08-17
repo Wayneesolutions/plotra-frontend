@@ -164,7 +164,7 @@ export default function DashboardListings() {
               <path d="M3 9.5L12 3l9 6.5V21H15v-6H9v6H3V9.5Z" fill="#0c1b2e"/>
             </svg>
           </div>
-          <span style={S.navBrand}>PropertyPro</span>
+          <span style={S.navBrand}>WayneState Pro</span>
           <div style={S.navDivider} />
           <span style={S.navSection}>Listings</span>
           {activeCount > 0 && (
@@ -194,6 +194,14 @@ export default function DashboardListings() {
               👤
             </button>
           )}
+          <button
+            className="pve-topbar-btn"
+            onClick={() => navigate('/dashboard/ops')}
+            style={S.iconBtn}
+            title="Ops Panel — leads, documents, calls, visits"
+          >
+            🗂
+          </button>
           <button
             className="pve-topbar-btn"
             onClick={() => setShowBillingModal(true)}

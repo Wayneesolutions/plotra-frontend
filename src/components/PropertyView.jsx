@@ -120,7 +120,7 @@ export default function PropertyView() {
                 <path d="M3 9.5L12 3l9 6.5V21H15v-6H9v6H3V9.5Z" fill="#0c1b2e"/>
               </svg>
             </div>
-            <span style={S.navBrand}>PropertyPro</span>
+            <span style={S.navBrand}>WayneState Pro</span>
           </div>
           <span style={S.navLabel}>Property Listing</span>
         </div>
@@ -342,7 +342,7 @@ export default function PropertyView() {
               <path d="M3 9.5L12 3l9 6.5V21H15v-6H9v6H3V9.5Z" fill="#c8a96e"/>
             </svg>
           </div>
-          <span style={S.footerBrand}>PropertyPro</span>
+          <span style={S.footerBrand}>WayneState Pro</span>
         </div>
         <p style={S.footerTxt}>Real Estate Visual Explorer · Dealer Powered Listing</p>
       </footer>

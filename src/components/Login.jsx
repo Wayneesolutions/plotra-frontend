@@ -48,7 +48,7 @@ export default function Login() {
                 <path d="M3 9.5L12 3l9 6.5V21H15v-6H9v6H3V9.5Z" fill="#0c1b2e"/>
               </svg>
             </div>
-            <span style={S.logoBrand}>PropertyPro</span>
+            <span style={S.logoBrand}>WayneState Pro</span>
           </div>
 
           {/* Hero headline */}
