@@ -2,12 +2,18 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { API_BASE_URL } from '../api/config';
+import RentVsBuyCalculator from './RentVsBuyCalculator.jsx';
 
 export default function PropertyView() {
   const { slug } = useParams();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Builder profile — fetched separately since most listings won't have one
+  // (only mega-project/developer listings do); a 404 here is expected and
+  // just means "no section to show," not an error.
+  const [builderProfile, setBuilderProfile] = useState(null);
 
   // Phase 3: the visit id this session's page view was logged under, so a
   // later phone-number submission (if any) can be attached to it.
@@ -34,6 +40,10 @@ export default function PropertyView() {
     };
 
     fetchPublicListing();
+
+    axios.get(`${API_BASE_URL}/api/v1/public/listings/${slug}/builder-profile`)
+      .then((res) => setBuilderProfile(res.data))
+      .catch(() => { /* 404 = no builder profile for this listing, expected for most */ });
   }, [slug]);
 
   // Log the visit once the listing is confirmed to exist and be active.
@@ -170,6 +180,48 @@ export default function PropertyView() {
           )}
         </div>
 
+        {/* Local Intelligence — built server-side (localIntelligenceWorker.js /
+            groundedResearchService.js) and already returned by this same API
+            call, but never rendered anywhere until now. Every item is
+            required to carry a real source_url (grounding discipline
+            enforced server-side), so every claim here is cited. */}
+        {data.localIntelligence && (
+          <div style={styles.card}>
+            <h3 style={styles.sectionTitle}>Local Intelligence</h3>
+            <LocalIntelSection title="News" items={data.localIntelligence.news} />
+            <LocalIntelSection title="Safety" items={data.localIntelligence.safety} />
+            <LocalIntelSection title="Seasonal Conditions" items={data.localIntelligence.seasonal} />
+          </div>
+        )}
+
+        {/* Builder Due Diligence — only shown once a human has explicitly
+            published it (moderation_status='published'); see
+            builderProfileController.js's getPublicBuilderProfile. */}
+        {builderProfile && (
+          <div style={styles.card}>
+            <h3 style={styles.sectionTitle}>Builder — {builderProfile.builderProfile.company_name}</h3>
+            {builderProfile.builderProfile.rera_registration_ids?.length > 0 && (
+              <p style={styles.descriptionText}>RERA: {builderProfile.builderProfile.rera_registration_ids.join(', ')}</p>
+            )}
+            <div style={styles.landmarkList}>
+              {builderProfile.claims.map((c, i) => (
+                <div key={i} style={styles.citedItem}>
+                  <span style={styles.citedCategory}>{c.category}</span>
+                  <p style={styles.descriptionText}>{c.claim_text}</p>
+                  <a href={c.source_url} target="_blank" rel="noopener noreferrer" style={styles.sourceLink}>
+                    Source: {c.source_title || c.source_domain}
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div style={styles.card}>
+          <h3 style={styles.sectionTitle}>Rent vs. Buy Calculator</h3>
+          <RentVsBuyCalculator propertyPrice={listing.price} propertyId={listing.id} />
+        </div>
+
         {/* Phase 3 — soft phone-number prompt: identifies the visit + kicks off
             the automated WhatsApp first-touch (see capturePublicLead on the backend) */}
         <div style={styles.card}>
@@ -213,6 +265,23 @@ export default function PropertyView() {
   );
 }
 
+function LocalIntelSection({ title, items }) {
+  if (!items || items.length === 0) return null;
+  return (
+    <div style={{ marginBottom: '14px' }}>
+      <h4 style={styles.intelSubhead}>{title}</h4>
+      {items.map((item, i) => (
+        <div key={i} style={styles.citedItem}>
+          <p style={styles.descriptionText}>{item.text}</p>
+          <a href={item.source_url} target="_blank" rel="noopener noreferrer" style={styles.sourceLink}>
+            Source: {item.source_title || item.source_url}
+          </a>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 const styles = {
   wrapper: { width: '100%', maxWidth: '768px', margin: '0 auto', boxSizing: 'border-box', paddingBottom: '32px' },
   centerScreen: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh', fontSize: '16px', fontWeight: '500' },
@@ -247,5 +316,9 @@ const styles = {
   phoneForm: { display: 'flex', flexDirection: 'column', gap: '10px' },
   phoneInput: { padding: '10px', fontSize: '14px', border: '1px solid #d1d5db', borderRadius: '6px', width: '100%', boxSizing: 'border-box' },
   phoneSubmitBtn: { padding: '10px', border: 'none', backgroundColor: '#2563eb', color: '#fff', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' },
-  phoneError: { backgroundColor: '#fef2f2', color: '#dc2626', padding: '8px 10px', borderRadius: '6px', fontSize: '13px' }
+  phoneError: { backgroundColor: '#fef2f2', color: '#dc2626', padding: '8px 10px', borderRadius: '6px', fontSize: '13px' },
+  intelSubhead: { fontSize: '12px', textTransform: 'uppercase', color: '#6b7280', margin: '0 0 6px 0', fontWeight: '700' },
+  citedItem: { borderLeft: '2px solid #e5e7eb', paddingLeft: '10px', marginBottom: '8px' },
+  citedCategory: { fontSize: '10px', textTransform: 'uppercase', color: '#9ca3af', fontWeight: 'bold' },
+  sourceLink: { fontSize: '11px', color: '#2563eb', textDecoration: 'none' },
 };
