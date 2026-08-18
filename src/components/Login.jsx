@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { API_BASE_URL } from '../api/config';
 
 export default function Login() {
@@ -60,6 +60,8 @@ export default function Login() {
         <button type="submit" disabled={submitting} style={styles.button}>
           {submitting ? 'Signing in…' : 'Sign in'}
         </button>
+
+        <Link to="/forgot-password" style={styles.forgotLink}>Forgot password?</Link>
       </form>
     </div>
   );
@@ -73,5 +75,6 @@ const styles = {
   label: { fontSize: '12px', color: '#4b5563', marginTop: '10px', marginBottom: '4px', fontWeight: '600' },
   input: { padding: '10px', fontSize: '14px', border: '1px solid #d1d5db', borderRadius: '6px', width: '100%', boxSizing: 'border-box' },
   button: { marginTop: '20px', padding: '10px', border: 'none', backgroundColor: '#2563eb', color: '#fff', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '14px' },
-  errorBox: { backgroundColor: '#fef2f2', color: '#dc2626', padding: '8px 10px', borderRadius: '6px', fontSize: '13px', marginBottom: '4px' }
+  errorBox: { backgroundColor: '#fef2f2', color: '#dc2626', padding: '8px 10px', borderRadius: '6px', fontSize: '13px', marginBottom: '4px' },
+  forgotLink: { marginTop: '12px', textAlign: 'center', fontSize: '13px', color: '#2563eb', textDecoration: 'none' }
 };
