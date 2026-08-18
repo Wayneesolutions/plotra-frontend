@@ -11,11 +11,11 @@ export default function PlotBoundaryTracer({ listingId, centerLat, centerLng, on
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
 
-  const mapboxToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
+  const mapboxToken = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
   useEffect(() => {
     if (!mapboxToken) {
-      setErrorMessage('Missing VITE_MAPBOX_ACCESS_TOKEN — add it to client/.env');
+      setErrorMessage('Missing VITE_GOOGLE_MAPS_API_KEY — add it to client/.env');
       return;
     }
 
