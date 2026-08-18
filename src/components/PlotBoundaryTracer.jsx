@@ -20,7 +20,8 @@ function loadGoogleMaps() {
     script.onerror = () => {
       delete window.__googleMapsInit__;
       mapsLoadPromise = null;
-      reject(new Error('Google Maps failed to load'));
+      // If the library is already in window (e.g. cached from a prior load), resolve anyway
+      if (window.google?.maps) { resolve(window.google.maps); } else { reject(new Error('Google Maps failed to load')); }
     };
     document.head.appendChild(script);
   });
@@ -87,8 +88,10 @@ export default function PlotBoundaryTracer({ listingId, centerLat, centerLng, on
         }
       })
       .catch(() => {
-        // Only fires when loadGoogleMaps() itself rejects (script network error)
-        if (!cancelled) setErrorMessage('Failed to load Google Maps. Check your API key.');
+        // If window.google.maps is already present the map rendered fine — suppress the banner
+        if (!cancelled && !window.google?.maps) {
+          setErrorMessage('Failed to load Google Maps. Check your API key.');
+        }
       });
 
     return () => {
