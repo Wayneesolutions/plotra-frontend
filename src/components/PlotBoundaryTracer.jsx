@@ -6,12 +6,16 @@ const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 function loadGoogleMaps() {
   return new Promise((resolve, reject) => {
     if (window.google?.maps?.drawing) { resolve(window.google.maps); return; }
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_API_KEY}&libraries=drawing`;
-    script.async = true;
-    script.onload = () => resolve(window.google.maps);
-    script.onerror = () => reject(new Error('Google Maps failed to load'));
-    document.head.appendChild(script);
+    // Reuse an in-progress script tag instead of appending a duplicate
+    let script = document.querySelector('script[src*="maps.googleapis.com/maps/api/js"]');
+    if (!script) {
+      script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_API_KEY}&libraries=drawing`;
+      script.async = true;
+      document.head.appendChild(script);
+    }
+    script.addEventListener('load', () => resolve(window.google.maps));
+    script.addEventListener('error', () => reject(new Error('Google Maps failed to load')));
   });
 }
 
@@ -29,10 +33,12 @@ export default function PlotBoundaryTracer({ listingId, centerLat, centerLng, on
       return;
     }
 
+    let cancelled = false;
     let drawingManager = null;
 
     loadGoogleMaps()
       .then((maps) => {
+        if (cancelled) return;
         const map = new maps.Map(mapContainerRef.current, {
           center: { lat: centerLat, lng: centerLng },
           zoom: 17,
@@ -67,10 +73,11 @@ export default function PlotBoundaryTracer({ listingId, centerLat, centerLng, on
         });
       })
       .catch(() => {
-        setErrorMessage('Failed to load Google Maps. Check your API key.');
+        if (!cancelled) setErrorMessage('Failed to load Google Maps. Check your API key.');
       });
 
     return () => {
+      cancelled = true;
       if (drawingManagerRef.current) drawingManagerRef.current.setMap(null);
       if (polygonRef.current) { polygonRef.current.setMap(null); polygonRef.current = null; }
     };
