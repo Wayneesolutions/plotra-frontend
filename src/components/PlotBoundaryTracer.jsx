@@ -1,64 +1,100 @@
 import React, { useEffect, useRef, useState } from 'react';
-import mapboxgl from 'mapbox-gl';
-import MapboxDraw from '@mapbox/mapbox-gl-draw';
 import apiClient from '../api/apiClient';
+
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
+function loadGoogleMaps() {
+  return new Promise((resolve, reject) => {
+    if (window.google?.maps?.drawing) { resolve(window.google.maps); return; }
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_API_KEY}&libraries=drawing`;
+    script.async = true;
+    script.onload = () => resolve(window.google.maps);
+    script.onerror = () => reject(new Error('Google Maps failed to load'));
+    document.head.appendChild(script);
+  });
+}
 
 export default function PlotBoundaryTracer({ listingId, centerLat, centerLng, onSaveSuccess }) {
   const mapContainerRef = useRef(null);
-  const mapRef = useRef(null);
-  const drawRef = useRef(null);
+  const polygonRef = useRef(null);
+  const drawingManagerRef = useRef(null);
 
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
 
-  const mapboxToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
-
   useEffect(() => {
-    if (!mapboxToken) {
-      setErrorMessage('Missing VITE_MAPBOX_ACCESS_TOKEN — add it to client/.env');
+    if (!GOOGLE_API_KEY) {
+      setErrorMessage('Missing VITE_GOOGLE_MAPS_API_KEY — add it to client/.env');
       return;
     }
 
-    mapboxgl.accessToken = mapboxToken;
+    let drawingManager = null;
 
-    const map = new mapboxgl.Map({
-      container: mapContainerRef.current,
-      style: 'mapbox://styles/mapbox/satellite-v9',
-      center: [centerLng, centerLat], // Mapbox wants [lng, lat]
-      zoom: 17
-    });
+    loadGoogleMaps()
+      .then((maps) => {
+        const map = new maps.Map(mapContainerRef.current, {
+          center: { lat: centerLat, lng: centerLng },
+          zoom: 17,
+          mapTypeId: 'satellite',
+          tilt: 0,
+        });
 
-    const draw = new MapboxDraw({
-      displayControlsDefault: false,
-      controls: { polygon: true, trash: true },
-      defaultMode: 'draw_polygon'
-    });
+        drawingManager = new maps.drawing.DrawingManager({
+          drawingMode: maps.drawing.OverlayType.POLYGON,
+          drawingControl: true,
+          drawingControlOptions: {
+            position: maps.ControlPosition.TOP_LEFT,
+            drawingModes: [maps.drawing.OverlayType.POLYGON],
+          },
+          polygonOptions: {
+            fillColor: '#2563eb',
+            fillOpacity: 0.2,
+            strokeWeight: 2,
+            strokeColor: '#2563eb',
+            editable: true,
+            draggable: true,
+          },
+        });
 
-    map.addControl(draw, 'top-left');
-    map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+        drawingManager.setMap(map);
+        drawingManagerRef.current = drawingManager;
 
-    mapRef.current = map;
-    drawRef.current = draw;
+        maps.event.addListener(drawingManager, 'polygoncomplete', (polygon) => {
+          if (polygonRef.current) polygonRef.current.setMap(null);
+          polygonRef.current = polygon;
+          drawingManager.setDrawingMode(null);
+        });
+      })
+      .catch(() => {
+        setErrorMessage('Failed to load Google Maps. Check your API key.');
+      });
 
-    return () => map.remove();
-  }, [centerLat, centerLng, mapboxToken]);
+    return () => {
+      if (drawingManagerRef.current) drawingManagerRef.current.setMap(null);
+      if (polygonRef.current) { polygonRef.current.setMap(null); polygonRef.current = null; }
+    };
+  }, [centerLat, centerLng]);
 
   const handleSave = async () => {
-    if (!drawRef.current) return;
-
-    const featureCollection = drawRef.current.getAll();
-    if (!featureCollection.features || featureCollection.features.length === 0) {
+    if (!polygonRef.current) {
       alert('Trace a boundary on the map before saving.');
       return;
     }
 
-    const boundaryGeoJSON = featureCollection.features[0];
+    const path = polygonRef.current.getPath().getArray();
+    const coordinates = path.map((ll) => [ll.lng(), ll.lat()]);
+    coordinates.push(coordinates[0]); // close the GeoJSON ring
+
+    const boundaryGeoJSON = {
+      type: 'Feature',
+      geometry: { type: 'Polygon', coordinates: [coordinates] },
+      properties: {},
+    };
 
     try {
       setSaving(true);
       setErrorMessage(null);
-      // apiClient attaches the JWT — a plain fetch() here would 401 every time,
-      // since this hits an authGuard-protected endpoint.
       await apiClient.patch(`/api/v1/dashboard/listings/${listingId}/boundary`, { boundaryGeoJSON });
       onSaveSuccess();
     } catch (err) {
@@ -74,7 +110,7 @@ export default function PlotBoundaryTracer({ listingId, centerLat, centerLng, on
       <div ref={mapContainerRef} style={styles.canvasFrame} />
       <footer style={styles.footerPanel}>
         <p style={styles.helperTxt}>
-          💡 Click to place corner points, double-click to close the boundary.
+          💡 Click to place corner points, click the first point to close the boundary.
         </p>
         <button
           onClick={handleSave}
@@ -94,5 +130,5 @@ const styles = {
   canvasFrame: { flex: 1, width: '100%', borderRadius: '8px', border: '1px solid #e5e7eb', overflow: 'hidden' },
   footerPanel: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', paddingTop: '4px' },
   helperTxt: { margin: 0, fontSize: '13px', color: '#4b5563', maxWidth: '70%', lineHeight: '1.4' },
-  saveBtn: { border: 'none', color: '#fff', padding: '10px 20px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '14px' }
+  saveBtn: { border: 'none', color: '#fff', padding: '10px 20px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '14px' },
 };
