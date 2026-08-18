@@ -47,40 +47,47 @@ export default function PlotBoundaryTracer({ listingId, centerLat, centerLng, on
     loadGoogleMaps()
       .then((maps) => {
         if (cancelled) return;
-        const map = new maps.Map(mapContainerRef.current, {
-          center: { lat: centerLat, lng: centerLng },
-          zoom: 17,
-          mapTypeId: 'satellite',
-          tilt: 0,
-        });
 
-        drawingManager = new maps.drawing.DrawingManager({
-          drawingMode: maps.drawing.OverlayType.POLYGON,
-          drawingControl: true,
-          drawingControlOptions: {
-            position: maps.ControlPosition.TOP_LEFT,
-            drawingModes: [maps.drawing.OverlayType.POLYGON],
-          },
-          polygonOptions: {
-            fillColor: '#2563eb',
-            fillOpacity: 0.2,
-            strokeWeight: 2,
-            strokeColor: '#2563eb',
-            editable: true,
-            draggable: true,
-          },
-        });
+        // Wrap map init separately so exceptions here don't reach the catch below
+        try {
+          const map = new maps.Map(mapContainerRef.current, {
+            center: { lat: centerLat, lng: centerLng },
+            zoom: 17,
+            mapTypeId: 'satellite',
+            tilt: 0,
+          });
 
-        drawingManager.setMap(map);
-        drawingManagerRef.current = drawingManager;
+          drawingManager = new maps.drawing.DrawingManager({
+            drawingMode: maps.drawing.OverlayType.POLYGON,
+            drawingControl: true,
+            drawingControlOptions: {
+              position: maps.ControlPosition.TOP_LEFT,
+              drawingModes: [maps.drawing.OverlayType.POLYGON],
+            },
+            polygonOptions: {
+              fillColor: '#2563eb',
+              fillOpacity: 0.2,
+              strokeWeight: 2,
+              strokeColor: '#2563eb',
+              editable: true,
+              draggable: true,
+            },
+          });
 
-        maps.event.addListener(drawingManager, 'polygoncomplete', (polygon) => {
-          if (polygonRef.current) polygonRef.current.setMap(null);
-          polygonRef.current = polygon;
-          drawingManager.setDrawingMode(null);
-        });
+          drawingManager.setMap(map);
+          drawingManagerRef.current = drawingManager;
+
+          maps.event.addListener(drawingManager, 'polygoncomplete', (polygon) => {
+            if (polygonRef.current) polygonRef.current.setMap(null);
+            polygonRef.current = polygon;
+            drawingManager.setDrawingMode(null);
+          });
+        } catch (initErr) {
+          console.error('Map init error:', initErr);
+        }
       })
       .catch(() => {
+        // Only fires when loadGoogleMaps() itself rejects (script network error)
         if (!cancelled) setErrorMessage('Failed to load Google Maps. Check your API key.');
       });
 
