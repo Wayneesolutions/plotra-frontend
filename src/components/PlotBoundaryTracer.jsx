@@ -3,20 +3,28 @@ import apiClient from '../api/apiClient';
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
+// Singleton promise — script is appended exactly once across all renders
+let mapsLoadPromise = null;
+
 function loadGoogleMaps() {
-  return new Promise((resolve, reject) => {
+  if (mapsLoadPromise) return mapsLoadPromise;
+  mapsLoadPromise = new Promise((resolve, reject) => {
     if (window.google?.maps?.drawing) { resolve(window.google.maps); return; }
-    // Reuse an in-progress script tag instead of appending a duplicate
-    let script = document.querySelector('script[src*="maps.googleapis.com/maps/api/js"]');
-    if (!script) {
-      script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_API_KEY}&libraries=drawing`;
-      script.async = true;
-      document.head.appendChild(script);
-    }
-    script.addEventListener('load', () => resolve(window.google.maps));
-    script.addEventListener('error', () => reject(new Error('Google Maps failed to load')));
+    window.__googleMapsInit__ = () => {
+      delete window.__googleMapsInit__;
+      resolve(window.google.maps);
+    };
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_API_KEY}&libraries=drawing&callback=__googleMapsInit__`;
+    script.async = true;
+    script.onerror = () => {
+      delete window.__googleMapsInit__;
+      mapsLoadPromise = null;
+      reject(new Error('Google Maps failed to load'));
+    };
+    document.head.appendChild(script);
   });
+  return mapsLoadPromise;
 }
 
 export default function PlotBoundaryTracer({ listingId, centerLat, centerLng, onSaveSuccess }) {
