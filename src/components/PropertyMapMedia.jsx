@@ -21,7 +21,13 @@ function toValidCoords(lat, lng) {
 // zoom in on, instead of a single flat staticmap screenshot fetched once at
 // listing-creation time (which goes stale the moment the buyer wants to
 // look closer at a specific corner of the plot).
-function InteractiveSatellite({ lat, lng, fallbackUrl }) {
+//
+// `draggable` + `onPositionChange` are only meaningful pre-approval (see
+// PropertyView.jsx, which gates this on listing.status !== 'active' and
+// backs it with a hard server-side block once a listing is live) — lets
+// a dealer nudge the pin to the exact spot when the AI's geocode is close
+// but not quite right.
+function InteractiveSatellite({ lat, lng, fallbackUrl, draggable = false, onPositionChange }) {
   const containerRef = useRef(null);
   const [failed, setFailed] = useState(false);
 
@@ -45,12 +51,24 @@ function InteractiveSatellite({ lat, lng, fallbackUrl }) {
         // Marks the exact point the address geocoded to — without this,
         // a buyer has no visual way to tell whether the map is centered
         // precisely on the plot or just somewhere in the general area.
-        new maps.Marker({ position: coords, map, title: 'Approximate plot location' });
+        const marker = new maps.Marker({
+          position: coords,
+          map,
+          draggable,
+          title: draggable ? 'Drag to correct the exact plot location' : 'Approximate plot location',
+        });
+
+        if (draggable && onPositionChange) {
+          marker.addListener('dragend', () => {
+            const pos = marker.getPosition();
+            onPositionChange({ lat: pos.lat(), lng: pos.lng() });
+          });
+        }
       })
       .catch(() => { if (!cancelled) setFailed(true); });
 
     return () => { cancelled = true; };
-  }, [lat, lng]);
+  }, [lat, lng, draggable]);
 
   if (failed) {
     if (!fallbackUrl) return null;

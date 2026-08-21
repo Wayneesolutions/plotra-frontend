@@ -27,6 +27,19 @@ export default function PropertyView() {
   const [phoneSubmitted, setPhoneSubmitted] = useState(false);
   const [phoneError, setPhoneError] = useState(null);
 
+  // Manual pin-drag correction — pre-approval only (see the "draggable"
+  // prop passed to InteractiveSatellite below, gated on listing.status).
+  // draggedPosition holds the pending (unsaved) coordinates after a drag;
+  // mapKey is bumped on cancel to force InteractiveSatellite to remount
+  // fresh at the listing's actual saved lat/lng, snapping the marker back
+  // visually (it's an imperative google.maps.Marker, not something React
+  // can just re-render into a new position on its own).
+  const [draggedPosition, setDraggedPosition] = useState(null);
+  const [savingLocation, setSavingLocation] = useState(false);
+  const [locationSaveError, setLocationSaveError] = useState(null);
+  const [locationSaved, setLocationSaved] = useState(false);
+  const [mapKey, setMapKey] = useState(0);
+
   useEffect(() => {
     const fetchPublicListing = async () => {
       try {
@@ -85,6 +98,49 @@ export default function PropertyView() {
     }
   };
 
+  const handlePinDragEnd = (coords) => {
+    setLocationSaved(false);
+    setLocationSaveError(null);
+    setDraggedPosition(coords);
+  };
+
+  const handleCancelPinDrag = () => {
+    setDraggedPosition(null);
+    setLocationSaveError(null);
+    setMapKey((k) => k + 1); // forces InteractiveSatellite to remount at the listing's actual saved position
+  };
+
+  const handleSaveLocation = async () => {
+    if (!draggedPosition) return;
+    setSavingLocation(true);
+    setLocationSaveError(null);
+    try {
+      const res = await axios.patch(`${API_BASE_URL}/api/v1/public/listings/${slug}/location`, {
+        lat: draggedPosition.lat,
+        lng: draggedPosition.lng,
+      });
+      // Reflect the corrected position/address immediately rather than
+      // waiting on a refetch — landmarks and satellite/street-view media
+      // still refresh in the background (same as an address correction in
+      // the chat), so those sections may take a moment to catch up.
+      setData((prev) => ({
+        ...prev,
+        listing: {
+          ...prev.listing,
+          lat: res.data.lat,
+          lng: res.data.lng,
+          formatted_address: res.data.formatted_address || prev.listing.formatted_address,
+        },
+      }));
+      setDraggedPosition(null);
+      setLocationSaved(true);
+    } catch (err) {
+      setLocationSaveError(err.response?.data?.error?.message || 'Could not save the new location. Please try again.');
+    } finally {
+      setSavingLocation(false);
+    }
+  };
+
   if (loading) return <div style={styles.centerScreen}>Loading Property Map Layouts...</div>;
   if (error) return <div style={{ ...styles.centerScreen, color: '#dc2626' }}>Error: {error}</div>;
   if (!data || !data.listing) return <div style={styles.centerScreen}>No details available.</div>;
@@ -109,13 +165,44 @@ export default function PropertyView() {
       )}`
     : null;
 
+  const canAdjustLocation = listing.status !== 'active';
+
   return (
     <div style={styles.wrapper}>
       <section style={styles.mediaContainer}>
         {(media?.satellite_image_url || (listing.lat != null && listing.lng != null)) && (
           <div style={styles.imageCard}>
             <span style={styles.imageBadge}>Satellite Perimeter</span>
-            <InteractiveSatellite lat={listing.lat} lng={listing.lng} fallbackUrl={media?.satellite_image_url} />
+            <InteractiveSatellite
+              key={mapKey}
+              lat={listing.lat}
+              lng={listing.lng}
+              fallbackUrl={media?.satellite_image_url}
+              draggable={canAdjustLocation}
+              onPositionChange={canAdjustLocation ? handlePinDragEnd : undefined}
+            />
+            {canAdjustLocation && (
+              <div style={styles.locationEditArea}>
+                {draggedPosition ? (
+                  <div style={styles.locationBanner}>
+                    <span>New location set — save it?</span>
+                    <div style={styles.locationBannerActions}>
+                      <button onClick={handleSaveLocation} disabled={savingLocation} style={styles.locationSaveBtn}>
+                        {savingLocation ? 'Saving…' : 'Save'}
+                      </button>
+                      <button onClick={handleCancelPinDrag} disabled={savingLocation} style={styles.locationCancelBtn}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : locationSaved ? (
+                  <div style={styles.locationSavedMsg}>✓ Location saved</div>
+                ) : (
+                  <div style={styles.locationHintMsg}>Not quite right? Drag the pin to the exact spot.</div>
+                )}
+                {locationSaveError && <div style={styles.locationErrorMsg}>{locationSaveError}</div>}
+              </div>
+            )}
           </div>
         )}
         {(media?.streetview_image_url || (listing.lat != null && listing.lng != null)) && (
@@ -311,6 +398,14 @@ const styles = {
   mediaContainer: { display: 'flex', flexDirection: 'column', gap: '4px', backgroundColor: '#000' },
   imageCard: { position: 'relative', width: '100%', height: '260px' },
   imageBadge: { position: 'absolute', top: '12px', left: '12px', backgroundColor: 'rgba(17, 24, 39, 0.8)', color: '#fff', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', letterSpacing: '0.5px' },
+  locationEditArea: { position: 'absolute', bottom: '12px', left: '12px', right: '12px' },
+  locationHintMsg: { backgroundColor: 'rgba(17, 24, 39, 0.8)', color: '#e5e7eb', fontSize: '12px', padding: '6px 10px', borderRadius: '6px', display: 'inline-block' },
+  locationSavedMsg: { backgroundColor: 'rgba(22, 101, 52, 0.9)', color: '#fff', fontSize: '12px', padding: '6px 10px', borderRadius: '6px', display: 'inline-block' },
+  locationErrorMsg: { backgroundColor: 'rgba(153, 27, 27, 0.9)', color: '#fff', fontSize: '12px', padding: '6px 10px', borderRadius: '6px', marginTop: '6px', display: 'inline-block' },
+  locationBanner: { backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: '#111827', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' },
+  locationBannerActions: { display: 'flex', gap: '8px', marginTop: '8px' },
+  locationSaveBtn: { flex: 1, backgroundColor: '#111827', color: '#fff', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', cursor: 'pointer' },
+  locationCancelBtn: { flex: 1, backgroundColor: '#f3f4f6', color: '#111827', border: '1px solid #d1d5db', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', cursor: 'pointer' },
   mapImage: { width: '100%', height: '100%', objectFit: 'cover' },
   detailsContainer: { padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' },
   headerBlock: { display: 'flex', flexDirection: 'column', gap: '6px' },
