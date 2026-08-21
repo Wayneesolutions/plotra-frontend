@@ -249,7 +249,8 @@
   function addBubble(dir, text, extraHtml){
     const row = document.createElement('div');
     row.className = 'row ' + dir;
-    row.innerHTML = `<div class="bubble">${escapeHtml(text)}${extraHtml || ''}<span style="display:block;text-align:right;font-size:10.5px;color:var(--meta);margin-top:4px;">${timeStamp()}</span></div>`;
+    const content = dir === 'in' ? linkify(escapeHtml(text)) : escapeHtml(text);
+    row.innerHTML = `<div class="bubble">${content}${extraHtml || ''}<span style="display:block;text-align:right;font-size:10.5px;color:var(--meta);margin-top:4px;">${timeStamp()}</span></div>`;
     messagesEl.appendChild(row);
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
@@ -266,6 +267,10 @@
     const d = document.createElement('div');
     d.innerText = str;
     return d.innerHTML;
+  }
+
+  function linkify(html){
+    return html.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener" style="color:var(--brand);word-break:break-all;">$1</a>');
   }
 
   function listingCardHtml(listing){
