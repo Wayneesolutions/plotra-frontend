@@ -15,6 +15,21 @@ export default function DashboardListings() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Search/filter — "search by area or budget" (area lives in the address
+  // text, not a separate field, so q searches title/address together).
+  // Applied on submit (Enter or the Search button), not live-as-you-type,
+  // to avoid firing a request per keystroke.
+  const [filters, setFilters] = useState({ q: '', min_price: '', max_price: '', property_type: '' });
+  const [filterInputs, setFilterInputs] = useState({ q: '', min_price: '', max_price: '', property_type: '' });
+
+  // Per-listing WhatsApp attribution — gated to growth/unlimited plans
+  // (plans.multi_agent_whatsapp, surfaced via /billing/status rather than
+  // inferring it from the plan name client-side). teamMembers only
+  // fetched when this is actually true — no point loading the team list
+  // for a Starter tenant who can't use the feature anyway.
+  const [multiAgentEnabled, setMultiAgentEnabled] = useState(false);
+  const [teamMembers, setTeamMembers] = useState([]);
+
   // Modal & Management States
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingListing, setEditingListing] = useState(null); // non-null = editing that listing instead of creating
@@ -26,7 +41,23 @@ export default function DashboardListings() {
 
   useEffect(() => {
     fetchTenantListings();
+    checkMultiAgentPlan();
   }, []);
+
+  const checkMultiAgentPlan = async () => {
+    try {
+      const res = await apiClient.get('/api/v1/dashboard/billing/status');
+      const enabled = !!res.data.billing?.multi_agent_whatsapp;
+      setMultiAgentEnabled(enabled);
+      if (enabled) {
+        const usersRes = await apiClient.get('/api/v1/dashboard/users');
+        setTeamMembers((usersRes.data.users || []).filter((u) => u.phone));
+      }
+    } catch {
+      // Non-fatal — the assign-to-agent UI just won't show. Search/filter
+      // and everything else on this page works independently of this.
+    }
+  };
 
   // `silent` skips the loading-screen flash: fetchTenantListings is also
   // called as a background refresh (e.g. BuilderProfileManager's onUpdated,
@@ -37,16 +68,49 @@ export default function DashboardListings() {
   // local state it had built up (this was a real bug, caught by testing
   // the builder-profile flow end-to-end: linking succeeded server-side but
   // the modal silently reverted to the unlinked form).
-  const fetchTenantListings = async ({ silent = false } = {}) => {
+  const fetchTenantListings = async ({ silent = false, withFilters = filters } = {}) => {
     try {
       if (!silent) setLoading(true);
       // Fetches current listings — apiClient attaches the JWT bearer token
-      const response = await apiClient.get('/api/v1/dashboard/listings');
+      const params = {};
+      if (withFilters.q) params.q = withFilters.q;
+      if (withFilters.min_price) params.min_price = withFilters.min_price;
+      if (withFilters.max_price) params.max_price = withFilters.max_price;
+      if (withFilters.property_type) params.property_type = withFilters.property_type;
+
+      const response = await apiClient.get('/api/v1/dashboard/listings', { params });
       setListings(response.data.listings || []);
     } catch (err) {
       setError(err.response?.data?.error?.message || 'Failed to sync backoffice property inventory.');
     } finally {
       if (!silent) setLoading(false);
+    }
+  };
+
+  const handleFilterInputChange = (e) => {
+    const { name, value } = e.target;
+    setFilterInputs((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const applyFilters = (e) => {
+    e?.preventDefault();
+    setFilters(filterInputs);
+    fetchTenantListings({ withFilters: filterInputs });
+  };
+
+  const clearFilters = () => {
+    const empty = { q: '', min_price: '', max_price: '', property_type: '' };
+    setFilterInputs(empty);
+    setFilters(empty);
+    fetchTenantListings({ withFilters: empty });
+  };
+
+  const handleAssignAgent = async (listingId, agentId) => {
+    try {
+      await apiClient.patch(`/api/v1/dashboard/listings/${listingId}`, { assigned_agent_id: agentId || null });
+      fetchTenantListings({ silent: true });
+    } catch (err) {
+      alert(err.response?.data?.error?.message || 'Failed to update WhatsApp assignment.');
     }
   };
 
@@ -127,6 +191,51 @@ export default function DashboardListings() {
           </button>
         </header>
 
+        {/* Search/filter bar — area lives in the address text (q searches
+            title + raw_address + formatted_address together), budget is
+            min/max price, property type is an exact-match dropdown. */}
+        <form onSubmit={applyFilters} style={styles.filterBar}>
+          <input
+            type="text"
+            name="q"
+            placeholder="Search by area, locality, or title…"
+            value={filterInputs.q}
+            onChange={handleFilterInputChange}
+            style={{ ...styles.input, flex: 2, minWidth: '200px' }}
+          />
+          <input
+            type="number"
+            name="min_price"
+            placeholder="Min budget (₹)"
+            value={filterInputs.min_price}
+            onChange={handleFilterInputChange}
+            style={{ ...styles.input, flex: 1, minWidth: '120px' }}
+          />
+          <input
+            type="number"
+            name="max_price"
+            placeholder="Max budget (₹)"
+            value={filterInputs.max_price}
+            onChange={handleFilterInputChange}
+            style={{ ...styles.input, flex: 1, minWidth: '120px' }}
+          />
+          <select
+            name="property_type"
+            value={filterInputs.property_type}
+            onChange={handleFilterInputChange}
+            style={{ ...styles.input, flex: 1, minWidth: '140px' }}
+          >
+            <option value="">All types</option>
+            <option value="Plot">Plot</option>
+            <option value="Villa">Villa</option>
+            <option value="Commercial">Commercial</option>
+          </select>
+          <button type="submit" style={styles.primaryActionBtn}>Search</button>
+          {(filters.q || filters.min_price || filters.max_price || filters.property_type) && (
+            <button type="button" onClick={clearFilters} style={styles.secondaryBtn}>Clear</button>
+          )}
+        </form>
+
         {/* Main Interactive Inventory Grid Matrix */}
         <div style={styles.gridContainer}>
           {listings.map((item) => (
@@ -178,12 +287,32 @@ export default function DashboardListings() {
                   🏗️ Builder Profile{item.builder_profile_id ? ` (${item.builder_moderation_status})` : ''}
                 </button>
               </div>
+
+              {multiAgentEnabled && (
+                <div style={styles.assignRow}>
+                  <label style={styles.assignLabel}>💬 WhatsApp contact for buyers:</label>
+                  <select
+                    value={item.assigned_agent_id || ''}
+                    onChange={(e) => handleAssignAgent(item.id, e.target.value)}
+                    style={styles.input}
+                  >
+                    <option value="">Default (tenant number)</option>
+                    {teamMembers.map((member) => (
+                      <option key={member.id} value={member.id}>{member.name} ({member.phone})</option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           ))}
         </div>
 
         {listings.length === 0 && (
-          <div style={styles.emptyContainer}>No active listings cataloged inside this corporate dashboard context yet.</div>
+          <div style={styles.emptyContainer}>
+            {(filters.q || filters.min_price || filters.max_price || filters.property_type)
+              ? 'No listings match these filters.'
+              : 'No active listings cataloged inside this corporate dashboard context yet.'}
+          </div>
         )}
 
         {/* 🛠️ MODAL LAYER A: Property Asset Registration Creator / Edit Drawer */}
@@ -257,6 +386,9 @@ const styles = {
   headerTitle: { margin: 0, fontSize: '24px', color: '#111' },
   headerSub: { margin: '4px 0 0 0', color: '#666', fontSize: '14px' },
   primaryActionBtn: { backgroundColor: '#2563eb', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' },
+  filterBar: { display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px', alignItems: 'center' },
+  assignRow: { borderTop: '1px solid #f0f0f0', paddingTop: '8px', marginTop: '4px' },
+  assignLabel: { display: 'block', fontSize: '12px', color: '#4b5563', marginBottom: '4px', fontWeight: '500' },
   gridContainer: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' },
   listingCard: { border: '1px solid #e0e0e0', borderRadius: '8px', padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', backgroundColor: '#fff', boxShadow: '0 2px 4px rgba(0,0,0,0.01)', gap: '8px' },
   cardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' },
