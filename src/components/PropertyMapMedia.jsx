@@ -1,6 +1,22 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { loadGoogleMaps } from '../utils/googleMapsLoader';
 
+// Coerces lat/lng to real numbers and validates them. Needed defensively
+// even though the backend now sends real numbers (publicListingController.js
+// parseFloat's them) — Postgres NUMERIC columns come back from the `pg`
+// driver as strings by default, and Google's LatLngLiteral silently fails
+// to render anything (not even a JS error) if given strings instead of
+// numbers. This was the actual cause of "satellite/street view not
+// showing" after the interactive-maps change: the old static <img> approach
+// never hit this, since a URL template literal doesn't care whether lat is
+// a string or a number.
+function toValidCoords(lat, lng) {
+  const nLat = typeof lat === 'number' ? lat : parseFloat(lat);
+  const nLng = typeof lng === 'number' ? lng : parseFloat(lng);
+  if (!Number.isFinite(nLat) || !Number.isFinite(nLng)) return null;
+  return { lat: nLat, lng: nLng };
+}
+
 // Interactive satellite view: a real google.maps.Map the buyer can pan and
 // zoom in on, instead of a single flat staticmap screenshot fetched once at
 // listing-creation time (which goes stale the moment the buyer wants to
@@ -10,14 +26,15 @@ function InteractiveSatellite({ lat, lng, fallbackUrl }) {
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    if (lat == null || lng == null) { setFailed(true); return; }
+    const coords = toValidCoords(lat, lng);
+    if (!coords) { setFailed(true); return; }
     let cancelled = false;
 
     loadGoogleMaps()
       .then((maps) => {
         if (cancelled || !containerRef.current) return;
         new maps.Map(containerRef.current, {
-          center: { lat, lng },
+          center: coords,
           zoom: 18,
           mapTypeId: 'satellite',
           tilt: 0,
@@ -48,14 +65,15 @@ function InteractiveStreetView({ lat, lng, fallbackUrl }) {
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    if (lat == null || lng == null) { setFailed(true); return; }
+    const coords = toValidCoords(lat, lng);
+    if (!coords) { setFailed(true); return; }
     let cancelled = false;
 
     loadGoogleMaps()
       .then((maps) => {
         if (cancelled || !containerRef.current) return;
         const svService = new maps.StreetViewService();
-        svService.getPanorama({ location: { lat, lng }, radius: 75 }, (data, status) => {
+        svService.getPanorama({ location: coords, radius: 75 }, (data, status) => {
           if (cancelled) return;
           if (status !== 'OK') { setFailed(true); return; }
           new maps.StreetViewPanorama(containerRef.current, {
