@@ -91,17 +91,21 @@ export default function PropertyView() {
 
   const { listing, media, landmarks, dealer } = data;
 
-  const formattedPrice = new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0
-  }).format(listing.price);
+  const formattedPrice = listing.price != null
+    ? new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        maximumFractionDigits: 0
+      }).format(listing.price)
+    : null;
 
   // Phase 4: free, no-API-cost WhatsApp CTA — opens the buyer's WhatsApp app
   // with a pre-filled message referencing this exact listing.
   const waMeLink = dealer?.whatsappDigits
     ? `https://wa.me/${dealer.whatsappDigits}?text=${encodeURIComponent(
-        `Hi, I'm interested in "${listing.title}" (${formattedPrice}) — ${window.location.href}`
+        formattedPrice
+          ? `Hi, I'm interested in "${listing.title}" (${formattedPrice}) — ${window.location.href}`
+          : `Hi, I'm interested in "${listing.title}" — ${window.location.href}`
       )}`
     : null;
 
@@ -126,7 +130,7 @@ export default function PropertyView() {
         <div style={styles.headerBlock}>
           <span style={styles.typeTag}>{listing.property_type}</span>
           <h1 style={styles.mainTitle}>{listing.title}</h1>
-          <div style={styles.priceTag}>{formattedPrice}</div>
+          <div style={styles.priceTag}>{formattedPrice || 'Price on request'}</div>
           <p style={styles.addressLabel}>📍 {listing.formatted_address || listing.raw_address}</p>
         </div>
 
@@ -154,6 +158,24 @@ export default function PropertyView() {
           <div style={styles.card}>
             <h3 style={styles.sectionTitle}>Overview Details</h3>
             <p style={styles.descriptionText}>{listing.description}</p>
+          </div>
+        )}
+
+        {/* Real property photos the dealer uploaded — via the dashboard or
+            the web chat's photo-attach button — distinct from the
+            satellite/street-view media above, which are Google Maps
+            imagery of the location rather than photos of the property
+            itself. */}
+        {media?.photo_urls?.length > 0 && (
+          <div style={styles.card}>
+            <h3 style={styles.sectionTitle}>Property Photos</h3>
+            <div style={styles.photoGrid}>
+              {media.photo_urls.map((url, i) => (
+                <a key={i} href={url} target="_blank" rel="noopener noreferrer" style={styles.photoThumbLink}>
+                  <img src={url} alt={`Property photo ${i + 1}`} style={styles.photoThumb} />
+                </a>
+              ))}
+            </div>
           </div>
         )}
 
@@ -304,6 +326,9 @@ const styles = {
   specValue: { fontSize: '15px', fontWeight: '600', color: '#1f2937' },
   card: { backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '16px' },
   sectionTitle: { margin: '0 0 12px 0', fontSize: '15px', color: '#374151', textTransform: 'uppercase', letterSpacing: '0.5px' },
+  photoGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '8px' },
+  photoThumbLink: { display: 'block', borderRadius: '6px', overflow: 'hidden', aspectRatio: '1 / 1' },
+  photoThumb: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
   descriptionText: { margin: 0, fontSize: '14px', color: '#4b5563', lineHeight: '1.6' },
   landmarkList: { display: 'flex', flexDirection: 'column', gap: '10px' },
   landmarkItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '10px', borderBottom: '1px solid #f3f4f6' },
