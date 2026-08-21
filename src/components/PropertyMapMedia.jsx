@@ -33,7 +33,7 @@ function InteractiveSatellite({ lat, lng, fallbackUrl }) {
     loadGoogleMaps()
       .then((maps) => {
         if (cancelled || !containerRef.current) return;
-        new maps.Map(containerRef.current, {
+        const map = new maps.Map(containerRef.current, {
           center: coords,
           zoom: 18,
           mapTypeId: 'satellite',
@@ -42,6 +42,10 @@ function InteractiveSatellite({ lat, lng, fallbackUrl }) {
           fullscreenControl: true,
           mapTypeControl: false,
         });
+        // Marks the exact point the address geocoded to — without this,
+        // a buyer has no visual way to tell whether the map is centered
+        // precisely on the plot or just somewhere in the general area.
+        new maps.Marker({ position: coords, map, title: 'Approximate plot location' });
       })
       .catch(() => { if (!cancelled) setFailed(true); });
 
