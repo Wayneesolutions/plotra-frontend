@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { API_BASE_URL } from '../api/config';
 import RentVsBuyCalculator from './RentVsBuyCalculator.jsx';
+import { InteractiveSatellite, InteractiveStreetView } from './PropertyMapMedia.jsx';
 
 export default function PropertyView() {
   const { slug } = useParams();
@@ -107,16 +108,16 @@ export default function PropertyView() {
   return (
     <div style={styles.wrapper}>
       <section style={styles.mediaContainer}>
-        {media?.satellite_image_url && (
+        {(media?.satellite_image_url || (listing.lat != null && listing.lng != null)) && (
           <div style={styles.imageCard}>
             <span style={styles.imageBadge}>Satellite Perimeter</span>
-            <img src={media.satellite_image_url} alt="Satellite Grid Layout" style={styles.mapImage} />
+            <InteractiveSatellite lat={listing.lat} lng={listing.lng} fallbackUrl={media?.satellite_image_url} />
           </div>
         )}
-        {media?.streetview_image_url && (
+        {(media?.streetview_image_url || (listing.lat != null && listing.lng != null)) && (
           <div style={styles.imageCard}>
             <span style={styles.imageBadge}>Street View Access</span>
-            <img src={media.streetview_image_url} alt="Street Frontage Elevation" style={styles.mapImage} />
+            <InteractiveStreetView lat={listing.lat} lng={listing.lng} fallbackUrl={media?.streetview_image_url} />
           </div>
         )}
       </section>
