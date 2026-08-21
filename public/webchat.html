@@ -125,7 +125,10 @@
   .listing-card{
     margin-top:8px; border-radius:10px; overflow:hidden;
     border:1px solid var(--bubble-in-border); background:var(--panel);
+    display:block; text-decoration:none; color:inherit;
+    transition: box-shadow .15s, border-color .15s;
   }
+  a.listing-card:hover{ box-shadow: 0 4px 16px var(--shadow); border-color: var(--brand); }
   .listing-card .thumb{
     height:78px;
     background:
@@ -267,14 +270,16 @@
 
   function listingCardHtml(listing){
     if(!listing) return '';
-    return `<div class="listing-card">
+    const tag = listing.url ? 'a' : 'div';
+    const href = listing.url ? `href="${listing.url}" target="_blank" rel="noopener"` : '';
+    return `<${tag} class="listing-card" ${href}>
       <div class="thumb">PLOT MAPPED</div>
       <div class="body">
         <div class="title">${escapeHtml(listing.title || 'New listing')}</div>
         <div class="addr">${escapeHtml(listing.address || '')}</div>
-        <span class="tag">Listing created</span>
+        <span class="tag">${listing.url ? 'View listing →' : 'Listing created'}</span>
       </div>
-    </div>`;
+    </${tag}>`;
   }
 
   async function sendMessage(text){
