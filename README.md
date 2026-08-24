@@ -53,7 +53,7 @@ src/
     Login.jsx
     DashboardListings.jsx
     PropertyView.jsx        # the public, buyer-facing page
-    PlotBoundaryTracer.jsx  # Mapbox GL Draw plot boundary tool
+    PlotBoundaryTracer.jsx  # Google Maps polygon draw plot boundary tool
     ChangePassword.jsx
     PrivateRoute.jsx        # redirects to /login if not authenticated
 ```

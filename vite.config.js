@@ -15,6 +15,25 @@ export default defineConfig({
         target: 'http://localhost:3001',
         changeOrigin: true,
         secure: false
+      },
+      // /p/:slug share links: forward to backend ONLY for known crawler
+      // user-agents so they receive OG meta tags. Regular browsers are sent
+      // straight to index.html so React Router handles the route as normal.
+      '/p': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        secure: false,
+        bypass(req) {
+          const crawlers = [
+            'facebookexternalhit', 'WhatsApp', 'Twitterbot', 'Slackbot',
+            'LinkedInBot', 'TelegramBot', 'Googlebot', 'bingbot',
+          ];
+          const ua = req.headers['user-agent'] || '';
+          if (!crawlers.some((bot) => ua.includes(bot))) {
+            return '/index.html'; // Vite serves index.html; React Router takes over
+          }
+          return null; // proxy to Express backend for OG HTML
+        },
       }
     }
   }

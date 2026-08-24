@@ -1,11 +1,7 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { API_BASE_URL } from '../api/config';
 
-// Wires POST /api/v1/auth/forgot-password — backend built (with the
-// deliberately generic "if an account exists" response to avoid email
-// enumeration), no UI existed to trigger it.
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -14,44 +10,92 @@ export default function ForgotPassword() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    setMessage(null);
     try {
       const res = await axios.post(`${API_BASE_URL}/api/v1/auth/forgot-password`, { email });
-      setMessage(res.data.message);
+      setMessage({ type: 'success', text: res.data.message });
     } catch (err) {
-      setMessage(err.response?.data?.error?.message || 'Something went wrong. Please try again.');
+      // The backend always returns a generic success message regardless of
+      // whether the email matched an account (prevents email enumeration) —
+      // an actual error here means something else broke (network, 500, etc).
+      setMessage({ type: 'error', text: 'Something went wrong. Please try again.' });
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div style={styles.wrapper}>
-      <form onSubmit={handleSubmit} style={styles.card}>
-        <h2 style={styles.title}>Reset your password</h2>
-        <p style={styles.subtitle}>We'll email you a link to reset it, if an account exists for that address.</p>
+    <div style={S.root}>
+      <div style={S.card}>
+        <div style={S.logoRow}>
+          <div style={S.logoIcon}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M3 9.5L12 3l9 6.5V21H15v-6H9v6H3V9.5Z" fill="#0c1b2e" />
+            </svg>
+          </div>
+          <span style={S.brand}>WayneState Pro</span>
+        </div>
 
-        {message && <div style={styles.infoBox}>{message}</div>}
+        <h1 style={S.title}>Forgot your password?</h1>
+        <p style={S.sub}>Enter the email on your account and we'll send you a reset link.</p>
 
-        <label style={styles.label}>Email</label>
-        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required style={styles.input} />
+        {message ? (
+          <div style={{
+            ...S.banner,
+            backgroundColor: message.type === 'error' ? '#fff5f5' : '#ecfdf5',
+            color: message.type === 'error' ? '#c53030' : '#059669',
+            border: `1px solid ${message.type === 'error' ? '#fed7d7' : '#a7f3d0'}`,
+          }}>
+            {message.text}
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} style={S.form}>
+            <label style={S.field}>
+              <span style={S.label}>Email</span>
+              <input
+                type="email" required value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                style={S.input} placeholder="you@company.com"
+              />
+            </label>
+            <button type="submit" disabled={submitting} style={{ ...S.submitBtn, opacity: submitting ? 0.7 : 1 }}>
+              {submitting ? 'Sending…' : 'Send Reset Link'}
+            </button>
+          </form>
+        )}
 
-        <button type="submit" disabled={submitting} style={styles.button}>
-          {submitting ? 'Sending…' : 'Send reset link'}
-        </button>
-        <Link to="/login" style={styles.link}>Back to login</Link>
-      </form>
+        <a href="/login" style={S.backLink}>← Back to login</a>
+      </div>
     </div>
   );
 }
 
-const styles = {
-  wrapper: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f9fafb' },
-  card: { display: 'flex', flexDirection: 'column', gap: '4px', width: '340px', backgroundColor: '#fff', padding: '32px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' },
-  title: { margin: 0, fontSize: '20px', color: '#111827' },
-  subtitle: { margin: '2px 0 20px 0', fontSize: '13px', color: '#6b7280', lineHeight: '1.5' },
-  label: { fontSize: '12px', color: '#4b5563', marginTop: '10px', marginBottom: '4px', fontWeight: '600' },
-  input: { padding: '10px', fontSize: '14px', border: '1px solid #d1d5db', borderRadius: '6px', width: '100%', boxSizing: 'border-box' },
-  button: { marginTop: '20px', padding: '10px', border: 'none', backgroundColor: '#2563eb', color: '#fff', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '14px' },
-  infoBox: { backgroundColor: '#eff6ff', color: '#1e40af', padding: '8px 10px', borderRadius: '6px', fontSize: '13px', marginBottom: '4px' },
-  link: { marginTop: '16px', fontSize: '13px', color: '#2563eb', textAlign: 'center', textDecoration: 'none' },
+const S = {
+  root: {
+    minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#f2f5fb', padding: '20px',
+  },
+  card: {
+    width: '100%', maxWidth: '420px', backgroundColor: '#fff', borderRadius: '18px',
+    padding: '36px 32px', boxShadow: '0 24px 64px rgba(12,27,46,0.10)',
+  },
+  logoRow: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' },
+  logoIcon: { width: '32px', height: '32px', borderRadius: '9px', backgroundColor: '#c8a96e', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  brand: { fontSize: '13px', fontWeight: '800', color: '#0c1b2e', letterSpacing: '1.5px', textTransform: 'uppercase' },
+  title: { fontSize: '22px', fontWeight: '800', color: '#0c1b2e', margin: '0 0 8px' },
+  sub: { fontSize: '14px', color: '#64748b', margin: '0 0 24px', lineHeight: '1.6' },
+  banner: { padding: '14px 16px', borderRadius: '10px', fontSize: '13px', marginBottom: '16px' },
+  form: { display: 'flex', flexDirection: 'column', gap: '16px' },
+  field: { display: 'flex', flexDirection: 'column', gap: '6px' },
+  label: { fontSize: '11px', fontWeight: '700', color: '#374151', textTransform: 'uppercase', letterSpacing: '0.6px' },
+  input: {
+    padding: '12px 14px', fontSize: '14px', border: '1.5px solid #e2e8f0', borderRadius: '10px',
+    width: '100%', color: '#0c1b2e', backgroundColor: '#fafbfd', boxSizing: 'border-box',
+  },
+  submitBtn: {
+    padding: '13px', border: 'none', borderRadius: '10px',
+    background: 'linear-gradient(135deg, #0c1b2e 0%, #1a3558 100%)',
+    color: '#fff', fontWeight: '700', fontSize: '14px', cursor: 'pointer',
+  },
+  backLink: { display: 'block', textAlign: 'center', marginTop: '24px', fontSize: '13px', color: '#64748b', textDecoration: 'none' },
 };

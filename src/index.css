@@ -1,0 +1,222 @@
+/* ══════════════════════════════════════════════════
+   WayneState Pro — Global Design System
+   ══════════════════════════════════════════════════ */
+
+/* ── Resets ──────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+/* ── Base ────────────────────────────────────────── */
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: #f2f5fb;
+  color: #0c1b2e;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Text selection ──────────────────────────────── */
+::selection {
+  background: rgba(200, 169, 110, 0.25);
+  color: #0c1b2e;
+}
+
+/* ── Custom scrollbar ────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #c5d5e4; border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: #8fa8be; }
+
+/* ── Input / Textarea / Select ───────────────────── */
+input, textarea, select {
+  font-family: inherit;
+}
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none !important;
+  border-color: #c8a96e !important;
+  box-shadow: 0 0 0 3.5px rgba(200, 169, 110, 0.20) !important;
+  background-color: #ffffff !important;
+}
+
+/* ── Buttons ─────────────────────────────────────── */
+button {
+  font-family: inherit;
+  transition: filter 0.15s ease, transform 0.1s ease, opacity 0.15s ease;
+}
+button:not([disabled]):hover  { filter: brightness(1.08); }
+button:not([disabled]):active { filter: brightness(0.95); transform: scale(0.985); }
+
+/* ══════════════════════════════════════════════════
+   Keyframe Animations
+   ══════════════════════════════════════════════════ */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-10px); }
+}
+
+@keyframes orb-drift {
+  0%   { transform: translate(0px,  0px)  scale(1);    }
+  33%  { transform: translate(22px, -18px) scale(1.05); }
+  66%  { transform: translate(-14px, 12px) scale(0.96); }
+  100% { transform: translate(0px,  0px)  scale(1);    }
+}
+
+@keyframes wa-pulse {
+  0%,  100% { box-shadow: 0 6px 20px rgba(37, 211, 102, 0.28); }
+  50%        { box-shadow: 0 8px 36px rgba(37, 211, 102, 0.58), 0 0 0 7px rgba(37,211,102,0.08); }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ══════════════════════════════════════════════════
+   Utility Classes
+   ══════════════════════════════════════════════════ */
+
+/* Gradient text (headline accent) */
+.pve-grad-text {
+  background: linear-gradient(130deg, #ffffff 15%, #d4ae72 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* WhatsApp CTA pulse */
+.pve-wa-btn {
+  animation: wa-pulse 2.6s ease-in-out infinite !important;
+}
+
+/* Floating element */
+.pve-float {
+  animation: float 4.5s ease-in-out infinite;
+}
+
+/* Decorative orb drift */
+.pve-orb {
+  animation: orb-drift 14s ease-in-out infinite;
+}
+
+/* Page-entry animation */
+.pve-fade-up {
+  animation: fadeUp 0.4s ease both;
+}
+
+/* ══════════════════════════════════════════════════
+   Listing Cards — CSS Hover
+   ══════════════════════════════════════════════════ */
+.pve-card {
+  transition: transform 0.22s ease, box-shadow 0.22s ease !important;
+  cursor: default;
+}
+.pve-card:hover {
+  transform: translateY(-5px) !important;
+  box-shadow: 0 18px 44px rgba(12, 27, 46, 0.13) !important;
+}
+.pve-card:hover .pve-card-price {
+  color: #c8a96e !important;
+}
+
+/* Action buttons inside cards */
+.pve-action-btn {
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease !important;
+}
+.pve-action-btn:hover {
+  background-color: #0c1b2e !important;
+  color: #ffffff !important;
+  border-color: #0c1b2e !important;
+  filter: none !important;
+}
+
+.pve-action-btn-blue:hover {
+  background-color: #1d4ed8 !important;
+  color: #ffffff !important;
+  border-color: #1d4ed8 !important;
+  filter: none !important;
+}
+
+/* ══════════════════════════════════════════════════
+   Topbar Icon Buttons
+   ══════════════════════════════════════════════════ */
+.pve-topbar-btn {
+  transition: background 0.15s ease, color 0.15s ease !important;
+}
+.pve-topbar-btn:hover {
+  background: rgba(200, 169, 110, 0.15) !important;
+  color: #c8a96e !important;
+  filter: none !important;
+}
+
+/* ══════════════════════════════════════════════════
+   Login page feature items
+   ══════════════════════════════════════════════════ */
+.pve-feature-item {
+  transition: transform 0.18s ease;
+}
+.pve-feature-item:hover {
+  transform: translateX(4px);
+}
+
+/* ══════════════════════════════════════════════════
+   Stat card shine on hover
+   ══════════════════════════════════════════════════ */
+.pve-stat-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+.pve-stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(12, 27, 46, 0.18) !important;
+}
+.pve-stat-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent);
+  transition: left 0.5s ease;
+}
+.pve-stat-card:hover::after {
+  left: 160%;
+}
+
+/* ══════════════════════════════════════════════════
+   Modal backdrop animation
+   ══════════════════════════════════════════════════ */
+.pve-modal-wrap {
+  animation: fadeIn 0.2s ease both;
+}
+.pve-modal {
+  animation: fadeUp 0.25s ease both;
+}
+
+/* ══════════════════════════════════════════════════
+   Landmark rows hover
+   ══════════════════════════════════════════════════ */
+.pve-landmark-row {
+  transition: background 0.15s ease;
+  border-radius: 8px;
+}
+.pve-landmark-row:hover {
+  background: #f8fafd;
+}

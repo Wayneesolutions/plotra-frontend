@@ -9,16 +9,24 @@ import LeadsInbox from './components/LeadsInbox.jsx';
 import OpsPanel from './components/OpsPanel.jsx';
 import Analytics from './components/Analytics.jsx';
 import Billing from './components/Billing.jsx';
+import AdminRoute from './components/AdminRoute.jsx';
 import AdminPanel from './components/AdminPanel.jsx';
 import RequestAccess from './components/RequestAccess.jsx';
 import Pricing from './components/Pricing.jsx';
 import ForgotPassword from './components/ForgotPassword.jsx';
 import ResetPassword from './components/ResetPassword.jsx';
+// NEW — Phase 7
+import LandingPage from './components/LandingPage.jsx';
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* NEW — public marketing homepage, was previously an unconditional
+            redirect to /dashboard (which just bounced to /login for anyone
+            not signed in). Investors/prospects landing on the bare domain
+            now see an actual product page. */}
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/request-access" element={<RequestAccess />} />
         <Route path="/pricing" element={<Pricing />} />
@@ -73,17 +81,20 @@ export default function App() {
             </PrivateRoute>
           }
         />
+        {/* AdminRoute (not just PrivateRoute) — AdminPanel manages tenant
+            approvals, plans and billing, so this checks role === 'super_admin',
+            not just "is logged in". */}
         <Route
           path="/admin"
           element={
-            <PrivateRoute>
+            <AdminRoute>
               <AdminPanel />
-            </PrivateRoute>
+            </AdminRoute>
           }
         />
 
         <Route path="/p/:slug" element={<PropertyView />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
