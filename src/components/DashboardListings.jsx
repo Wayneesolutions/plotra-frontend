@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/apiClient';
 import ChangePassword from './ChangePassword.jsx';
 import PlotBoundaryTracer from './PlotBoundaryTracer';
+import BuilderProfileManager from './BuilderProfileManager.jsx';
 // NEW — Phase 7
 import BillingModal from './BillingModal.jsx';
 import InviteUserModal from './InviteUserModal.jsx';
@@ -22,6 +23,7 @@ export default function DashboardListings() {
   const [error, setError]                 = useState(null);
   const [showCreateModal, setShowCreate]  = useState(false);
   const [activeTracerListing, setTracer]  = useState(null);
+  const [builderModalListing, setBuilderModalListing] = useState(null); // Flat listings only — see the button below
   const [formData, setFormData]           = useState({
     title: '', raw_address: '', price: '',
     plot_area: '', property_type: 'Plot', description: '',
@@ -297,6 +299,14 @@ export default function DashboardListings() {
       {showPwModal && <ChangePassword onClose={() => setShowPwModal(false)} />}
       {showBillingModal && <BillingModal onClose={() => setShowBillingModal(false)} />}
       {showInviteModal && <InviteUserModal onClose={() => setShowInviteModal(false)} />}
+      {builderModalListing && (
+        <BuilderProfileManager
+          listing={builderModalListing}
+          currentUserRole={storedUser?.role}
+          onClose={() => setBuilderModalListing(null)}
+          onUpdated={() => fetchListings()}
+        />
+      )}
 
       {/* ══ MODAL: Photo Management ═══════════════════════════════ */}
       {photoModal && (
@@ -576,6 +586,20 @@ export default function DashboardListings() {
                     >
                       🗺 Trace
                     </button>
+                    {/* Flat-only — a builder profile (developer rating,
+                        possession record, nearby comparisons) doesn't apply
+                        to a plot or villa, so the option isn't even offered
+                        for those, rather than showing it and rejecting it
+                        server-side. See builderProfileController.js. */}
+                    {item.property_type === 'Flat' && (
+                      <button
+                        className="pve-action-btn"
+                        onClick={() => setBuilderModalListing(item)}
+                        style={S.actionBtn}
+                      >
+                        🏗️ {item.builder_profile_id ? 'Builder Profile' : 'Link Builder'}
+                      </button>
+                    )}
                   </div>
 
                   {multiAgentEnabled && (

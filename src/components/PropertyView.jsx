@@ -174,6 +174,13 @@ export default function PropertyView() {
 
   const { listing, media, landmarks, dealer } = data;
 
+  // Developer profile / rating / possession record / nearby-comparison
+  // content is Flat-only — the backend already won't return builderProfile
+  // for a non-Flat listing (see builderProfileController.js), but this is
+  // a second, client-side gate so a house never renders this section
+  // under any circumstance, including a stale/cached response.
+  const showBuilderSection = !!builderProfile && listing.property_type === 'Flat';
+
   const formattedPrice = listing.price != null
     ? new Intl.NumberFormat('en-IN', {
         style: 'currency', currency: 'INR', maximumFractionDigits: 0,
@@ -409,7 +416,7 @@ export default function PropertyView() {
             developer profile, cited rating, cited possession track
             record, and a comparison against other real nearby options —
             none of that applies to an individual plot with no builder. */}
-        {builderProfile && (
+        {showBuilderSection && (
           <div style={S.section}>
             <div style={S.sectionHead}>
               <div style={S.sectionAccent} />
@@ -485,7 +492,7 @@ export default function PropertyView() {
             ~5km and a similar price band, platform-wide (not just this
             dealer's own listings — a buyer cross-shops across dealers).
             See builderProfileController.js's findSimilarProjects(). */}
-        {builderProfile?.similarProjects?.length > 0 && (
+        {showBuilderSection && builderProfile.similarProjects?.length > 0 && (
           <div style={S.section}>
             <div style={S.sectionHead}>
               <div style={S.sectionAccent} />
