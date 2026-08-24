@@ -466,6 +466,7 @@ export default function DashboardListings() {
             <option value="">All types</option>
             <option value="Plot">Plot</option>
             <option value="Villa">Villa</option>
+            <option value="Flat">Flat</option>
             <option value="Commercial">Commercial</option>
           </select>
           <button type="submit" style={S.filterSearchBtn}>Search</button>
@@ -640,6 +641,7 @@ export default function DashboardListings() {
                   onChange={handleInputChange} style={S.fi}>
                   <option value="Plot">Plot</option>
                   <option value="Villa">Villa</option>
+                  <option value="Flat">Flat</option>
                   <option value="Commercial">Commercial</option>
                 </select>
               </MField>

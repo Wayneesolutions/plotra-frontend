@@ -7,6 +7,19 @@ import { InteractiveSatellite, InteractiveStreetView } from './PropertyMapMedia.
 // NEW — Phase 6 monetization
 import AdSlot from './AdSlot.jsx';
 
+// Display order + labels for builder_profile_claims.category — keeps the
+// developer section reading as distinct topics (delivery record, who runs
+// the company, financial standing, legal/criminal matters) rather than one
+// undifferentiated list. "rating" claims (prose reputation mentions) are
+// folded in last, separate from the numeric overall_rating badge above.
+const CLAIM_CATEGORY_ORDER = [
+  { key: 'delivery_history', label: 'Past Project Delivery' },
+  { key: 'leadership', label: 'Ownership & Leadership' },
+  { key: 'financial_condition', label: 'Financial Condition' },
+  { key: 'legal_issue', label: 'Legal & Regulatory Record' },
+  { key: 'rating', label: 'Reputation & Rankings' },
+];
+
 export default function PropertyView() {
   const { slug } = useParams();
   const [data, setData]       = useState(null);
@@ -388,29 +401,117 @@ export default function PropertyView() {
           </div>
         )}
 
-        {/* Builder Due Diligence — only shown once a human has explicitly
-            published it (moderation_status='published'); see
-            builderProfileController.js's getPublicBuilderProfile. */}
+        {/* Developer / Builder Due Diligence — only shown once a human has
+            explicitly published it (moderation_status='published'); see
+            builderProfileController.js's getPublicBuilderProfile. This is
+            the section that makes a mega-project/flat listing's page
+            materially different from a plain plot/villa listing: a
+            developer profile, cited rating, cited possession track
+            record, and a comparison against other real nearby options —
+            none of that applies to an individual plot with no builder. */}
         {builderProfile && (
           <div style={S.section}>
             <div style={S.sectionHead}>
               <div style={S.sectionAccent} />
-              <h2 style={S.sectionTitle}>Builder — {builderProfile.builderProfile.company_name}</h2>
+              <h2 style={S.sectionTitle}>Developer — {builderProfile.builderProfile.company_name}</h2>
             </div>
+
             {builderProfile.builderProfile.rera_registration_ids?.length > 0 && (
-              <p style={{ ...S.descTxt, marginBottom: '10px' }}>
+              <p style={{ ...S.descTxt, marginBottom: '14px' }}>
                 RERA: {builderProfile.builderProfile.rera_registration_ids.join(', ')}
               </p>
             )}
-            {builderProfile.claims.map((c, i) => (
-              <div key={i} style={S.citedItem}>
-                <span style={S.citedCategory}>{c.category}</span>
-                <p style={S.descTxt}>{c.claim_text}</p>
-                <a href={c.source_url} target="_blank" rel="noopener noreferrer" style={S.sourceLink}>
-                  Source: {c.source_title || c.source_domain}
-                </a>
+
+            {/* Rating + possession track record — the two structured,
+                comparable numbers this section adds on top of the prose
+                claims below. Both are cited like everything else here;
+                neither renders at all if no real published source was
+                found (see groundedResearchService.js — never a guessed
+                number). */}
+            {(builderProfile.builderProfile.overall_rating != null || builderProfile.builderProfile.possession_total_count != null) && (
+              <div style={S.devStatsRow}>
+                {builderProfile.builderProfile.overall_rating != null && (
+                  <div style={S.devStatCard}>
+                    <span style={S.devStatLbl}>Rating</span>
+                    <span style={S.devStatVal}>★ {Number(builderProfile.builderProfile.overall_rating).toFixed(1)}<span style={S.devStatMax}>/5</span></span>
+                    <a href={builderProfile.builderProfile.rating_source_url} target="_blank" rel="noopener noreferrer" style={S.sourceLink}>
+                      Source: {builderProfile.builderProfile.rating_source_title || 'link'}
+                    </a>
+                  </div>
+                )}
+                {builderProfile.builderProfile.possession_total_count != null && (
+                  <div style={S.devStatCard}>
+                    <span style={S.devStatLbl}>Possession Track Record</span>
+                    <span style={S.devStatVal}>
+                      {builderProfile.builderProfile.possession_delivered_count}
+                      <span style={S.devStatMax}>/{builderProfile.builderProfile.possession_total_count} delivered</span>
+                    </span>
+                    <a href={builderProfile.builderProfile.possession_source_url} target="_blank" rel="noopener noreferrer" style={S.sourceLink}>
+                      Source: {builderProfile.builderProfile.possession_source_title || 'link'}
+                    </a>
+                  </div>
+                )}
               </div>
-            ))}
+            )}
+
+            {/* Cited claims, grouped so "past projects" and "legal/criminal
+                records" read as distinct, scannable sections instead of
+                one flat list. */}
+            {CLAIM_CATEGORY_ORDER.map(({ key, label }) => {
+              const items = builderProfile.claims.filter((c) => c.category === key);
+              if (items.length === 0) return null;
+              return (
+                <div key={key} style={{ marginBottom: '14px' }}>
+                  <h4 style={S.intelSubhead}>{label}</h4>
+                  {items.map((c, i) => (
+                    <div key={i} style={S.citedItem}>
+                      <p style={S.descTxt}>{c.claim_text}</p>
+                      <a href={c.source_url} target="_blank" rel="noopener noreferrer" style={S.sourceLink}>
+                        Source: {c.source_title || c.source_domain}
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+
+            {builderProfile.claims.length === 0 && builderProfile.builderProfile.overall_rating == null && builderProfile.builderProfile.possession_total_count == null && (
+              <p style={S.emptyNote}>No independently verified information found for this developer yet.</p>
+            )}
+          </div>
+        )}
+
+        {/* Compare Nearby Projects — other mega-project listings within
+            ~5km and a similar price band, platform-wide (not just this
+            dealer's own listings — a buyer cross-shops across dealers).
+            See builderProfileController.js's findSimilarProjects(). */}
+        {builderProfile?.similarProjects?.length > 0 && (
+          <div style={S.section}>
+            <div style={S.sectionHead}>
+              <div style={S.sectionAccent} />
+              <h2 style={S.sectionTitle}>Compare Nearby Projects</h2>
+            </div>
+            <div style={S.compareList}>
+              {builderProfile.similarProjects.map((p) => (
+                <a key={p.slug} href={`/p/${p.slug}`} style={S.compareRow}>
+                  <div style={S.compareMain}>
+                    <span style={S.compareTitle}>{p.title}</span>
+                    <span style={S.compareMeta}>
+                      {p.builder_company_name} · {p.distance_km} km away
+                      {p.plot_area ? ` · ${p.plot_area}` : ''}
+                    </span>
+                  </div>
+                  <div style={S.compareRight}>
+                    {p.builder_rating != null && (
+                      <span style={S.comparePill}>★ {p.builder_rating.toFixed(1)}</span>
+                    )}
+                    <span style={S.comparePrice}>
+                      {p.price != null ? `₹${Number(p.price).toLocaleString('en-IN')}` : 'On request'}
+                    </span>
+                  </div>
+                </a>
+              ))}
+            </div>
           </div>
         )}
 
@@ -696,6 +797,34 @@ const S = {
   citedItem: { borderLeft: '2px solid #eff2f8', paddingLeft: '10px', marginBottom: '10px' },
   citedCategory: { fontSize: '10px', textTransform: 'uppercase', color: '#94a3b8', fontWeight: 'bold' },
   sourceLink: { fontSize: '11px', color: '#0c1b2e', fontWeight: '600', textDecoration: 'none' },
+
+  /* Developer rating / possession-record stat cards */
+  devStatsRow: { display: 'flex', gap: '12px', marginBottom: '18px', flexWrap: 'wrap' },
+  devStatCard: {
+    flex: '1 1 160px', border: '1px solid #eff2f8', borderRadius: '12px',
+    padding: '14px 16px', backgroundColor: '#fafbfd',
+    display: 'flex', flexDirection: 'column', gap: '4px',
+  },
+  devStatLbl: { fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.4px', fontWeight: '700' },
+  devStatVal: { fontSize: '20px', fontWeight: '800', color: '#0c1b2e' },
+  devStatMax: { fontSize: '13px', fontWeight: '600', color: '#94a3b8', marginLeft: '2px' },
+
+  /* Compare Nearby Projects */
+  compareList: { display: 'flex', flexDirection: 'column', gap: '2px' },
+  compareRow: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px',
+    padding: '12px 8px', borderBottom: '1px solid #f8fafd',
+    textDecoration: 'none', color: 'inherit',
+  },
+  compareMain: { display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 },
+  compareTitle: { fontSize: '14px', fontWeight: '700', color: '#0c1b2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  compareMeta: { fontSize: '12px', color: '#94a3b8' },
+  compareRight: { display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 },
+  comparePill: {
+    fontSize: '12px', fontWeight: '700', color: '#92702f',
+    backgroundColor: '#fdfbf6', border: '1px solid #eadfc7', borderRadius: '20px', padding: '3px 10px',
+  },
+  comparePrice: { fontSize: '13px', fontWeight: '700', color: '#0c1b2e' },
 
   /* Photo gallery */
   photoScroll: {
