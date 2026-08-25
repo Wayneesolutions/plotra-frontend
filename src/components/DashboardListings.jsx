@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/apiClient';
 import ChangePassword from './ChangePassword.jsx';
 import PlotBoundaryTracer from './PlotBoundaryTracer';
+import BuilderProfileManager from './BuilderProfileManager.jsx';
 // NEW — Phase 7
 import BillingModal from './BillingModal.jsx';
 import InviteUserModal from './InviteUserModal.jsx';
-import LeadInbox from './LeadInbox.jsx';
 import PropertyEditModal from './PropertyEditModal.jsx';
 
 export default function DashboardListings() {
@@ -24,6 +24,7 @@ export default function DashboardListings() {
   const [error, setError]                 = useState(null);
   const [showCreateModal, setShowCreate]  = useState(false);
   const [activeTracerListing, setTracer]  = useState(null);
+  const [builderModalListing, setBuilderModalListing] = useState(null); // Flat listings only — see the button below
   const [formData, setFormData]           = useState({
     title: '', raw_address: '', price: '',
     plot_area: '', property_type: 'Plot', description: '',
@@ -32,9 +33,26 @@ export default function DashboardListings() {
   const [showPwModal, setShowPwModal]     = useState(false);
   const [showBillingModal, setShowBillingModal] = useState(false); // NEW — Phase 7
   const [showInviteModal, setShowInviteModal] = useState(false); // NEW — gap #7
-  const [showLeadInbox, setShowLeadInbox] = useState(false); // NEW — gap: leads captured but never surfaced
   const [editListing, setEditListing] = useState(null); // NEW — gap: no Edit/Delete/Deactivate existed
   const [copiedSlug, setCopiedSlug]       = useState(null);
+
+  // Search/filter — "search by area or budget" (area lives in the address
+  // text, not a separate field, so q searches title/address together).
+  // Applied on submit (Enter or the Search button), not live-as-you-type,
+  // to avoid firing a request per keystroke.
+  const [filters, setFilters] = useState({ q: '', min_price: '', max_price: '', property_type: '' });
+  const [filterInputs, setFilterInputs] = useState({ q: '', min_price: '', max_price: '', property_type: '' });
+
+  // Per-listing WhatsApp attribution — only makes sense for a plan with
+  // more than one WhatsApp number to assign FROM (plans.max_whatsapp_numbers,
+  // surfaced via /billing/status). Re-pointed here from the old
+  // multi_agent_whatsapp boolean to the new tier flag (Part 2, build-order
+  // item 7) — see listingService.js's validateAssignedAgent for the
+  // matching backend-side re-point. teamMembers only fetched when this is
+  // actually true — no point loading the team list for a single-number
+  // tenant who can't use the feature anyway.
+  const [multiAgentEnabled, setMultiAgentEnabled] = useState(false);
+  const [teamMembers, setTeamMembers] = useState([]);
 
   // Photo management
   const [photoModal, setPhotoModal]             = useState(null); // listing object
@@ -43,17 +61,68 @@ export default function DashboardListings() {
   const [photoUploading, setPhotoUploading]     = useState(false);
   const [photoDeleting, setPhotoDeleting]       = useState(null); // URL being deleted
 
-  useEffect(() => { fetchListings(); }, []);
+  useEffect(() => {
+    fetchListings();
+    checkMultiAgentPlan();
+  }, []);
 
-  const fetchListings = async () => {
+  const checkMultiAgentPlan = async () => {
+    try {
+      const res = await apiClient.get('/api/v1/dashboard/billing/status');
+      const enabled = (res.data.billing?.max_whatsapp_numbers ?? 1) > 1;
+      setMultiAgentEnabled(enabled);
+      if (enabled) {
+        const usersRes = await apiClient.get('/api/v1/dashboard/users');
+        setTeamMembers((usersRes.data.users || []).filter((u) => u.phone));
+      }
+    } catch {
+      // Non-fatal — the assign-to-agent UI just won't show. Search/filter
+      // and everything else on this page works independently of this.
+    }
+  };
+
+  const fetchListings = async ({ withFilters = filters } = {}) => {
     try {
       setLoading(true);
-      const r = await apiClient.get('/api/v1/dashboard/listings');
+      const params = {};
+      if (withFilters.q) params.q = withFilters.q;
+      if (withFilters.min_price) params.min_price = withFilters.min_price;
+      if (withFilters.max_price) params.max_price = withFilters.max_price;
+      if (withFilters.property_type) params.property_type = withFilters.property_type;
+
+      const r = await apiClient.get('/api/v1/dashboard/listings', { params });
       setListings(r.data.listings || []);
     } catch (err) {
       setError(err.response?.data?.error?.message || 'Failed to load listings.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFilterInputChange = (e) => {
+    const { name, value } = e.target;
+    setFilterInputs((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const applyFilters = (e) => {
+    e?.preventDefault();
+    setFilters(filterInputs);
+    fetchListings({ withFilters: filterInputs });
+  };
+
+  const clearFilters = () => {
+    const empty = { q: '', min_price: '', max_price: '', property_type: '' };
+    setFilterInputs(empty);
+    setFilters(empty);
+    fetchListings({ withFilters: empty });
+  };
+
+  const handleAssignAgent = async (listingId, agentId) => {
+    try {
+      await apiClient.patch(`/api/v1/dashboard/listings/${listingId}`, { assigned_agent_id: agentId || null });
+      fetchListings();
+    } catch (err) {
+      alert(err.response?.data?.error?.message || 'Failed to update WhatsApp assignment.');
     }
   };
 
@@ -168,7 +237,7 @@ export default function DashboardListings() {
               <path d="M3 9.5L12 3l9 6.5V21H15v-6H9v6H3V9.5Z" fill="#0c1b2e"/>
             </svg>
           </div>
-          <span style={S.navBrand}>PropertyPro</span>
+          <span style={S.navBrand}>WayneState Pro</span>
           <div style={S.navDivider} />
           <span style={S.navSection}>Listings</span>
           {activeCount > 0 && (
@@ -200,11 +269,11 @@ export default function DashboardListings() {
           )}
           <button
             className="pve-topbar-btn"
-            onClick={() => setShowLeadInbox(true)}
+            onClick={() => navigate('/dashboard/ops')}
             style={S.iconBtn}
-            title="Lead Inbox"
+            title="Ops Panel — leads, documents, calls, visits"
           >
-            💬
+            🗂
           </button>
           <button
             className="pve-topbar-btn"
@@ -235,13 +304,20 @@ export default function DashboardListings() {
       {showPwModal && <ChangePassword onClose={() => setShowPwModal(false)} />}
       {showBillingModal && <BillingModal onClose={() => setShowBillingModal(false)} />}
       {showInviteModal && <InviteUserModal onClose={() => setShowInviteModal(false)} />}
-      {showLeadInbox && <LeadInbox onClose={() => setShowLeadInbox(false)} />}
       {editListing && (
         <PropertyEditModal
           listing={editListing}
           onClose={() => setEditListing(null)}
           onSaved={() => { setEditListing(null); fetchListings(); }}
           onDeleted={() => { setEditListing(null); fetchListings(); }}
+        />
+      )}
+      {builderModalListing && (
+        <BuilderProfileManager
+          listing={builderModalListing}
+          currentUserRole={storedUser?.role}
+          onClose={() => setBuilderModalListing(null)}
+          onUpdated={() => fetchListings()}
         />
       )}
 
@@ -376,12 +452,66 @@ export default function DashboardListings() {
           </div>
         </div>
 
+        {/* ── Search/filter bar — area lives in the address text (q searches
+            title + raw_address + formatted_address together), budget is
+            min/max price, property type is an exact-match dropdown. ── */}
+        <form onSubmit={applyFilters} style={S.filterBar}>
+          <input
+            type="text"
+            name="q"
+            placeholder="Search by area, locality, or title…"
+            value={filterInputs.q}
+            onChange={handleFilterInputChange}
+            style={{ ...S.filterInput, flex: 2, minWidth: '200px' }}
+          />
+          <input
+            type="number"
+            name="min_price"
+            placeholder="Min budget (₹)"
+            value={filterInputs.min_price}
+            onChange={handleFilterInputChange}
+            style={{ ...S.filterInput, flex: 1, minWidth: '120px' }}
+          />
+          <input
+            type="number"
+            name="max_price"
+            placeholder="Max budget (₹)"
+            value={filterInputs.max_price}
+            onChange={handleFilterInputChange}
+            style={{ ...S.filterInput, flex: 1, minWidth: '120px' }}
+          />
+          <select
+            name="property_type"
+            value={filterInputs.property_type}
+            onChange={handleFilterInputChange}
+            style={{ ...S.filterInput, flex: 1, minWidth: '140px' }}
+          >
+            <option value="">All types</option>
+            <option value="Plot">Plot</option>
+            <option value="Villa">Villa</option>
+            <option value="Flat">Flat</option>
+            <option value="Commercial">Commercial</option>
+          </select>
+          <button type="submit" style={S.filterSearchBtn}>Search</button>
+          {(filters.q || filters.min_price || filters.max_price || filters.property_type) && (
+            <button type="button" onClick={clearFilters} style={S.filterClearBtn}>Clear</button>
+          )}
+        </form>
+
         {/* ── Empty state ───────────────────────────────────────── */}
         {listings.length === 0 && (
           <div style={S.empty}>
             <div style={S.emptyIconWrap}>🏗</div>
-            <h4 style={S.emptyTitle}>No properties yet</h4>
-            <p style={S.emptySub}>Add your first listing to get started.</p>
+            <h4 style={S.emptyTitle}>
+              {(filters.q || filters.min_price || filters.max_price || filters.property_type)
+                ? 'No listings match these filters'
+                : 'No properties yet'}
+            </h4>
+            <p style={S.emptySub}>
+              {(filters.q || filters.min_price || filters.max_price || filters.property_type)
+                ? 'Try widening your search or clearing the filters.'
+                : 'Add your first listing to get started.'}
+            </p>
             <button onClick={() => setShowCreate(true)} style={S.addBtn}>+ Add Property</button>
           </div>
         )}
@@ -476,7 +606,37 @@ export default function DashboardListings() {
                     >
                       ✎ Edit
                     </button>
+                    {/* Flat-only — a builder profile (developer rating,
+                        possession record, nearby comparisons) doesn't apply
+                        to a plot or villa, so the option isn't even offered
+                        for those, rather than showing it and rejecting it
+                        server-side. See builderProfileController.js. */}
+                    {item.property_type === 'Flat' && (
+                      <button
+                        className="pve-action-btn"
+                        onClick={() => setBuilderModalListing(item)}
+                        style={S.actionBtn}
+                      >
+                        🏗️ {item.builder_profile_id ? 'Builder Profile' : 'Link Builder'}
+                      </button>
+                    )}
                   </div>
+
+                  {multiAgentEnabled && (
+                    <div style={S.assignRow}>
+                      <label style={S.assignLabel}>💬 WhatsApp contact for buyers:</label>
+                      <select
+                        value={item.assigned_agent_id || ''}
+                        onChange={(e) => handleAssignAgent(item.id, e.target.value)}
+                        style={S.filterInput}
+                      >
+                        <option value="">Default (tenant number)</option>
+                        {teamMembers.map((member) => (
+                          <option key={member.id} value={member.id}>{member.name} ({member.phone})</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -525,6 +685,7 @@ export default function DashboardListings() {
                   onChange={handleInputChange} style={S.fi}>
                   <option value="Plot">Plot</option>
                   <option value="Villa">Villa</option>
+                  <option value="Flat">Flat</option>
                   <option value="Commercial">Commercial</option>
                 </select>
               </MField>
@@ -697,6 +858,22 @@ const S = {
 
   /* Section header */
   sectionBar: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px' },
+  filterBar: { display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '18px', alignItems: 'center' },
+  filterInput: {
+    padding: '10px 12px', fontSize: '13px',
+    border: '1.5px solid #e2e8f0', borderRadius: '9px',
+    color: '#0c1b2e', backgroundColor: '#fafbfd',
+  },
+  filterSearchBtn: {
+    padding: '10px 18px', border: 'none', borderRadius: '9px',
+    background: 'linear-gradient(135deg, #0c1b2e 0%, #1a3558 100%)',
+    color: '#fff', fontWeight: '700', fontSize: '13px', cursor: 'pointer',
+  },
+  filterClearBtn: {
+    padding: '10px 18px', borderRadius: '9px',
+    border: '1.5px solid #e2e8f0', backgroundColor: '#fff',
+    color: '#475569', fontWeight: '600', fontSize: '13px', cursor: 'pointer',
+  },
   sectionTitle: { margin: '0 0 4px 0', fontSize: '18px', fontWeight: '800', color: '#0c1b2e' },
   sectionSub:   { margin: 0, fontSize: '13px', color: '#64748b' },
 
@@ -762,6 +939,8 @@ const S = {
   },
   viewsIcon: { fontSize: '13px' },
   cardActions: { display: 'flex', gap: '10px', marginTop: 'auto' },
+  assignRow: { borderTop: '1px solid #f1f5f9', paddingTop: '10px', marginTop: '10px' },
+  assignLabel: { display: 'block', fontSize: '11px', color: '#64748b', marginBottom: '5px', fontWeight: '600' },
   actionBtn: {
     flex: 1, padding: '9px 10px', fontSize: '12px', fontWeight: '600',
     border: '1.5px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer',

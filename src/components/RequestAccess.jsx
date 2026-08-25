@@ -42,7 +42,7 @@ export default function RequestAccess() {
                   <path d="M3 9.5L12 3l9 6.5V21H15v-6H9v6H3V9.5Z" fill="#0c1b2e"/>
                 </svg>
               </div>
-              <span style={S.logoBrand}>PropertyPro</span>
+              <span style={S.logoBrand}>WayneState Pro</span>
             </div>
             <h1 style={S.heroTitle}>One platform.<br /><span className="pve-grad-text" style={S.heroAccent}>Every deal.</span></h1>
             <p style={S.heroCopy}>Listings, satellite imagery, buyer leads, and WhatsApp automation — all in one place.</p>
@@ -80,7 +80,7 @@ export default function RequestAccess() {
                 <path d="M3 9.5L12 3l9 6.5V21H15v-6H9v6H3V9.5Z" fill="#0c1b2e"/>
               </svg>
             </div>
-            <span style={S.logoBrand}>PropertyPro</span>
+            <span style={S.logoBrand}>WayneState Pro</span>
           </div>
           <h1 style={S.heroTitle}>Grow your<br /><span className="pve-grad-text" style={S.heroAccent}>Real Estate Business.</span></h1>
           <p style={S.heroCopy}>

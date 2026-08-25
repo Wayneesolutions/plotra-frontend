@@ -1,130 +1,120 @@
 import React, { useEffect, useRef, useState } from 'react';
 import apiClient from '../api/apiClient';
 
-const GMAPS_SCRIPT_ID = 'pve-gmaps-script';
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
+// Singleton promise — script is appended exactly once across all renders
+let mapsLoadPromise = null;
+
+function loadGoogleMaps() {
+  if (mapsLoadPromise) return mapsLoadPromise;
+  mapsLoadPromise = new Promise((resolve, reject) => {
+    if (window.google?.maps?.drawing) { resolve(window.google.maps); return; }
+    window.__googleMapsInit__ = () => {
+      delete window.__googleMapsInit__;
+      resolve(window.google.maps);
+    };
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_API_KEY}&libraries=drawing&callback=__googleMapsInit__`;
+    script.async = true;
+    script.onerror = () => {
+      delete window.__googleMapsInit__;
+      mapsLoadPromise = null;
+      // If the library is already in window (e.g. cached from a prior load), resolve anyway
+      if (window.google?.maps) { resolve(window.google.maps); } else { reject(new Error('Google Maps failed to load')); }
+    };
+    document.head.appendChild(script);
+  });
+  return mapsLoadPromise;
+}
 
 export default function PlotBoundaryTracer({ listingId, centerLat, centerLng, onSaveSuccess }) {
   const mapContainerRef = useRef(null);
   const polygonRef = useRef(null);
-  const pointsRef = useRef([]);
-  const doneRef = useRef(false);
+  const drawingManagerRef = useRef(null);
 
   const [saving, setSaving] = useState(false);
-  const [hasDrawn, setHasDrawn] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
-  const [hint, setHint] = useState('Click on the map to place boundary points. Double-click to finish.');
 
   useEffect(() => {
-    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-    if (!apiKey) {
-      setErrorMessage('Missing VITE_GOOGLE_MAPS_API_KEY in realfrontend/.env');
+    if (!GOOGLE_API_KEY) {
+      setErrorMessage('Missing VITE_GOOGLE_MAPS_API_KEY — add it to client/.env');
       return;
     }
 
     let cancelled = false;
+    let drawingManager = null;
 
-    function initMap() {
-      if (cancelled || !mapContainerRef.current || !window.google?.maps) return;
+    loadGoogleMaps()
+      .then((maps) => {
+        if (cancelled) return;
 
-      const map = new window.google.maps.Map(mapContainerRef.current, {
-        center: { lat: centerLat, lng: centerLng },
-        zoom: 19,
-        mapTypeId: 'satellite',
-        tilt: 0,
-        disableDoubleClickZoom: true
-      });
+        // Wrap map init separately so exceptions here don't reach the catch below
+        try {
+          const map = new maps.Map(mapContainerRef.current, {
+            center: { lat: centerLat, lng: centerLng },
+            zoom: 17,
+            mapTypeId: 'satellite',
+            tilt: 0,
+          });
 
-      const polygon = new window.google.maps.Polygon({
-        paths: [],
-        strokeColor: '#2563eb',
-        strokeWeight: 2,
-        fillColor: '#2563eb',
-        fillOpacity: 0.25
-      });
-      polygon.setMap(map);
-      polygonRef.current = polygon;
+          drawingManager = new maps.drawing.DrawingManager({
+            drawingMode: maps.drawing.OverlayType.POLYGON,
+            drawingControl: true,
+            drawingControlOptions: {
+              position: maps.ControlPosition.TOP_LEFT,
+              drawingModes: [maps.drawing.OverlayType.POLYGON],
+            },
+            polygonOptions: {
+              fillColor: '#2563eb',
+              fillOpacity: 0.2,
+              strokeWeight: 2,
+              strokeColor: '#2563eb',
+              editable: true,
+              draggable: true,
+            },
+          });
 
-      // Single click = add a boundary point
-      map.addListener('click', (e) => {
-        if (doneRef.current) return;
-        pointsRef.current.push(e.latLng);
-        polygon.setPath([...pointsRef.current]);
-        setHint(`${pointsRef.current.length} point(s) placed. Double-click to finish the boundary.`);
-      });
+          drawingManager.setMap(map);
+          drawingManagerRef.current = drawingManager;
 
-      // Double-click = close the polygon and make it editable
-      map.addListener('dblclick', () => {
-        if (doneRef.current) return;
-        if (pointsRef.current.length < 3) {
-          setHint('Add at least 3 points before finishing.');
-          return;
+          maps.event.addListener(drawingManager, 'polygoncomplete', (polygon) => {
+            if (polygonRef.current) polygonRef.current.setMap(null);
+            polygonRef.current = polygon;
+            drawingManager.setDrawingMode(null);
+          });
+        } catch (initErr) {
+          console.error('Map init error:', initErr);
         }
-        doneRef.current = true;
-        polygon.setEditable(true);
-        polygon.setDraggable(true);
-        setHasDrawn(true);
-        setHint('Boundary complete! Drag corner points to adjust, then click Save.');
-      });
-    }
-
-    if (window.google?.maps) {
-      // Already loaded
-      initMap();
-    } else if (!document.getElementById(GMAPS_SCRIPT_ID)) {
-      // Inject script once.
-      // NOTE: previously this URL included `&loading=async`, which tells
-      // Google's loader to use its newer dynamic-import bootstrap
-      // (google.maps.importLibrary) instead of attaching classes to
-      // window.google.maps directly. This code was never updated to use
-      // that pattern, so `script.onload` could fire before
-      // window.google.maps.Map actually existed as a constructor —
-      // exactly the "window.google.maps.Map is not a constructor" error
-      // seen in production. Removing the flag restores the classic
-      // synchronous-attach behavior that this onload-based initMap() call
-      // expects. `async`/`defer` on the tag itself keeps script loading
-      // non-blocking without needing the bootstrap loader.
-      const script = document.createElement('script');
-      script.id = GMAPS_SCRIPT_ID;
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}`;
-      script.async = true;
-      script.defer = true;
-      script.onload = () => { if (!cancelled) initMap(); };
-      script.onerror = () => {
-        if (!cancelled) setErrorMessage('Failed to load Google Maps. Make sure Maps JavaScript API is enabled in Google Cloud.');
-      };
-      document.head.appendChild(script);
-    } else {
-      // Script injected but not loaded yet — poll
-      const poll = setInterval(() => {
-        if (window.google?.maps) {
-          clearInterval(poll);
-          if (!cancelled) initMap();
+      })
+      .catch(() => {
+        // If window.google.maps is already present the map rendered fine — suppress the banner
+        if (!cancelled && !window.google?.maps) {
+          setErrorMessage('Failed to load Google Maps. Check your API key.');
         }
-      }, 100);
-      return () => { cancelled = true; clearInterval(poll); };
-    }
+      });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      if (drawingManagerRef.current) drawingManagerRef.current.setMap(null);
+      if (polygonRef.current) { polygonRef.current.setMap(null); polygonRef.current = null; }
+    };
   }, [centerLat, centerLng]);
 
   const handleSave = async () => {
-    if (!polygonRef.current || pointsRef.current.length < 3) {
-      alert('Draw a boundary first.');
+    if (!polygonRef.current) {
+      alert('Trace a boundary on the map before saving.');
       return;
     }
 
-    const path = polygonRef.current.getPath();
-    const coordinates = [];
-    for (let i = 0; i < path.getLength(); i++) {
-      const pt = path.getAt(i);
-      coordinates.push([pt.lng(), pt.lat()]);
-    }
+    const path = polygonRef.current.getPath().getArray();
+    const coordinates = path.map((ll) => [ll.lng(), ll.lat()]);
     coordinates.push(coordinates[0]); // close the GeoJSON ring
 
     const boundaryGeoJSON = {
       type: 'Feature',
       geometry: { type: 'Polygon', coordinates: [coordinates] },
-      properties: {}
+      properties: {},
     };
 
     try {
@@ -144,11 +134,13 @@ export default function PlotBoundaryTracer({ listingId, centerLat, centerLng, on
       {errorMessage && <div style={styles.errorBanner}>⚠️ {errorMessage}</div>}
       <div ref={mapContainerRef} style={styles.canvasFrame} />
       <footer style={styles.footerPanel}>
-        <p style={styles.helperTxt}>💡 {hint}</p>
+        <p style={styles.helperTxt}>
+          💡 Click to place corner points, click the first point to close the boundary.
+        </p>
         <button
           onClick={handleSave}
-          disabled={saving || !hasDrawn}
-          style={{ ...styles.saveBtn, backgroundColor: (saving || !hasDrawn) ? '#9ca3af' : '#2563eb' }}
+          disabled={saving}
+          style={{ ...styles.saveBtn, backgroundColor: saving ? '#9ca3af' : '#2563eb' }}
         >
           {saving ? 'Saving…' : '💾 Save Property Boundary'}
         </button>
@@ -163,5 +155,5 @@ const styles = {
   canvasFrame: { flex: 1, width: '100%', borderRadius: '8px', border: '1px solid #e5e7eb', overflow: 'hidden' },
   footerPanel: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', paddingTop: '4px' },
   helperTxt: { margin: 0, fontSize: '13px', color: '#4b5563', maxWidth: '70%', lineHeight: '1.4' },
-  saveBtn: { border: 'none', color: '#fff', padding: '10px 20px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '14px' }
+  saveBtn: { border: 'none', color: '#fff', padding: '10px 20px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '14px' },
 };

@@ -2,15 +2,37 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { API_BASE_URL } from '../api/config';
-// NEW — Phase 6 monetization
 import RentVsBuyCalculator from './RentVsBuyCalculator.jsx';
+import { InteractiveSatellite, InteractiveStreetView } from './PropertyMapMedia.jsx';
+// NEW — Phase 6 monetization
 import AdSlot from './AdSlot.jsx';
+
+// Display order + labels for builder_profile_claims.category — keeps the
+// developer section reading as distinct topics (delivery record, who runs
+// the company, financial standing, legal/criminal matters) rather than one
+// undifferentiated list. "rating" claims (prose reputation mentions) are
+// folded in last, separate from the numeric overall_rating badge above.
+const CLAIM_CATEGORY_ORDER = [
+  { key: 'delivery_history', label: 'Past Project Delivery' },
+  { key: 'leadership', label: 'Ownership & Leadership' },
+  { key: 'financial_condition', label: 'Financial Condition' },
+  { key: 'legal_issue', label: 'Legal & Regulatory Record' },
+  { key: 'rating', label: 'Reputation & Rankings' },
+];
 
 export default function PropertyView() {
   const { slug } = useParams();
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(null);
+
+  // Builder profile — fetched separately since most listings won't have one
+  // (only mega-project/developer listings do); a 404 here is expected and
+  // just means "no section to show," not an error.
+  const [builderProfile, setBuilderProfile] = useState(null);
+
+  // Phase 3: the visit id this session's page view was logged under, so a
+  // later phone-number submission (if any) can be attached to it.
   const visitIdRef = useRef(null);
 
   const [showPhonePrompt, setShowPhonePrompt] = useState(false);
@@ -18,6 +40,19 @@ export default function PropertyView() {
   const [phoneSubmitting, setPhoneSubmitting] = useState(false);
   const [phoneSubmitted, setPhoneSubmitted]   = useState(false);
   const [phoneError, setPhoneError]           = useState(null);
+
+  // Manual pin-drag correction — pre-approval only (see the "draggable"
+  // prop passed to InteractiveSatellite below, gated on listing.status).
+  // draggedPosition holds the pending (unsaved) coordinates after a drag;
+  // mapKey is bumped on cancel to force InteractiveSatellite to remount
+  // fresh at the listing's actual saved lat/lng, snapping the marker back
+  // visually (it's an imperative google.maps.Marker, not something React
+  // can just re-render into a new position on its own).
+  const [draggedPosition, setDraggedPosition] = useState(null);
+  const [savingLocation, setSavingLocation] = useState(false);
+  const [locationSaveError, setLocationSaveError] = useState(null);
+  const [locationSaved, setLocationSaved] = useState(false);
+  const [mapKey, setMapKey] = useState(0);
 
   useEffect(() => {
     const load = async () => {
@@ -31,7 +66,12 @@ export default function PropertyView() {
         setLoading(false);
       }
     };
+
     load();
+
+    axios.get(`${API_BASE_URL}/api/v1/public/listings/${slug}/builder-profile`)
+      .then((res) => setBuilderProfile(res.data))
+      .catch(() => { /* 404 = no builder profile for this listing, expected for most */ });
   }, [slug]);
 
   useEffect(() => {
@@ -66,6 +106,49 @@ export default function PropertyView() {
     }
   };
 
+  const handlePinDragEnd = (coords) => {
+    setLocationSaved(false);
+    setLocationSaveError(null);
+    setDraggedPosition(coords);
+  };
+
+  const handleCancelPinDrag = () => {
+    setDraggedPosition(null);
+    setLocationSaveError(null);
+    setMapKey((k) => k + 1); // forces InteractiveSatellite to remount at the listing's actual saved position
+  };
+
+  const handleSaveLocation = async () => {
+    if (!draggedPosition) return;
+    setSavingLocation(true);
+    setLocationSaveError(null);
+    try {
+      const res = await axios.patch(`${API_BASE_URL}/api/v1/public/listings/${slug}/location`, {
+        lat: draggedPosition.lat,
+        lng: draggedPosition.lng,
+      });
+      // Reflect the corrected position/address immediately rather than
+      // waiting on a refetch — landmarks and satellite/street-view media
+      // still refresh in the background (same as an address correction in
+      // the chat), so those sections may take a moment to catch up.
+      setData((prev) => ({
+        ...prev,
+        listing: {
+          ...prev.listing,
+          lat: res.data.lat,
+          lng: res.data.lng,
+          formatted_address: res.data.formatted_address || prev.listing.formatted_address,
+        },
+      }));
+      setDraggedPosition(null);
+      setLocationSaved(true);
+    } catch (err) {
+      setLocationSaveError(err.response?.data?.error?.message || 'Could not save the new location. Please try again.');
+    } finally {
+      setSavingLocation(false);
+    }
+  };
+
   /* ── Loading ─────────────────────────────────────── */
   if (loading) return (
     <div style={S.screen}>
@@ -91,21 +174,41 @@ export default function PropertyView() {
 
   const { listing, media, landmarks, dealer } = data;
 
-  const formattedPrice = new Intl.NumberFormat('en-IN', {
-    style: 'currency', currency: 'INR', maximumFractionDigits: 0,
-  }).format(listing.price);
+  // Developer profile / rating / possession record / nearby-comparison
+  // content is Flat-only — the backend already won't return builderProfile
+  // for a non-Flat listing (see builderProfileController.js), but this is
+  // a second, client-side gate so a house never renders this section
+  // under any circumstance, including a stale/cached response.
+  const showBuilderSection = !!builderProfile && listing.property_type === 'Flat';
+
+  const formattedPrice = listing.price != null
+    ? new Intl.NumberFormat('en-IN', {
+        style: 'currency', currency: 'INR', maximumFractionDigits: 0,
+      }).format(listing.price)
+    : null;
 
   const waMeLink = dealer?.whatsappDigits
     ? `https://wa.me/${dealer.whatsappDigits}?text=${encodeURIComponent(
-        `Hi, I'm interested in "${listing.title}" (${formattedPrice}) — ${window.location.href}`
+        formattedPrice
+          ? `Hi, I'm interested in "${listing.title}" (${formattedPrice}) — ${window.location.href}`
+          : `Hi, I'm interested in "${listing.title}" — ${window.location.href}`
       )}`
     : null;
 
   const ICONS = { school: '🏫', hospital: '🏥', market: '🛒', transit: '🚌' };
-
-  const hasSatellite  = !!media?.satellite_image_url;
-  const hasStreetview = !!media?.streetview_image_url;
-  const bothImages    = hasSatellite && hasStreetview;
+  const canAdjustLocation = listing.status !== 'active';
+  const hasSatellite  = !!(media?.satellite_image_url || (listing.lat != null && listing.lng != null));
+  const hasStreetview = !!(media?.streetview_image_url || (listing.lat != null && listing.lng != null));
+  // Satellite is a pin-correction tool, not a buyer-facing view — it only
+  // ever shows pre-approval, while a dealer can still drag the pin to fix
+  // a geocode that's slightly off. Once that's confirmed and the listing
+  // goes active, satellite has done its job and drops away; street view
+  // carries forward to the public listing on its own, pinned to that same
+  // confirmed lat/lng, alongside the dealer's real "Property Photos".
+  const showSatellite  = canAdjustLocation && hasSatellite;
+  const showStreetview = hasStreetview;
+  const bothImages     = showSatellite && showStreetview;
+  const showHeroSection = canAdjustLocation || showStreetview;
   const photos        = media?.photo_urls || [];
 
   return (
@@ -120,32 +223,66 @@ export default function PropertyView() {
                 <path d="M3 9.5L12 3l9 6.5V21H15v-6H9v6H3V9.5Z" fill="#0c1b2e"/>
               </svg>
             </div>
-            <span style={S.navBrand}>PropertyPro</span>
+            <span style={S.navBrand}>WayneState Pro</span>
           </div>
           <span style={S.navLabel}>Property Listing</span>
         </div>
       </header>
 
-      {/* ══ HERO IMAGES ══════════════════════════════════════════ */}
-      <section style={{
-        ...S.hero,
-        flexDirection: bothImages ? 'row' : 'column',
-      }}>
-        {hasSatellite && (
+      {/* ══ HERO — satellite (pre-approval only) + street view ══════
+          Satellite is the pin-correction tool: shown only while a dealer
+          can still drag the pin to fix a geocode that's slightly off
+          (canAdjustLocation, i.e. status !== 'active'). Once the location
+          is confirmed and the listing goes live, satellite drops away —
+          street view carries forward on its own, pinned to that same
+          confirmed lat/lng, so a buyer still gets a real sense of the
+          location alongside the dealer's "Property Photos" further down
+          the page. Dealers/realtors see and can use the satellite pin
+          editor exactly as before while a listing is pending. */}
+      {showHeroSection && (
+      <section style={{ ...S.hero, flexDirection: bothImages ? 'row' : 'column' }}>
+        {showSatellite && (
           <div style={{ ...S.heroSlot, flex: bothImages ? 1 : 'unset', height: bothImages ? '280px' : '260px' }}>
-            <img src={media.satellite_image_url} alt="Satellite" style={S.heroImg} />
-            <div style={S.heroOverlay} />
+            <InteractiveSatellite
+              key={mapKey}
+              lat={listing.lat}
+              lng={listing.lng}
+              fallbackUrl={media?.satellite_image_url}
+              draggable={canAdjustLocation}
+              onPositionChange={canAdjustLocation ? handlePinDragEnd : undefined}
+            />
             <div style={S.heroBadge}>🛰 Satellite View</div>
+            {canAdjustLocation && (
+              <div style={S.locationEditArea}>
+                {draggedPosition ? (
+                  <div style={S.locationBanner}>
+                    <span>New location set — save it?</span>
+                    <div style={S.locationBannerActions}>
+                      <button onClick={handleSaveLocation} disabled={savingLocation} style={S.locationSaveBtn}>
+                        {savingLocation ? 'Saving…' : 'Save'}
+                      </button>
+                      <button onClick={handleCancelPinDrag} disabled={savingLocation} style={S.locationCancelBtn}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : locationSaved ? (
+                  <div style={S.locationSavedMsg}>✓ Location saved</div>
+                ) : (
+                  <div style={S.locationHintMsg}>Not quite right? Drag the pin to the exact spot.</div>
+                )}
+                {locationSaveError && <div style={S.locationErrorMsg}>{locationSaveError}</div>}
+              </div>
+            )}
           </div>
         )}
-        {hasStreetview && (
+        {showStreetview && (
           <div style={{ ...S.heroSlot, flex: bothImages ? 1 : 'unset', height: bothImages ? '280px' : '260px' }}>
-            <img src={media.streetview_image_url} alt="Street View" style={S.heroImg} />
-            <div style={S.heroOverlay} />
+            <InteractiveStreetView lat={listing.lat} lng={listing.lng} fallbackUrl={media?.streetview_image_url} />
             <div style={S.heroBadge}>📸 Street View</div>
           </div>
         )}
-        {!hasSatellite && !hasStreetview && (
+        {canAdjustLocation && !hasSatellite && !hasStreetview && (
           <div style={S.heroEmpty}>
             <span style={{ fontSize: '48px' }}>🏠</span>
             <p style={{ color: '#94a3b8', margin: '8px 0 0', fontSize: '14px' }}>
@@ -154,12 +291,13 @@ export default function PropertyView() {
           </div>
         )}
       </section>
+      )}
 
       {/* ══ ANCHOR STRIP (price + area + type) ══════════════════ */}
       <div style={S.anchor}>
         <div style={S.anchorItem}>
           <span style={S.anchorLbl}>Price</span>
-          <span style={S.anchorVal}>{formattedPrice}</span>
+          <span style={S.anchorVal}>{formattedPrice || 'On request'}</span>
         </div>
         <div style={S.anchorDivider} />
         <div style={S.anchorItem}>
@@ -214,7 +352,11 @@ export default function PropertyView() {
           </div>
         )}
 
-        {/* Property Photos */}
+        {/* Real property photos the dealer uploaded — via the dashboard or
+            the web chat's photo-attach button — distinct from the
+            satellite/street-view media above, which are Google Maps
+            imagery of the location rather than photos of the property
+            itself. */}
         {photos.length > 0 && (
           <div style={S.section}>
             <div style={S.sectionHead}>
@@ -223,14 +365,14 @@ export default function PropertyView() {
             </div>
             <div style={S.photoScroll}>
               {photos.map((url, i) => (
-                <div key={url} style={S.photoCard}>
+                <a key={url} href={url} target="_blank" rel="noopener noreferrer" style={S.photoCard}>
                   <img
                     src={url}
                     alt={`Property photo ${i + 1}`}
                     style={S.photoCardImg}
                     loading="lazy"
                   />
-                </div>
+                </a>
               ))}
             </div>
           </div>
@@ -242,7 +384,6 @@ export default function PropertyView() {
             <div style={S.sectionAccent} />
             <h2 style={S.sectionTitle}>Nearby Landmarks</h2>
           </div>
-
           {landmarks && landmarks.length > 0 ? (
             <div style={S.landmarkList}>
               {landmarks.map((item, i) => (
@@ -269,6 +410,137 @@ export default function PropertyView() {
             <p style={S.emptyNote}>No landmark data for this listing yet.</p>
           )}
         </div>
+
+        {/* Local Intelligence — built server-side (localIntelligenceWorker.js /
+            groundedResearchService.js) and already returned by this same API
+            call. Every item is required to carry a real source_url
+            (grounding discipline enforced server-side), so every claim here
+            is cited. */}
+        {data.localIntelligence && (
+          <div style={S.section}>
+            <div style={S.sectionHead}>
+              <div style={S.sectionAccent} />
+              <h2 style={S.sectionTitle}>Local Intelligence</h2>
+            </div>
+            <LocalIntelSection title="News" items={data.localIntelligence.news} />
+            <LocalIntelSection title="Safety" items={data.localIntelligence.safety} />
+            <LocalIntelSection title="Seasonal Conditions" items={data.localIntelligence.seasonal} />
+          </div>
+        )}
+
+        {/* Developer / Builder Due Diligence — only shown once a human has
+            explicitly published it (moderation_status='published'); see
+            builderProfileController.js's getPublicBuilderProfile. This is
+            the section that makes a mega-project/flat listing's page
+            materially different from a plain plot/villa listing: a
+            developer profile, cited rating, cited possession track
+            record, and a comparison against other real nearby options —
+            none of that applies to an individual plot with no builder. */}
+        {showBuilderSection && (
+          <div style={S.section}>
+            <div style={S.sectionHead}>
+              <div style={S.sectionAccent} />
+              <h2 style={S.sectionTitle}>Developer — {builderProfile.builderProfile.company_name}</h2>
+            </div>
+
+            {builderProfile.builderProfile.rera_registration_ids?.length > 0 && (
+              <p style={{ ...S.descTxt, marginBottom: '14px' }}>
+                RERA: {builderProfile.builderProfile.rera_registration_ids.join(', ')}
+              </p>
+            )}
+
+            {/* Rating + possession track record — the two structured,
+                comparable numbers this section adds on top of the prose
+                claims below. Both are cited like everything else here;
+                neither renders at all if no real published source was
+                found (see groundedResearchService.js — never a guessed
+                number). */}
+            {(builderProfile.builderProfile.overall_rating != null || builderProfile.builderProfile.possession_total_count != null) && (
+              <div style={S.devStatsRow}>
+                {builderProfile.builderProfile.overall_rating != null && (
+                  <div style={S.devStatCard}>
+                    <span style={S.devStatLbl}>Rating</span>
+                    <span style={S.devStatVal}>★ {Number(builderProfile.builderProfile.overall_rating).toFixed(1)}<span style={S.devStatMax}>/5</span></span>
+                    <a href={builderProfile.builderProfile.rating_source_url} target="_blank" rel="noopener noreferrer" style={S.sourceLink}>
+                      Source: {builderProfile.builderProfile.rating_source_title || 'link'}
+                    </a>
+                  </div>
+                )}
+                {builderProfile.builderProfile.possession_total_count != null && (
+                  <div style={S.devStatCard}>
+                    <span style={S.devStatLbl}>Possession Track Record</span>
+                    <span style={S.devStatVal}>
+                      {builderProfile.builderProfile.possession_delivered_count}
+                      <span style={S.devStatMax}>/{builderProfile.builderProfile.possession_total_count} delivered</span>
+                    </span>
+                    <a href={builderProfile.builderProfile.possession_source_url} target="_blank" rel="noopener noreferrer" style={S.sourceLink}>
+                      Source: {builderProfile.builderProfile.possession_source_title || 'link'}
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Cited claims, grouped so "past projects" and "legal/criminal
+                records" read as distinct, scannable sections instead of
+                one flat list. */}
+            {CLAIM_CATEGORY_ORDER.map(({ key, label }) => {
+              const items = builderProfile.claims.filter((c) => c.category === key);
+              if (items.length === 0) return null;
+              return (
+                <div key={key} style={{ marginBottom: '14px' }}>
+                  <h4 style={S.intelSubhead}>{label}</h4>
+                  {items.map((c, i) => (
+                    <div key={i} style={S.citedItem}>
+                      <p style={S.descTxt}>{c.claim_text}</p>
+                      <a href={c.source_url} target="_blank" rel="noopener noreferrer" style={S.sourceLink}>
+                        Source: {c.source_title || c.source_domain}
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+
+            {builderProfile.claims.length === 0 && builderProfile.builderProfile.overall_rating == null && builderProfile.builderProfile.possession_total_count == null && (
+              <p style={S.emptyNote}>No independently verified information found for this developer yet.</p>
+            )}
+          </div>
+        )}
+
+        {/* Compare Nearby Projects — other mega-project listings within
+            ~5km and a similar price band, platform-wide (not just this
+            dealer's own listings — a buyer cross-shops across dealers).
+            See builderProfileController.js's findSimilarProjects(). */}
+        {showBuilderSection && builderProfile.similarProjects?.length > 0 && (
+          <div style={S.section}>
+            <div style={S.sectionHead}>
+              <div style={S.sectionAccent} />
+              <h2 style={S.sectionTitle}>Compare Nearby Projects</h2>
+            </div>
+            <div style={S.compareList}>
+              {builderProfile.similarProjects.map((p) => (
+                <a key={p.slug} href={`/p/${p.slug}`} style={S.compareRow}>
+                  <div style={S.compareMain}>
+                    <span style={S.compareTitle}>{p.title}</span>
+                    <span style={S.compareMeta}>
+                      {p.builder_company_name} · {p.distance_km} km away
+                      {p.plot_area ? ` · ${p.plot_area}` : ''}
+                    </span>
+                  </div>
+                  <div style={S.compareRight}>
+                    {p.builder_rating != null && (
+                      <span style={S.comparePill}>★ {p.builder_rating.toFixed(1)}</span>
+                    )}
+                    <span style={S.comparePrice}>
+                      {p.price != null ? `₹${Number(p.price).toLocaleString('en-IN')}` : 'On request'}
+                    </span>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* NEW — Rent vs Buy Calculator (Phase 6) */}
         <RentVsBuyCalculator
@@ -342,10 +614,27 @@ export default function PropertyView() {
               <path d="M3 9.5L12 3l9 6.5V21H15v-6H9v6H3V9.5Z" fill="#c8a96e"/>
             </svg>
           </div>
-          <span style={S.footerBrand}>PropertyPro</span>
+          <span style={S.footerBrand}>WayneState Pro</span>
         </div>
         <p style={S.footerTxt}>Real Estate Visual Explorer · Dealer Powered Listing</p>
       </footer>
+    </div>
+  );
+}
+
+function LocalIntelSection({ title, items }) {
+  if (!items || items.length === 0) return null;
+  return (
+    <div style={{ marginBottom: '14px' }}>
+      <h4 style={S.intelSubhead}>{title}</h4>
+      {items.map((item, i) => (
+        <div key={i} style={S.citedItem}>
+          <p style={S.descTxt}>{item.text}</p>
+          <a href={item.source_url} target="_blank" rel="noopener noreferrer" style={S.sourceLink}>
+            Source: {item.source_title || item.source_url}
+          </a>
+        </div>
+      ))}
     </div>
   );
 }
@@ -425,12 +714,23 @@ const S = {
     color: '#fff', padding: '5px 11px', borderRadius: '7px',
     fontSize: '11px', fontWeight: '700', letterSpacing: '0.4px',
     border: '1px solid rgba(200,169,110,0.25)',
+    zIndex: 1,
   },
   heroEmpty: {
     height: '220px', backgroundColor: '#0c1b2e',
     display: 'flex', flexDirection: 'column',
     alignItems: 'center', justifyContent: 'center', width: '100%',
   },
+
+  /* Manual pin-drag correction banner, overlaid on the satellite slot */
+  locationEditArea: { position: 'absolute', bottom: '12px', left: '12px', right: '12px', zIndex: 1 },
+  locationHintMsg: { backgroundColor: 'rgba(17, 24, 39, 0.8)', color: '#e5e7eb', fontSize: '12px', padding: '6px 10px', borderRadius: '6px', display: 'inline-block' },
+  locationSavedMsg: { backgroundColor: 'rgba(22, 101, 52, 0.9)', color: '#fff', fontSize: '12px', padding: '6px 10px', borderRadius: '6px', display: 'inline-block' },
+  locationErrorMsg: { backgroundColor: 'rgba(153, 27, 27, 0.9)', color: '#fff', fontSize: '12px', padding: '6px 10px', borderRadius: '6px', marginTop: '6px', display: 'inline-block' },
+  locationBanner: { backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: '#111827', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' },
+  locationBannerActions: { display: 'flex', gap: '8px', marginTop: '8px' },
+  locationSaveBtn: { flex: 1, backgroundColor: '#111827', color: '#fff', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', cursor: 'pointer' },
+  locationCancelBtn: { flex: 1, backgroundColor: '#f3f4f6', color: '#111827', border: '1px solid #d1d5db', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', cursor: 'pointer' },
 
   /* Anchor strip */
   anchor: {
@@ -519,6 +819,40 @@ const S = {
   timeRow: { fontSize: '11px', color: '#94a3b8' },
   emptyNote: { margin: 0, fontSize: '13px', color: '#94a3b8', fontStyle: 'italic' },
 
+  /* Local Intelligence / Builder Due Diligence citations */
+  intelSubhead: { fontSize: '12px', textTransform: 'uppercase', color: '#6b7280', margin: '0 0 6px 0', fontWeight: '700' },
+  citedItem: { borderLeft: '2px solid #eff2f8', paddingLeft: '10px', marginBottom: '10px' },
+  citedCategory: { fontSize: '10px', textTransform: 'uppercase', color: '#94a3b8', fontWeight: 'bold' },
+  sourceLink: { fontSize: '11px', color: '#0c1b2e', fontWeight: '600', textDecoration: 'none' },
+
+  /* Developer rating / possession-record stat cards */
+  devStatsRow: { display: 'flex', gap: '12px', marginBottom: '18px', flexWrap: 'wrap' },
+  devStatCard: {
+    flex: '1 1 160px', border: '1px solid #eff2f8', borderRadius: '12px',
+    padding: '14px 16px', backgroundColor: '#fafbfd',
+    display: 'flex', flexDirection: 'column', gap: '4px',
+  },
+  devStatLbl: { fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.4px', fontWeight: '700' },
+  devStatVal: { fontSize: '20px', fontWeight: '800', color: '#0c1b2e' },
+  devStatMax: { fontSize: '13px', fontWeight: '600', color: '#94a3b8', marginLeft: '2px' },
+
+  /* Compare Nearby Projects */
+  compareList: { display: 'flex', flexDirection: 'column', gap: '2px' },
+  compareRow: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px',
+    padding: '12px 8px', borderBottom: '1px solid #f8fafd',
+    textDecoration: 'none', color: 'inherit',
+  },
+  compareMain: { display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 },
+  compareTitle: { fontSize: '14px', fontWeight: '700', color: '#0c1b2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  compareMeta: { fontSize: '12px', color: '#94a3b8' },
+  compareRight: { display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 },
+  comparePill: {
+    fontSize: '12px', fontWeight: '700', color: '#92702f',
+    backgroundColor: '#fdfbf6', border: '1px solid #eadfc7', borderRadius: '20px', padding: '3px 10px',
+  },
+  comparePrice: { fontSize: '13px', fontWeight: '700', color: '#0c1b2e' },
+
   /* Photo gallery */
   photoScroll: {
     display: 'flex', gap: '10px', overflowX: 'auto',
@@ -526,6 +860,7 @@ const S = {
     scrollbarWidth: 'thin',
   },
   photoCard: {
+    display: 'block',
     flexShrink: 0, width: '200px', height: '150px',
     borderRadius: '10px', overflow: 'hidden',
     border: '1px solid #e8edf4',
