@@ -99,10 +99,26 @@ export default function AdminPanel() {
 
   useEffect(() => {
     if (tab === 0) fetchRequests();
-    if (tab === 1) fetchTenants();
+    // Tab 1 (All Tenants) also needs the plan list — its plan column is
+    // an editable dropdown (Part 2, build-order item 9), sourced from the
+    // same active-plans list the Plans tab manages.
+    if (tab === 1) { fetchTenants(); fetchPlans(); }
     if (tab === 3) fetchAds();
     if (tab === 4) fetchPlans();
   }, [tab, fetchRequests, fetchTenants, fetchAds, fetchPlans]);
+
+  const handleChangeTenantPlan = async (tenantId, newPlan) => {
+    setActionLoading(tenantId);
+    try {
+      const res = await apiClient.patch(`/api/v1/admin/tenants/${tenantId}/plan`, { plan: newPlan });
+      setTenants((prev) => prev.map((t) => (t.id === tenantId ? { ...t, plan: res.data.tenant.plan } : t)));
+      showToast('Plan updated.');
+    } catch (err) {
+      showToast(err.response?.data?.error?.message || 'Failed to change plan.', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   const handleApprove = async (id) => {
     setActionLoading(id);
@@ -451,9 +467,32 @@ export default function AdminPanel() {
                           <div style={S.tenantName}>{t.business_name}</div>
                         </td>
                         <td style={S.td}>
-                          <span style={{ ...S.planBadge, ...S.planColors[t.plan] || S.planColors.starter }}>
-                            {t.plan}
-                          </span>
+                          {plans.length > 0 ? (
+                            <select
+                              value={t.plan}
+                              disabled={actionLoading === t.id}
+                              onChange={(e) => handleChangeTenantPlan(t.id, e.target.value)}
+                              style={{ ...S.planSelect, ...S.planColors[t.plan] || S.planColors.starter }}
+                            >
+                              {/* Only active plans are real choices (the backend rejects
+                                  assigning an inactive one anyway) — but the tenant's CURRENT
+                                  plan is always shown as an option even if it's since been
+                                  deactivated (e.g. starter/growth/unlimited after the new tier
+                                  system launched), so the dropdown still accurately reflects
+                                  where they actually are instead of silently substituting
+                                  something else as "selected". */}
+                              {!plans.some((p) => p.key === t.plan && p.is_active) && (
+                                <option value={t.plan}>{t.plan} (inactive)</option>
+                              )}
+                              {plans.filter((p) => p.is_active).map((p) => (
+                                <option key={p.key} value={p.key}>{p.label}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span style={{ ...S.planBadge, ...S.planColors[t.plan] || S.planColors.starter }}>
+                              {t.plan}
+                            </span>
+                          )}
                         </td>
                         <td style={S.td}>{t.user_count}</td>
                         <td style={S.td}>
@@ -1021,6 +1060,13 @@ const S = {
     starter: { background: '#eff6ff', color: '#1d4ed8' },
     growth: { background: '#fefce8', color: '#ca8a04' },
     unlimited: { background: '#f0fdf4', color: '#15803d' },
+    tier1: { background: '#f0fdfa', color: '#0f766e' },
+    tier2: { background: '#eef2ff', color: '#4338ca' },
+    tier3: { background: '#fdf4ff', color: '#a21caf' },
+  },
+  planSelect: {
+    border: '1.5px solid #e2e8f0', borderRadius: '8px', padding: '5px 8px',
+    fontSize: '12px', fontWeight: '700', color: '#0c1b2e', backgroundColor: '#fff', cursor: 'pointer',
   },
   statusBadge: { padding: '3px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '700' },
   statusActive: { background: '#f0fdf4', color: '#15803d' },
