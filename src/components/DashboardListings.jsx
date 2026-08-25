@@ -1,280 +1,1024 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/apiClient';
-import Layout from './Layout.jsx';
-import PlotBoundaryTracer from './PlotBoundaryTracer'; // Visual perimeter tracer component built in Phase 2
-import ListingMediaManager from './ListingMediaManager.jsx';
+import ChangePassword from './ChangePassword.jsx';
+import PlotBoundaryTracer from './PlotBoundaryTracer';
 import BuilderProfileManager from './BuilderProfileManager.jsx';
-
-const EMPTY_FORM = { title: '', raw_address: '', price: '', plot_area: '', property_type: 'Plot', description: '' };
+// NEW — Phase 7
+import BillingModal from './BillingModal.jsx';
+import InviteUserModal from './InviteUserModal.jsx';
 
 export default function DashboardListings() {
+  const navigate   = useNavigate();
   const storedUser = JSON.parse(localStorage.getItem('pve_user') || 'null');
 
-  // Inventory and Dashboard Metric States
-  const [listings, setListings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const handleLogout = () => {
+    localStorage.removeItem('pve_token');
+    localStorage.removeItem('pve_user');
+    navigate('/login');
+  };
 
-  // Modal & Management States
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editingListing, setEditingListing] = useState(null); // non-null = editing that listing instead of creating
-  const [activeTracerListing, setActiveTracerListing] = useState(null);
-  const [activeMediaListing, setActiveMediaListing] = useState(null);
-  const [activeBuilderListing, setActiveBuilderListing] = useState(null);
-  const [formData, setFormData] = useState(EMPTY_FORM);
-  const [submitting, setSubmitting] = useState(false);
+  const [listings, setListings]           = useState([]);
+  const [loading, setLoading]             = useState(true);
+  const [error, setError]                 = useState(null);
+  const [showCreateModal, setShowCreate]  = useState(false);
+  const [activeTracerListing, setTracer]  = useState(null);
+  const [builderModalListing, setBuilderModalListing] = useState(null); // Flat listings only — see the button below
+  const [formData, setFormData]           = useState({
+    title: '', raw_address: '', price: '',
+    plot_area: '', property_type: 'Plot', description: '',
+  });
+  const [submitting, setSubmitting]       = useState(false);
+  const [showPwModal, setShowPwModal]     = useState(false);
+  const [showBillingModal, setShowBillingModal] = useState(false); // NEW — Phase 7
+  const [showInviteModal, setShowInviteModal] = useState(false); // NEW — gap #7
+  const [copiedSlug, setCopiedSlug]       = useState(null);
+
+  // Search/filter — "search by area or budget" (area lives in the address
+  // text, not a separate field, so q searches title/address together).
+  // Applied on submit (Enter or the Search button), not live-as-you-type,
+  // to avoid firing a request per keystroke.
+  const [filters, setFilters] = useState({ q: '', min_price: '', max_price: '', property_type: '' });
+  const [filterInputs, setFilterInputs] = useState({ q: '', min_price: '', max_price: '', property_type: '' });
+
+  // Per-listing WhatsApp attribution — gated to growth/unlimited plans
+  // (plans.multi_agent_whatsapp, surfaced via /billing/status rather than
+  // inferring it from the plan name client-side). teamMembers only
+  // fetched when this is actually true — no point loading the team list
+  // for a Starter tenant who can't use the feature anyway.
+  const [multiAgentEnabled, setMultiAgentEnabled] = useState(false);
+  const [teamMembers, setTeamMembers] = useState([]);
+
+  // Photo management
+  const [photoModal, setPhotoModal]             = useState(null); // listing object
+  const [photoUrls, setPhotoUrls]               = useState([]);
+  const [photoLoading, setPhotoLoading]         = useState(false);
+  const [photoUploading, setPhotoUploading]     = useState(false);
+  const [photoDeleting, setPhotoDeleting]       = useState(null); // URL being deleted
 
   useEffect(() => {
-    fetchTenantListings();
+    fetchListings();
+    checkMultiAgentPlan();
   }, []);
 
-  // `silent` skips the loading-screen flash: fetchTenantListings is also
-  // called as a background refresh (e.g. BuilderProfileManager's onUpdated,
-  // after linking/moderating) while a modal on top of the grid is still
-  // open. Flipping `loading` to true there would swap the whole page for
-  // the "Syncing…" screen, unmounting every child including that open
-  // modal — which then remounts fresh once loading clears, losing whatever
-  // local state it had built up (this was a real bug, caught by testing
-  // the builder-profile flow end-to-end: linking succeeded server-side but
-  // the modal silently reverted to the unlinked form).
-  const fetchTenantListings = async ({ silent = false } = {}) => {
+  const checkMultiAgentPlan = async () => {
     try {
-      if (!silent) setLoading(true);
-      // Fetches current listings — apiClient attaches the JWT bearer token
-      const response = await apiClient.get('/api/v1/dashboard/listings');
-      setListings(response.data.listings || []);
+      const res = await apiClient.get('/api/v1/dashboard/billing/status');
+      const enabled = !!res.data.billing?.multi_agent_whatsapp;
+      setMultiAgentEnabled(enabled);
+      if (enabled) {
+        const usersRes = await apiClient.get('/api/v1/dashboard/users');
+        setTeamMembers((usersRes.data.users || []).filter((u) => u.phone));
+      }
+    } catch {
+      // Non-fatal — the assign-to-agent UI just won't show. Search/filter
+      // and everything else on this page works independently of this.
+    }
+  };
+
+  const fetchListings = async ({ withFilters = filters } = {}) => {
+    try {
+      setLoading(true);
+      const params = {};
+      if (withFilters.q) params.q = withFilters.q;
+      if (withFilters.min_price) params.min_price = withFilters.min_price;
+      if (withFilters.max_price) params.max_price = withFilters.max_price;
+      if (withFilters.property_type) params.property_type = withFilters.property_type;
+
+      const r = await apiClient.get('/api/v1/dashboard/listings', { params });
+      setListings(r.data.listings || []);
     } catch (err) {
-      setError(err.response?.data?.error?.message || 'Failed to sync backoffice property inventory.');
+      setError(err.response?.data?.error?.message || 'Failed to load listings.');
     } finally {
-      if (!silent) setLoading(false);
+      setLoading(false);
+    }
+  };
+
+  const handleFilterInputChange = (e) => {
+    const { name, value } = e.target;
+    setFilterInputs((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const applyFilters = (e) => {
+    e?.preventDefault();
+    setFilters(filterInputs);
+    fetchListings({ withFilters: filterInputs });
+  };
+
+  const clearFilters = () => {
+    const empty = { q: '', min_price: '', max_price: '', property_type: '' };
+    setFilterInputs(empty);
+    setFilters(empty);
+    fetchListings({ withFilters: empty });
+  };
+
+  const handleAssignAgent = async (listingId, agentId) => {
+    try {
+      await apiClient.patch(`/api/v1/dashboard/listings/${listingId}`, { assigned_agent_id: agentId || null });
+      fetchListings();
+    } catch (err) {
+      alert(err.response?.data?.error?.message || 'Failed to update WhatsApp assignment.');
     }
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(p => ({ ...p, [name]: value }));
   };
 
-  const openCreateModal = () => {
-    setEditingListing(null);
-    setFormData(EMPTY_FORM);
-    setShowCreateModal(true);
-  };
-
-  const openEditModal = (item) => {
-    setEditingListing(item);
-    setFormData({
-      title: item.title || '',
-      raw_address: item.raw_address || '',
-      price: item.price || '',
-      plot_area: item.plot_area || '',
-      property_type: item.property_type || 'Plot',
-      description: item.description || '',
-    });
-    setShowCreateModal(true);
-  };
-
-  const handleFormSubmit = async (e) => {
+  const handleCreateSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      if (editingListing) {
-        await apiClient.patch(`/api/v1/dashboard/listings/${editingListing.id}`, formData);
-      } else {
-        await apiClient.post('/api/v1/dashboard/listings', formData);
-      }
-      setShowCreateModal(false);
-      setEditingListing(null);
-      setFormData(EMPTY_FORM);
-      fetchTenantListings({ silent: true }); // Refresh inventory snapshot grid
+      await apiClient.post('/api/v1/dashboard/listings', formData);
+      setShowCreate(false);
+      setFormData({ title: '', raw_address: '', price: '', plot_area: '', property_type: 'Plot', description: '' });
+      fetchListings();
     } catch (err) {
-      alert(err.response?.data?.error?.message || 'Error executing resource allocation schema write.');
+      alert(err.response?.data?.error?.message || 'Error creating listing.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleDelete = async (item) => {
-    if (!window.confirm(`Delete "${item.title}"? This can't be undone.`)) return;
+  const copyLink = (slug) => {
+    navigator.clipboard.writeText(`${window.location.origin}/p/${slug}`);
+    setCopiedSlug(slug);
+    setTimeout(() => setCopiedSlug(null), 2200);
+  };
+
+  const openPhotoModal = async (listing) => {
+    setPhotoModal(listing);
+    setPhotoLoading(true);
     try {
-      await apiClient.delete(`/api/v1/dashboard/listings/${item.id}`);
-      fetchTenantListings({ silent: true });
-    } catch (err) {
-      alert(err.response?.data?.error?.message || 'Failed to delete listing.');
+      const r = await apiClient.get(`/api/v1/dashboard/listings/${listing.id}/media`);
+      setPhotoUrls(r.data.photo_urls || []);
+    } catch {
+      setPhotoUrls([]);
+    } finally {
+      setPhotoLoading(false);
     }
   };
 
-  const copyStorefrontLink = (slug) => {
-    const publicUrl = `${window.location.origin}/p/${slug}`;
-    navigator.clipboard.writeText(publicUrl);
-    alert('Public interactive storefront link copied to clipboard.');
+  const closePhotoModal = () => {
+    setPhotoModal(null);
+    setPhotoUrls([]);
+    setPhotoDeleting(null);
   };
 
-  if (loading) return <Layout><div style={styles.centerText}>Syncing Enterprise Datasets...</div></Layout>;
-  if (error) return <Layout><div style={styles.centerText}>System Error: {error}</div></Layout>;
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !photoModal) return;
+    setPhotoUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('photo', file);
+      const r = await apiClient.post(`/api/v1/dashboard/listings/${photoModal.id}/media`, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setPhotoUrls(r.data.photo_urls || []);
+    } catch (err) {
+      alert(err.response?.data?.error?.message || 'Upload failed.');
+    } finally {
+      setPhotoUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  const handlePhotoDelete = async (url) => {
+    if (!photoModal) return;
+    setPhotoDeleting(url);
+    try {
+      const r = await apiClient.delete(`/api/v1/dashboard/listings/${photoModal.id}/media`, { data: { url } });
+      setPhotoUrls(r.data.photo_urls || []);
+    } catch (err) {
+      alert(err.response?.data?.error?.message || 'Delete failed.');
+    } finally {
+      setPhotoDeleting(null);
+    }
+  };
+
+  /* Derived stats */
+  const totalViews  = listings.reduce((s, l) => s + (l.visit_count || 0), 0);
+  const activeCount = listings.filter(l => l.status === 'active').length;
+
+  /* Greeting */
+  const hour     = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+
+  /* ── Loading state ─────────────────────────────── */
+  if (loading) return (
+    <div style={S.centerScreen}>
+      <div style={S.spinRing} />
+      <p style={S.centerTxt}>Loading your portfolio…</p>
+    </div>
+  );
+
+  if (error) return (
+    <div style={S.centerScreen}>
+      <span style={{ fontSize: '32px' }}>⚠️</span>
+      <p style={{ color: '#dc2626', fontSize: '15px', margin: 0 }}>{error}</p>
+    </div>
+  );
 
   return (
-    <Layout>
-      <div style={styles.dashboardContainer}>
-        {/* Upper Overview Metrics Action Panel bar */}
-        <header style={styles.dashboardHeader}>
-          <div>
-            <h2 style={styles.headerTitle}>Verified Property Inventory</h2>
-            <p style={styles.headerSub}>Manage your localized land plots, monitor tracking engagement, and map out geometric boundaries.</p>
+    <div style={S.root}>
+
+      {/* ══ TOP NAV ══════════════════════════════════════════════ */}
+      <header style={S.nav}>
+        <div style={S.navLeft}>
+          <div style={S.navLogo}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M3 9.5L12 3l9 6.5V21H15v-6H9v6H3V9.5Z" fill="#0c1b2e"/>
+            </svg>
           </div>
-          <button onClick={openCreateModal} style={styles.primaryActionBtn}>
-            + Register New Plot
+          <span style={S.navBrand}>WayneState Pro</span>
+          <div style={S.navDivider} />
+          <span style={S.navSection}>Listings</span>
+          {activeCount > 0 && (
+            <span style={S.navBadge}>{activeCount} active</span>
+          )}
+        </div>
+
+        <div style={S.navRight}>
+          {storedUser && (
+            <div style={S.userChip}>
+              <div style={S.avatar}>
+                {storedUser.name?.[0]?.toUpperCase() || 'D'}
+              </div>
+              <div style={S.userMeta}>
+                <span style={S.userName}>{storedUser.name}</span>
+                <span style={S.userBiz}>{storedUser.businessName}</span>
+              </div>
+            </div>
+          )}
+          {storedUser?.role === 'owner' && (
+            <button
+              className="pve-topbar-btn"
+              onClick={() => setShowInviteModal(true)}
+              style={S.iconBtn}
+              title="Invite Team Member"
+            >
+              👤
+            </button>
+          )}
+          <button
+            className="pve-topbar-btn"
+            onClick={() => navigate('/dashboard/ops')}
+            style={S.iconBtn}
+            title="Ops Panel — leads, documents, calls, visits"
+          >
+            🗂
           </button>
-        </header>
+          <button
+            className="pve-topbar-btn"
+            onClick={() => setShowBillingModal(true)}
+            style={S.iconBtn}
+            title="Billing & Plan"
+          >
+            💳
+          </button>
+          <button
+            className="pve-topbar-btn"
+            onClick={() => setShowPwModal(true)}
+            style={S.iconBtn}
+            title="Change Password"
+          >
+            ⚙
+          </button>
+          <button
+            className="pve-topbar-btn"
+            onClick={handleLogout}
+            style={S.logoutBtn}
+          >
+            Log out
+          </button>
+        </div>
+      </header>
 
-        {/* Main Interactive Inventory Grid Matrix */}
-        <div style={styles.gridContainer}>
-          {listings.map((item) => (
-            <div key={item.id} style={styles.listingCard}>
-              <div style={styles.cardHeader}>
-                <span style={{...styles.statusBadge, backgroundColor: item.status === 'active' ? '#e8f5e9' : '#fff3e0', color: item.status === 'active' ? '#2e7d32' : '#ef6c00'}}>
-                  {item.status}
-                </span>
-                <span style={styles.propertyTypeLabel}>{item.property_type}</span>
-              </div>
-              <h4 style={styles.cardTitle}>{item.title}</h4>
-              <p style={styles.cardAddress}>📍 {item.formatted_address || item.raw_address}</p>
+      {showPwModal && <ChangePassword onClose={() => setShowPwModal(false)} />}
+      {showBillingModal && <BillingModal onClose={() => setShowBillingModal(false)} />}
+      {showInviteModal && <InviteUserModal onClose={() => setShowInviteModal(false)} />}
+      {builderModalListing && (
+        <BuilderProfileManager
+          listing={builderModalListing}
+          currentUserRole={storedUser?.role}
+          onClose={() => setBuilderModalListing(null)}
+          onUpdated={() => fetchListings()}
+        />
+      )}
 
-              <div style={styles.metaRow}>
-                <div><strong>Area:</strong> {item.plot_area || 'N/A'}</div>
-                <div><strong>Valuation:</strong> ₹{parseFloat(item.price).toLocaleString('en-IN')}</div>
+      {/* ══ MODAL: Photo Management ═══════════════════════════════ */}
+      {photoModal && (
+        <div className="pve-modal-wrap" style={S.overlay}>
+          <div className="pve-modal" style={{ ...S.modal, maxWidth: '600px' }}>
+            <div style={S.modalStripe} />
+            <div style={S.modalHead}>
+              <div>
+                <p style={S.modalEye}>Property Photos</p>
+                <h3 style={S.modalTitle}>{photoModal.title}</h3>
               </div>
+              <button onClick={closePhotoModal} style={S.closeBtn}>✕</button>
+            </div>
 
-              {/* Interaction Analytics Counter row */}
-              <div style={styles.analyticsRow}>
-                <span>📈 Views logged: <strong>{item.visit_count || 0}</strong></span>
-              </div>
+            <div style={{ padding: '20px 24px 24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* Upload button */}
+              <label style={S.uploadLabel}>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handlePhotoUpload}
+                  disabled={photoUploading || photoUrls.length >= 10}
+                  style={{ display: 'none' }}
+                />
+                {photoUploading ? (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={S.miniSpin} /> Uploading…
+                  </span>
+                ) : photoUrls.length >= 10 ? (
+                  '10/10 photos — limit reached'
+                ) : (
+                  `+ Upload Photo (${photoUrls.length}/10)`
+                )}
+              </label>
 
-              <div style={styles.cardActions}>
-                <button onClick={() => copyStorefrontLink(item.public_slug)} style={styles.secondaryBtn}>
-                  🔗 Copy Link
-                </button>
-                <button
-                  onClick={() => setActiveTracerListing(item)}
-                  disabled={item.status !== 'active'}
-                  style={{...styles.secondaryBtn, border: '1px solid #2563eb', color: '#2563eb'}}
-                >
-                  🗺️ Trace Perimeter
-                </button>
-              </div>
-              <div style={styles.cardActions}>
-                <button onClick={() => setActiveMediaListing(item)} style={styles.secondaryBtn}>
-                  🖼️ Photos
-                </button>
-                <button onClick={() => openEditModal(item)} style={styles.secondaryBtn}>
-                  ✏️ Edit
-                </button>
-                <button onClick={() => handleDelete(item)} style={{...styles.secondaryBtn, border: '1px solid #dc2626', color: '#dc2626'}}>
-                  🗑️ Delete
-                </button>
-              </div>
-              <div style={styles.cardActions}>
-                <button onClick={() => setActiveBuilderListing(item)} style={styles.secondaryBtn}>
-                  🏗️ Builder Profile{item.builder_profile_id ? ` (${item.builder_moderation_status})` : ''}
-                </button>
-              </div>
+              {/* Photo grid */}
+              {photoLoading ? (
+                <div style={{ textAlign: 'center', padding: '32px 0', color: '#94a3b8' }}>
+                  <div style={{ ...S.miniSpin, margin: '0 auto 10px' }} />
+                  Loading photos…
+                </div>
+              ) : photoUrls.length === 0 ? (
+                <div style={S.photoEmpty}>
+                  <span style={{ fontSize: '36px' }}>📷</span>
+                  <p style={{ margin: '8px 0 0', color: '#94a3b8', fontSize: '13px' }}>
+                    No photos yet. Upload some to show buyers.
+                  </p>
+                </div>
+              ) : (
+                <div style={S.photoGrid}>
+                  {photoUrls.map((url) => (
+                    <div key={url} style={S.photoThumb}>
+                      <img src={url} alt="Property" style={S.thumbImg} />
+                      <button
+                        onClick={() => handlePhotoDelete(url)}
+                        disabled={photoDeleting === url}
+                        style={S.thumbDel}
+                        title="Delete photo"
+                      >
+                        {photoDeleting === url ? '…' : '✕'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <p style={{ margin: 0, fontSize: '11px', color: '#cbd5e1' }}>
+                JPEG, PNG, or WebP · Max 10 MB per photo · Max 10 photos per listing
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══ PAGE BODY ════════════════════════════════════════════ */}
+      <div style={S.page}>
+
+        {/* ── Welcome Strip ─────────────────────────────────────── */}
+        <div style={S.welcomeStrip}>
+          <div>
+            <h2 style={S.welcomeTitle}>
+              {greeting}{storedUser?.name ? `, ${storedUser.name.split(' ')[0]}` : ''} 👋
+            </h2>
+            <p style={S.welcomeSub}>Here's your property portfolio at a glance.</p>
+          </div>
+          <button onClick={() => setShowCreate(true)} style={S.addBtn}>
+            + Add Property
+          </button>
+        </div>
+
+        {/* ── Stat Cards ────────────────────────────────────────── */}
+        <div style={S.statsRow}>
+          {[
+            {
+              label: 'Total Properties',
+              value: listings.length,
+              icon: '🏘',
+              bg: 'linear-gradient(135deg, #0c1b2e 0%, #1a3558 100%)',
+            },
+            {
+              label: 'Active Listings',
+              value: activeCount,
+              icon: '✅',
+              bg: 'linear-gradient(135deg, #064e3b 0%, #059669 100%)',
+            },
+            {
+              label: 'Total Views',
+              value: totalViews,
+              icon: '📊',
+              bg: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
+            },
+          ].map(s => (
+            <div key={s.label} className="pve-stat-card" style={{ ...S.statCard, background: s.bg }}>
+              <span style={S.statIcon}>{s.icon}</span>
+              <span style={S.statValue}>{s.value}</span>
+              <span style={S.statLabel}>{s.label}</span>
             </div>
           ))}
         </div>
 
+        {/* ── Section header ────────────────────────────────────── */}
+        <div style={S.sectionBar}>
+          <div>
+            <h3 style={S.sectionTitle}>My Properties</h3>
+            <p style={S.sectionSub}>
+              {listings.length === 0
+                ? 'No listings yet — add your first property above.'
+                : `${listings.length} propert${listings.length === 1 ? 'y' : 'ies'} in your portfolio`}
+            </p>
+          </div>
+        </div>
+
+        {/* ── Search/filter bar — area lives in the address text (q searches
+            title + raw_address + formatted_address together), budget is
+            min/max price, property type is an exact-match dropdown. ── */}
+        <form onSubmit={applyFilters} style={S.filterBar}>
+          <input
+            type="text"
+            name="q"
+            placeholder="Search by area, locality, or title…"
+            value={filterInputs.q}
+            onChange={handleFilterInputChange}
+            style={{ ...S.filterInput, flex: 2, minWidth: '200px' }}
+          />
+          <input
+            type="number"
+            name="min_price"
+            placeholder="Min budget (₹)"
+            value={filterInputs.min_price}
+            onChange={handleFilterInputChange}
+            style={{ ...S.filterInput, flex: 1, minWidth: '120px' }}
+          />
+          <input
+            type="number"
+            name="max_price"
+            placeholder="Max budget (₹)"
+            value={filterInputs.max_price}
+            onChange={handleFilterInputChange}
+            style={{ ...S.filterInput, flex: 1, minWidth: '120px' }}
+          />
+          <select
+            name="property_type"
+            value={filterInputs.property_type}
+            onChange={handleFilterInputChange}
+            style={{ ...S.filterInput, flex: 1, minWidth: '140px' }}
+          >
+            <option value="">All types</option>
+            <option value="Plot">Plot</option>
+            <option value="Villa">Villa</option>
+            <option value="Flat">Flat</option>
+            <option value="Commercial">Commercial</option>
+          </select>
+          <button type="submit" style={S.filterSearchBtn}>Search</button>
+          {(filters.q || filters.min_price || filters.max_price || filters.property_type) && (
+            <button type="button" onClick={clearFilters} style={S.filterClearBtn}>Clear</button>
+          )}
+        </form>
+
+        {/* ── Empty state ───────────────────────────────────────── */}
         {listings.length === 0 && (
-          <div style={styles.emptyContainer}>No active listings cataloged inside this corporate dashboard context yet.</div>
-        )}
-
-        {/* 🛠️ MODAL LAYER A: Property Asset Registration Creator / Edit Drawer */}
-        {showCreateModal && (
-          <div style={styles.modalOverlay}>
-            <div style={styles.modalContent}>
-              <h3>{editingListing ? 'Edit Real Estate Asset' : 'Register Real Estate Asset'}</h3>
-              <form onSubmit={handleFormSubmit} style={styles.formContainer}>
-                <input type="text" name="title" placeholder="Listing Title Name (e.g., Omaxe Royal Villa 230)" value={formData.title} onChange={handleInputChange} required style={styles.input} />
-                <input type="text" name="raw_address" placeholder="Raw Local Address (e.g., Pakhowal Road, near Canal, Ludhiana)" value={formData.raw_address} onChange={handleInputChange} required style={styles.input} />
-                <input type="number" name="price" placeholder="Target Pricing Valuation (INR)" value={formData.price} onChange={handleInputChange} required style={styles.input} />
-                <input type="text" name="plot_area" placeholder="Plot Dimensions / Area (e.g., 250 Sq Yards)" value={formData.plot_area} onChange={handleInputChange} style={styles.input} />
-                <select name="property_type" value={formData.property_type} onChange={handleInputChange} style={styles.input}>
-                  <option value="Plot">Plot Land Matrix</option>
-                  <option value="Villa">Residential Villa</option>
-                  <option value="Commercial">Commercial Complex</option>
-                </select>
-                <textarea name="description" placeholder="Comprehensive contextual sales descriptions..." value={formData.description} onChange={handleInputChange} style={{...styles.input, height: '80px'}} />
-
-                <div style={styles.modalActions}>
-                  <button type="button" onClick={() => { setShowCreateModal(false); setEditingListing(null); }} style={styles.cancelBtn}>Cancel</button>
-                  <button type="submit" disabled={submitting} style={styles.submitBtn}>
-                    {submitting ? 'Saving...' : editingListing ? 'Save Changes' : 'Add Property Row'}
-                  </button>
-                </div>
-              </form>
-            </div>
+          <div style={S.empty}>
+            <div style={S.emptyIconWrap}>🏗</div>
+            <h4 style={S.emptyTitle}>
+              {(filters.q || filters.min_price || filters.max_price || filters.property_type)
+                ? 'No listings match these filters'
+                : 'No properties yet'}
+            </h4>
+            <p style={S.emptySub}>
+              {(filters.q || filters.min_price || filters.max_price || filters.property_type)
+                ? 'Try widening your search or clearing the filters.'
+                : 'Add your first listing to get started.'}
+            </p>
+            <button onClick={() => setShowCreate(true)} style={S.addBtn}>+ Add Property</button>
           </div>
         )}
 
-        {/* 🛠️ MODAL LAYER B: Mapbox GL Vector Geometric Tracer Drawer overlay */}
-        {activeTracerListing && (
-          <div style={styles.modalOverlay}>
-            <div style={{...styles.modalContent, maxWidth: '800px', width: '90%'}}>
-              <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px'}}>
-                <h3>Trace Geometry Framework — {activeTracerListing.title}</h3>
-                <button onClick={() => setActiveTracerListing(null)} style={styles.cancelBtn}>Close Canvas</button>
+        {/* ── Listings Grid ─────────────────────────────────────── */}
+        {listings.length > 0 && (
+          <div style={S.grid}>
+            {listings.map(item => {
+              const isActive = item.status === 'active';
+              return (
+                <div
+                  key={item.id}
+                  className="pve-card pve-fade-up"
+                  style={{
+                    ...S.card,
+                    borderLeft: `4px solid ${isActive ? '#c8a96e' : '#f59e0b'}`,
+                  }}
+                >
+                  {/* Card top */}
+                  <div style={S.cardTop}>
+                    <span style={{
+                      ...S.badge,
+                      backgroundColor: isActive ? '#ecfdf5' : '#fffbeb',
+                      color:           isActive ? '#059669' : '#d97706',
+                      border: `1px solid ${isActive ? '#a7f3d0' : '#fde68a'}`,
+                    }}>
+                      <span style={{ fontSize: '7px', marginRight: '4px' }}>
+                        {isActive ? '●' : '○'}
+                      </span>
+                      {isActive ? 'Active' : 'Pending'}
+                    </span>
+                    <span style={S.typePill}>{item.property_type}</span>
+                  </div>
+
+                  {/* Title */}
+                  <h3 style={S.cardTitle}>{item.title}</h3>
+                  <p style={S.cardAddr}>📍 {item.formatted_address || item.raw_address}</p>
+
+                  {/* Meta */}
+                  <div style={S.metaGrid}>
+                    <div style={S.metaBlock}>
+                      <span style={S.metaLbl}>Price</span>
+                      <span className="pve-card-price" style={S.metaPrice}>
+                        ₹{parseFloat(item.price).toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                    <div style={S.metaBlock}>
+                      <span style={S.metaLbl}>Area</span>
+                      <span style={S.metaVal}>{item.plot_area || '—'}</span>
+                    </div>
+                  </div>
+
+                  {/* Views */}
+                  <div style={S.viewsRow}>
+                    <span style={S.viewsIcon}>📈</span>
+                    <strong>{item.visit_count || 0}</strong>&nbsp;page views
+                  </div>
+
+                  {/* Actions */}
+                  <div style={S.cardActions}>
+                    <button
+                      className="pve-action-btn"
+                      onClick={() => copyLink(item.public_slug)}
+                      style={S.actionBtn}
+                    >
+                      {copiedSlug === item.public_slug ? '✓ Copied!' : '🔗 Copy Link'}
+                    </button>
+                    <button
+                      className="pve-action-btn"
+                      onClick={() => openPhotoModal(item)}
+                      style={{ ...S.actionBtn, ...S.actionBtnGreen }}
+                    >
+                      📷 Photos
+                    </button>
+                    <button
+                      className="pve-action-btn pve-action-btn-blue"
+                      onClick={() => setTracer(item)}
+                      disabled={!isActive}
+                      style={{
+                        ...S.actionBtn,
+                        ...S.actionBtnBlue,
+                        opacity: isActive ? 1 : 0.35,
+                        cursor: isActive ? 'pointer' : 'not-allowed',
+                      }}
+                    >
+                      🗺 Trace
+                    </button>
+                    {/* Flat-only — a builder profile (developer rating,
+                        possession record, nearby comparisons) doesn't apply
+                        to a plot or villa, so the option isn't even offered
+                        for those, rather than showing it and rejecting it
+                        server-side. See builderProfileController.js. */}
+                    {item.property_type === 'Flat' && (
+                      <button
+                        className="pve-action-btn"
+                        onClick={() => setBuilderModalListing(item)}
+                        style={S.actionBtn}
+                      >
+                        🏗️ {item.builder_profile_id ? 'Builder Profile' : 'Link Builder'}
+                      </button>
+                    )}
+                  </div>
+
+                  {multiAgentEnabled && (
+                    <div style={S.assignRow}>
+                      <label style={S.assignLabel}>💬 WhatsApp contact for buyers:</label>
+                      <select
+                        value={item.assigned_agent_id || ''}
+                        onChange={(e) => handleAssignAgent(item.id, e.target.value)}
+                        style={S.filterInput}
+                      >
+                        <option value="">Default (tenant number)</option>
+                        {teamMembers.map((member) => (
+                          <option key={member.id} value={member.id}>{member.name} ({member.phone})</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ══ MODAL: Create Listing ═══════════════════════════════ */}
+      {showCreateModal && (
+        <div className="pve-modal-wrap" style={S.overlay}>
+          <div className="pve-modal" style={S.modal}>
+
+            <div style={S.modalStripe} />
+            <div style={S.modalHead}>
+              <div>
+                <p style={S.modalEye}>New Listing</p>
+                <h3 style={S.modalTitle}>Add Property</h3>
               </div>
+              <button onClick={() => setShowCreate(false)} style={S.closeBtn}>✕</button>
+            </div>
+
+            <form onSubmit={handleCreateSubmit} style={S.modalForm}>
+              <MField label="Property Title">
+                <input type="text" name="title" placeholder="e.g. Omaxe Royal Villa 230"
+                  value={formData.title} onChange={handleInputChange} required style={S.fi} />
+              </MField>
+
+              <MField label="Full Address">
+                <input type="text" name="raw_address" placeholder="e.g. Pakhowal Road, near Canal, Ludhiana"
+                  value={formData.raw_address} onChange={handleInputChange} required style={S.fi} />
+              </MField>
+
+              <div style={S.row2}>
+                <MField label="Price (₹)">
+                  <input type="number" name="price" placeholder="e.g. 4500000"
+                    value={formData.price} onChange={handleInputChange} required style={S.fi} />
+                </MField>
+                <MField label="Plot Area">
+                  <input type="text" name="plot_area" placeholder="e.g. 250 Sq Yards"
+                    value={formData.plot_area} onChange={handleInputChange} style={S.fi} />
+                </MField>
+              </div>
+
+              <MField label="Property Type">
+                <select name="property_type" value={formData.property_type}
+                  onChange={handleInputChange} style={S.fi}>
+                  <option value="Plot">Plot</option>
+                  <option value="Villa">Villa</option>
+                  <option value="Flat">Flat</option>
+                  <option value="Commercial">Commercial</option>
+                </select>
+              </MField>
+
+              <MField label="Description">
+                <textarea name="description" placeholder="Describe the property, key features…"
+                  value={formData.description} onChange={handleInputChange}
+                  style={{ ...S.fi, height: '88px', resize: 'vertical' }} />
+              </MField>
+
+              <div style={S.modalFoot}>
+                <button type="button" onClick={() => setShowCreate(false)} style={S.cancelBtn}>
+                  Cancel
+                </button>
+                <button type="submit" disabled={submitting}
+                  style={{ ...S.submitBtn, opacity: submitting ? 0.72 : 1 }}>
+                  {submitting ? 'Saving…' : 'Add Property'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ══ MODAL: Boundary Tracer ══════════════════════════════ */}
+      {activeTracerListing && (
+        <div className="pve-modal-wrap" style={S.overlay}>
+          <div className="pve-modal" style={{ ...S.modal, maxWidth: '840px', width: '92%' }}>
+            <div style={S.modalStripe} />
+            <div style={S.modalHead}>
+              <div>
+                <p style={S.modalEye}>Plot Boundary</p>
+                <h3 style={S.modalTitle}>{activeTracerListing.title}</h3>
+              </div>
+              <button onClick={() => setTracer(null)} style={S.closeBtn}>✕</button>
+            </div>
+            <div style={{ padding: '0 24px 24px' }}>
               <PlotBoundaryTracer
                 listingId={activeTracerListing.id}
                 centerLat={parseFloat(activeTracerListing.lat)}
                 centerLng={parseFloat(activeTracerListing.lng)}
-                onSaveSuccess={() => setActiveTracerListing(null)}
+                onSaveSuccess={() => setTracer(null)}
               />
             </div>
           </div>
-        )}
-
-        {/* 🛠️ MODAL LAYER C: Photo management */}
-        {activeMediaListing && (
-          <ListingMediaManager listing={activeMediaListing} onClose={() => setActiveMediaListing(null)} />
-        )}
-
-        {/* 🛠️ MODAL LAYER D: Builder profile link + moderation */}
-        {activeBuilderListing && (
-          <BuilderProfileManager
-            listing={activeBuilderListing}
-            currentUserRole={storedUser?.role}
-            onClose={() => setActiveBuilderListing(null)}
-            onUpdated={() => fetchTenantListings({ silent: true })}
-          />
-        )}
-      </div>
-    </Layout>
+        </div>
+      )}
+    </div>
   );
 }
 
-const styles = {
-  dashboardContainer: { fontFamily: 'system-ui, sans-serif' },
-  dashboardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', borderBottom: '1px solid #eaeaea', paddingBottom: '16px' },
-  headerTitle: { margin: 0, fontSize: '24px', color: '#111' },
-  headerSub: { margin: '4px 0 0 0', color: '#666', fontSize: '14px' },
-  primaryActionBtn: { backgroundColor: '#2563eb', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' },
-  gridContainer: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' },
-  listingCard: { border: '1px solid #e0e0e0', borderRadius: '8px', padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', backgroundColor: '#fff', boxShadow: '0 2px 4px rgba(0,0,0,0.01)', gap: '8px' },
-  cardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' },
-  statusBadge: { fontSize: '11px', fontWeight: 'bold', padding: '2px 8px', borderRadius: '12px', textTransform: 'uppercase' },
-  propertyTypeLabel: { fontSize: '12px', color: '#666', fontWeight: '500' },
-  cardTitle: { margin: '0 0 8px 0', fontSize: '18px', color: '#111' },
-  cardAddress: { margin: '0 0 12px 0', fontSize: '13px', color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
-  metaRow: { display: 'flex', justifyContent: 'space-between', fontSize: '13px', backgroundColor: '#f9f9f9', padding: '8px', borderRadius: '4px', marginBottom: '4px' },
-  analyticsRow: { fontSize: '13px', color: '#4b5563', borderTop: '1px solid #f0f0f0', paddingTop: '8px', marginBottom: '4px' },
-  cardActions: { display: 'flex', gap: '8px' },
-  secondaryBtn: { flex: 1, padding: '8px', border: '1px solid #ccc', borderRadius: '4px', backgroundColor: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: '500', textAlign: 'center' },
-  emptyContainer: { textAlign: 'center', padding: '48px', color: '#888', fontStyle: 'italic', border: '1px dashed #ccc', borderRadius: '8px', marginTop: '24px' },
-  modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
-  modalContent: { backgroundColor: '#fff', padding: '24px', borderRadius: '8px', maxWidth: '500px', width: '100%', boxShadow: '0 10px 25px rgba(0,0,0,0.15)' },
-  formContainer: { display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' },
-  input: { padding: '10px', fontSize: '14px', border: '1px solid #ccc', borderRadius: '4px', width: '100%', boxSizing: 'border-box' },
-  modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' },
-  cancelBtn: { padding: '8px 16px', border: 'none', backgroundColor: '#eee', borderRadius: '4px', cursor: 'pointer', fontSize: '14px' },
-  submitBtn: { padding: '8px 16px', border: 'none', backgroundColor: '#2563eb', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold' },
-  centerText: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh', fontSize: '16px', color: '#555' }
+/* Small helper: modal form field wrapper */
+function MField({ label, children }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      <label style={{
+        fontSize: '11px', fontWeight: '700', color: '#374151',
+        textTransform: 'uppercase', letterSpacing: '0.6px',
+      }}>
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════
+   Styles
+   ══════════════════════════════════════════════════ */
+const S = {
+  root: { minHeight: '100vh', backgroundColor: '#f2f5fb' },
+
+  /* Loading */
+  centerScreen: {
+    display: 'flex', flexDirection: 'column', alignItems: 'center',
+    justifyContent: 'center', height: '100vh', gap: '16px', backgroundColor: '#f2f5fb',
+  },
+  spinRing: {
+    width: '44px', height: '44px',
+    border: '3px solid #e2e8f0', borderTop: '3px solid #0c1b2e',
+    borderRadius: '50%', animation: 'spin 0.75s linear infinite',
+  },
+  centerTxt: { color: '#64748b', fontSize: '14px', margin: 0, fontWeight: '500' },
+
+  /* ── Nav ─────────────────────────────────────────── */
+  nav: {
+    height: '62px',
+    background: 'linear-gradient(90deg, #080f1c 0%, #0c1b2e 100%)',
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    padding: '0 28px', position: 'sticky', top: 0, zIndex: 100,
+    boxShadow: '0 2px 20px rgba(0,0,0,0.32)',
+  },
+  navLeft: { display: 'flex', alignItems: 'center', gap: '12px' },
+  navLogo: {
+    width: '34px', height: '34px', borderRadius: '9px',
+    backgroundColor: '#c8a96e',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+    boxShadow: '0 2px 8px rgba(200,169,110,0.35)',
+  },
+  navBrand: {
+    fontSize: '13px', fontWeight: '800', color: '#c8a96e',
+    letterSpacing: '2px', textTransform: 'uppercase',
+  },
+  navDivider: { width: '1px', height: '18px', backgroundColor: 'rgba(255,255,255,0.12)', margin: '0 2px' },
+  navSection: { fontSize: '12px', color: 'rgba(255,255,255,0.38)', fontWeight: '500' },
+  navBadge: {
+    fontSize: '11px', fontWeight: '700', color: '#0c1b2e',
+    backgroundColor: '#c8a96e', padding: '3px 8px', borderRadius: '20px',
+    letterSpacing: '0.3px',
+  },
+  navRight: { display: 'flex', alignItems: 'center', gap: '10px' },
+  userChip: { display: 'flex', alignItems: 'center', gap: '10px' },
+  avatar: {
+    width: '34px', height: '34px', borderRadius: '50%',
+    background: 'linear-gradient(135deg, #c8a96e 0%, #b08848 100%)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: '14px', fontWeight: '800', color: '#0c1b2e', flexShrink: 0,
+  },
+  userMeta: { display: 'flex', flexDirection: 'column', gap: '1px' },
+  userName: { fontSize: '13px', fontWeight: '600', color: '#fff', lineHeight: '1.2' },
+  userBiz:  { fontSize: '11px', color: 'rgba(255,255,255,0.42)', lineHeight: '1.2' },
+  iconBtn: {
+    width: '34px', height: '34px', borderRadius: '8px',
+    background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.11)',
+    cursor: 'pointer', fontSize: '15px', color: '#94a3b8',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+  },
+  logoutBtn: {
+    padding: '8px 16px', borderRadius: '8px',
+    background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.11)',
+    cursor: 'pointer', fontSize: '13px', color: '#94a3b8', fontWeight: '500',
+  },
+
+  /* ── Page body ───────────────────────────────────── */
+  page: { maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' },
+
+  /* Welcome strip */
+  welcomeStrip: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    marginBottom: '28px',
+  },
+  welcomeTitle: { margin: '0 0 4px 0', fontSize: '22px', fontWeight: '800', color: '#0c1b2e' },
+  welcomeSub:   { margin: 0, fontSize: '13px', color: '#64748b' },
+  addBtn: {
+    padding: '12px 22px',
+    background: 'linear-gradient(135deg, #0c1b2e 0%, #1a3558 100%)',
+    color: '#fff', border: 'none', borderRadius: '10px',
+    fontWeight: '700', fontSize: '13px', cursor: 'pointer',
+    letterSpacing: '0.3px', whiteSpace: 'nowrap',
+    boxShadow: '0 4px 14px rgba(12,27,46,0.24)',
+  },
+
+  /* Stat cards */
+  statsRow: {
+    display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px',
+    marginBottom: '32px',
+  },
+  statCard: {
+    borderRadius: '14px', padding: '22px 22px 20px',
+    display: 'flex', flexDirection: 'column', gap: '6px',
+    boxShadow: '0 4px 16px rgba(12,27,46,0.14)',
+    border: '1px solid rgba(255,255,255,0.06)',
+  },
+  statIcon: { fontSize: '22px', marginBottom: '2px' },
+  statValue: { fontSize: '36px', fontWeight: '900', color: '#fff', lineHeight: '1' },
+  statLabel: {
+    fontSize: '11px', fontWeight: '700', color: 'rgba(255,255,255,0.55)',
+    textTransform: 'uppercase', letterSpacing: '0.6px',
+  },
+
+  /* Section header */
+  sectionBar: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px' },
+  filterBar: { display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '18px', alignItems: 'center' },
+  filterInput: {
+    padding: '10px 12px', fontSize: '13px',
+    border: '1.5px solid #e2e8f0', borderRadius: '9px',
+    color: '#0c1b2e', backgroundColor: '#fafbfd',
+  },
+  filterSearchBtn: {
+    padding: '10px 18px', border: 'none', borderRadius: '9px',
+    background: 'linear-gradient(135deg, #0c1b2e 0%, #1a3558 100%)',
+    color: '#fff', fontWeight: '700', fontSize: '13px', cursor: 'pointer',
+  },
+  filterClearBtn: {
+    padding: '10px 18px', borderRadius: '9px',
+    border: '1.5px solid #e2e8f0', backgroundColor: '#fff',
+    color: '#475569', fontWeight: '600', fontSize: '13px', cursor: 'pointer',
+  },
+  sectionTitle: { margin: '0 0 4px 0', fontSize: '18px', fontWeight: '800', color: '#0c1b2e' },
+  sectionSub:   { margin: 0, fontSize: '13px', color: '#64748b' },
+
+  /* Empty state */
+  empty: {
+    textAlign: 'center', padding: '72px 32px',
+    backgroundColor: '#fff', borderRadius: '16px',
+    border: '2px dashed #e2e8f0',
+    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px',
+  },
+  emptyIconWrap: { fontSize: '48px' },
+  emptyTitle: { margin: 0, fontSize: '19px', fontWeight: '800', color: '#0c1b2e' },
+  emptySub:   { margin: 0, fontSize: '14px', color: '#64748b' },
+
+  /* Grid */
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+    gap: '20px',
+  },
+
+  /* Card */
+  card: {
+    backgroundColor: '#ffffff', borderRadius: '14px',
+    padding: '20px', display: 'flex', flexDirection: 'column',
+    border: '1px solid #e8edf4',
+    boxShadow: '0 2px 10px rgba(12,27,46,0.06)',
+  },
+  cardTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' },
+  badge: {
+    display: 'inline-flex', alignItems: 'center',
+    fontSize: '11px', fontWeight: '700',
+    padding: '4px 10px', borderRadius: '20px',
+    textTransform: 'uppercase', letterSpacing: '0.4px',
+  },
+  typePill: {
+    fontSize: '11px', color: '#64748b', fontWeight: '600',
+    backgroundColor: '#f1f5f9', padding: '4px 10px', borderRadius: '20px',
+    textTransform: 'uppercase', letterSpacing: '0.4px',
+  },
+  cardTitle: { margin: '0 0 6px 0', fontSize: '17px', fontWeight: '700', color: '#0c1b2e', lineHeight: '1.3' },
+  cardAddr: {
+    margin: '0 0 16px 0', fontSize: '13px', color: '#64748b',
+    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+  },
+  metaGrid: {
+    display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px',
+    backgroundColor: '#f8fafd', borderRadius: '10px',
+    padding: '12px 14px', marginBottom: '12px',
+    border: '1px solid #f0f4fa',
+  },
+  metaBlock: { display: 'flex', flexDirection: 'column', gap: '3px' },
+  metaLbl: {
+    fontSize: '10px', color: '#94a3b8',
+    textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '700',
+  },
+  metaPrice: { fontSize: '15px', fontWeight: '800', color: '#0c1b2e', transition: 'color 0.2s' },
+  metaVal:   { fontSize: '14px', fontWeight: '700', color: '#0c1b2e' },
+  viewsRow: {
+    display: 'flex', alignItems: 'center', gap: '6px',
+    fontSize: '12px', color: '#94a3b8', fontWeight: '500',
+    borderTop: '1px solid #f1f5f9', paddingTop: '10px', marginBottom: '14px',
+  },
+  viewsIcon: { fontSize: '13px' },
+  cardActions: { display: 'flex', gap: '10px', marginTop: 'auto' },
+  assignRow: { borderTop: '1px solid #f1f5f9', paddingTop: '10px', marginTop: '10px' },
+  assignLabel: { display: 'block', fontSize: '11px', color: '#64748b', marginBottom: '5px', fontWeight: '600' },
+  actionBtn: {
+    flex: 1, padding: '9px 10px', fontSize: '12px', fontWeight: '600',
+    border: '1.5px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer',
+    backgroundColor: '#fff', color: '#475569', textAlign: 'center',
+  },
+  actionBtnBlue:  { backgroundColor: '#eff6ff', color: '#1d4ed8', borderColor: '#bfdbfe' },
+  actionBtnGreen: { backgroundColor: '#f0fdf4', color: '#059669', borderColor: '#a7f3d0' },
+
+  /* Overlay / Modal */
+  overlay: {
+    position: 'fixed', inset: 0,
+    backgroundColor: 'rgba(6,12,24,0.68)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    zIndex: 300, padding: '20px',
+    backdropFilter: 'blur(8px)',
+  },
+  modal: {
+    backgroundColor: '#fff', borderRadius: '18px',
+    width: '100%', maxWidth: '520px',
+    boxShadow: '0 24px 72px rgba(6,12,24,0.30)',
+    maxHeight: '92vh', overflowY: 'auto', overflow: 'hidden',
+  },
+  modalStripe: {
+    height: '4px',
+    background: 'linear-gradient(90deg, #c8a96e 0%, #e8c98e 50%, #c8a96e 100%)',
+  },
+  modalHead: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+    padding: '20px 24px 16px',
+    borderBottom: '1px solid #f1f5f9',
+  },
+  modalEye: {
+    margin: '0 0 4px', fontSize: '11px', fontWeight: '700',
+    color: '#c8a96e', textTransform: 'uppercase', letterSpacing: '1.2px',
+  },
+  modalTitle: { margin: 0, fontSize: '18px', fontWeight: '800', color: '#0c1b2e' },
+  closeBtn: {
+    width: '32px', height: '32px', borderRadius: '8px',
+    background: '#f1f5f9', border: 'none', cursor: 'pointer',
+    fontSize: '14px', color: '#64748b',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  },
+  modalForm: { display: 'flex', flexDirection: 'column', gap: '16px', padding: '20px 24px' },
+  row2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' },
+  fi: {
+    padding: '11px 13px', fontSize: '14px',
+    border: '1.5px solid #e2e8f0', borderRadius: '9px',
+    width: '100%', color: '#0c1b2e', backgroundColor: '#fafbfd',
+  },
+  modalFoot: { display: 'flex', justifyContent: 'flex-end', gap: '10px', paddingTop: '4px' },
+  cancelBtn: {
+    padding: '10px 20px', borderRadius: '9px',
+    border: '1.5px solid #e2e8f0', backgroundColor: '#fff',
+    cursor: 'pointer', fontSize: '14px', color: '#64748b', fontWeight: '600',
+  },
+  submitBtn: {
+    padding: '10px 24px', borderRadius: '9px', border: 'none',
+    background: 'linear-gradient(135deg, #0c1b2e 0%, #1a3558 100%)',
+    color: '#fff', cursor: 'pointer', fontSize: '14px', fontWeight: '700',
+    boxShadow: '0 4px 12px rgba(12,27,46,0.22)',
+  },
+
+  /* Photo modal */
+  uploadLabel: {
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    padding: '12px', borderRadius: '10px', cursor: 'pointer',
+    border: '2px dashed #c8a96e', color: '#b08848',
+    fontSize: '13px', fontWeight: '700', letterSpacing: '0.3px',
+    backgroundColor: '#fffbf0', userSelect: 'none',
+    transition: 'background 0.15s',
+  },
+  miniSpin: {
+    width: '16px', height: '16px', borderRadius: '50%',
+    border: '2px solid #e2e8f0', borderTop: '2px solid #c8a96e',
+    animation: 'spin 0.7s linear infinite', display: 'inline-block',
+  },
+  photoEmpty: {
+    display: 'flex', flexDirection: 'column', alignItems: 'center',
+    padding: '32px', backgroundColor: '#f8fafd', borderRadius: '12px',
+    border: '1px dashed #e2e8f0',
+  },
+  photoGrid: {
+    display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px',
+  },
+  photoThumb: {
+    position: 'relative', borderRadius: '8px', overflow: 'hidden',
+    aspectRatio: '4/3', backgroundColor: '#f1f5f9',
+    border: '1px solid #e2e8f0',
+  },
+  thumbImg: {
+    width: '100%', height: '100%', objectFit: 'cover', display: 'block',
+  },
+  thumbDel: {
+    position: 'absolute', top: '4px', right: '4px',
+    width: '22px', height: '22px', borderRadius: '50%',
+    backgroundColor: 'rgba(15,23,42,0.75)', border: 'none',
+    color: '#fff', fontSize: '11px', cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    lineHeight: 1,
+  },
 };

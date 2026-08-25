@@ -8,6 +8,7 @@ import LeadsInbox from './components/LeadsInbox.jsx';
 import OpsPanel from './components/OpsPanel.jsx';
 import Analytics from './components/Analytics.jsx';
 import Billing from './components/Billing.jsx';
+import AdminRoute from './components/AdminRoute.jsx';
 import AdminPanel from './components/AdminPanel.jsx';
 import ResetPassword from './components/ResetPassword.jsx';
 
@@ -86,19 +87,20 @@ export default function App() {
               </PrivateRoute>
             }
           />
+          {/* AdminRoute (not just PrivateRoute) — checks role === 'super_admin' */}
           <Route
             path="/admin"
             element={
-              <PrivateRoute>
+              <AdminRoute>
                 <AdminPanel />
-              </PrivateRoute>
+              </AdminRoute>
             }
           />
 
           {/* Public property view */}
           <Route path="/p/:slug" element={<PropertyView />} />
 
-          {/* Unauthenticated users hitting /dashboard → landing page */}
+          {/* Unauthenticated users hitting unknown routes → landing page */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
