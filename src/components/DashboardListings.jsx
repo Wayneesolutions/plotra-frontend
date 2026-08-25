@@ -7,6 +7,7 @@ import BuilderProfileManager from './BuilderProfileManager.jsx';
 // NEW — Phase 7
 import BillingModal from './BillingModal.jsx';
 import InviteUserModal from './InviteUserModal.jsx';
+import PropertyEditModal from './PropertyEditModal.jsx';
 
 export default function DashboardListings() {
   const navigate   = useNavigate();
@@ -32,6 +33,7 @@ export default function DashboardListings() {
   const [showPwModal, setShowPwModal]     = useState(false);
   const [showBillingModal, setShowBillingModal] = useState(false); // NEW — Phase 7
   const [showInviteModal, setShowInviteModal] = useState(false); // NEW — gap #7
+  const [editListing, setEditListing] = useState(null); // NEW — gap: no Edit/Delete/Deactivate existed
   const [copiedSlug, setCopiedSlug]       = useState(null);
 
   // Search/filter — "search by area or budget" (area lives in the address
@@ -302,6 +304,14 @@ export default function DashboardListings() {
       {showPwModal && <ChangePassword onClose={() => setShowPwModal(false)} />}
       {showBillingModal && <BillingModal onClose={() => setShowBillingModal(false)} />}
       {showInviteModal && <InviteUserModal onClose={() => setShowInviteModal(false)} />}
+      {editListing && (
+        <PropertyEditModal
+          listing={editListing}
+          onClose={() => setEditListing(null)}
+          onSaved={() => { setEditListing(null); fetchListings(); }}
+          onDeleted={() => { setEditListing(null); fetchListings(); }}
+        />
+      )}
       {builderModalListing && (
         <BuilderProfileManager
           listing={builderModalListing}
@@ -588,6 +598,13 @@ export default function DashboardListings() {
                       }}
                     >
                       🗺 Trace
+                    </button>
+                    <button
+                      className="pve-action-btn"
+                      onClick={() => setEditListing(item)}
+                      style={{ ...S.actionBtn, ...S.actionBtnEdit }}
+                    >
+                      ✎ Edit
                     </button>
                     {/* Flat-only — a builder profile (developer rating,
                         possession record, nearby comparisons) doesn't apply
@@ -931,6 +948,7 @@ const S = {
   },
   actionBtnBlue:  { backgroundColor: '#eff6ff', color: '#1d4ed8', borderColor: '#bfdbfe' },
   actionBtnGreen: { backgroundColor: '#f0fdf4', color: '#059669', borderColor: '#a7f3d0' },
+  actionBtnEdit:  { backgroundColor: '#fdfbf6', color: '#92702f', borderColor: '#eadfc7' },
 
   /* Overlay / Modal */
   overlay: {

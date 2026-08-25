@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/apiClient';
+import TenantDetailModal from './TenantDetailModal.jsx';
 
 const TABS = ['Pending Requests', 'All Tenants', 'Create Tenant', 'Ad Placements', 'Plans'];
 const AD_POSITIONS = ['calculator_result', 'listing_sidebar', 'listing_footer'];
@@ -22,6 +23,7 @@ export default function AdminPanel() {
   const [createForm, setCreateForm] = useState({ business_name: '', contact_name: '', email: '', phone: '' });
   const [createError, setCreateError]   = useState(null);
   const [createLoading, setCreateLoading] = useState(false);
+  const [selectedTenantId, setSelectedTenantId] = useState(null); // NEW — gap: tenant drill-down
   const [toast, setToast] = useState(null);
 
   // NEW — Phase 6: Ad Placements tab state
@@ -417,6 +419,15 @@ export default function AdminPanel() {
           </div>
         )}
 
+        {/* Tenant Detail Drill-down — NEW, fixes gap: clicking a tenant row did nothing */}
+        {selectedTenantId && (
+          <TenantDetailModal
+            tenantId={selectedTenantId}
+            onClose={() => setSelectedTenantId(null)}
+            onChanged={fetchTenants}
+          />
+        )}
+
         {/* WhatsApp signup approval result — no credential (Tier 1 has no
             dashboard login), just confirmation the payment link went out. */}
         {checkoutLinkSent && (
@@ -572,7 +583,12 @@ export default function AdminPanel() {
                   </thead>
                   <tbody>
                     {tenants.map((t) => (
-                      <tr key={t.id} style={S.tr}>
+                      <tr
+                        key={t.id}
+                        style={{ ...S.tr, cursor: 'pointer' }}
+                        onClick={() => setSelectedTenantId(t.id)}
+                        title="Click for tenant detail"
+                      >
                         <td style={S.td}>
                           <div style={S.tenantName}>{t.business_name}</div>
                         </td>
