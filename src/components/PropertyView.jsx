@@ -220,7 +220,15 @@ export default function PropertyView() {
         </div>
       </header>
 
-      {/* ══ HERO — interactive satellite + street view ══════════════ */}
+      {/* ══ HERO — interactive satellite + street view ══════════════
+          Pre-approval only. Once a listing is live (canAdjustLocation
+          false, i.e. status === 'active'), this whole section disappears
+          — a buyer viewing a live listing only ever sees the dealer's
+          real "Property Photos" further down the page, never the
+          satellite/street-view imagery, which stops being relevant once
+          the location is no longer adjustable. Dealers/realtors still see
+          and can use it exactly as before while a listing is pending. */}
+      {canAdjustLocation && (
       <section style={{ ...S.hero, flexDirection: bothImages ? 'row' : 'column' }}>
         {hasSatellite && (
           <div style={{ ...S.heroSlot, flex: bothImages ? 1 : 'unset', height: bothImages ? '280px' : '260px' }}>
@@ -272,6 +280,7 @@ export default function PropertyView() {
           </div>
         )}
       </section>
+      )}
 
       {/* ══ ANCHOR STRIP (price + area + type) ══════════════════ */}
       <div style={S.anchor}>

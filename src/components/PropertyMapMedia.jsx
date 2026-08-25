@@ -42,7 +42,12 @@ function InteractiveSatellite({ lat, lng, fallbackUrl, draggable = false, onPosi
         const map = new maps.Map(containerRef.current, {
           center: coords,
           zoom: 18,
-          mapTypeId: 'satellite',
+          // 'hybrid', not 'satellite' — plain satellite imagery has no
+          // road/place-name overlay at all (Google deliberately omits it),
+          // so a dealer dragging the pin had no way to actually tell where
+          // they were relative to a road or landmark. Hybrid is the same
+          // imagery with that overlay on top.
+          mapTypeId: 'hybrid',
           tilt: 0,
           streetViewControl: false,
           fullscreenControl: true,
