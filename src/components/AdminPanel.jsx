@@ -11,10 +11,14 @@ export default function AdminPanel() {
 
   const [tab, setTab]           = useState(0);
   const [requests, setRequests] = useState([]);
+  // WhatsApp signups (Part 3) that are approved but still waiting on a
+  // human to confirm payment — see fetchRequests.
+  const [awaitingPaymentRequests, setAwaitingPaymentRequests] = useState([]);
   const [tenants, setTenants]   = useState([]);
   const [loading, setLoading]   = useState(false);
   const [actionLoading, setActionLoading] = useState(null); // id of row being actioned
   const [credential, setCredential] = useState(null); // { email, password, businessName }
+  const [checkoutLinkSent, setCheckoutLinkSent] = useState(null); // WhatsApp-signup approval result, no credential to show
   const [createForm, setCreateForm] = useState({ business_name: '', contact_name: '', email: '', phone: '' });
   const [createError, setCreateError]   = useState(null);
   const [createLoading, setCreateLoading] = useState(false);
@@ -50,8 +54,20 @@ export default function AdminPanel() {
   const fetchRequests = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await apiClient.get('/api/v1/admin/requests?status=pending');
-      setRequests(res.data.requests);
+      // Two calls, not one: an approved WhatsApp signup (Part 3) drops out
+      // of ?status=pending the moment it's approved, but it isn't actually
+      // live yet — it's sitting in status='approved' waiting on a human to
+      // confirm payment (confirmSignupPayment). Both need to show up here
+      // so nothing silently disappears from view mid-flow.
+      const [pendingRes, approvedRes] = await Promise.all([
+        apiClient.get('/api/v1/admin/requests?status=pending'),
+        apiClient.get('/api/v1/admin/requests?status=approved'),
+      ]);
+      const awaitingPayment = (approvedRes.data.requests || []).filter(
+        (r) => r.source === 'whatsapp' && r.payment_status && !r.payment_status.startsWith('paid_')
+      );
+      setRequests(pendingRes.data.requests || []);
+      setAwaitingPaymentRequests(awaitingPayment);
     } catch {
       showToast('Failed to load requests.', 'error');
     } finally {
@@ -108,14 +124,37 @@ export default function AdminPanel() {
     setActionLoading(id);
     try {
       const res = await apiClient.post(`/api/v1/admin/requests/${id}/approve`);
-      setCredential({
-        businessName: res.data.tenant.business_name,
-        email: res.data.user.email,
-        password: res.data.temporaryPassword,
-      });
+      // A WhatsApp signup's approval response has no `user` at all (Tier 1
+      // gets no dashboard login, so there's no owner account/credential to
+      // show) — it has a checkoutUrl instead, already sent to the prospect
+      // over WhatsApp. Show that instead of the credential modal, and pull
+      // this request into "Awaiting Payment" rather than just dropping it.
+      if (res.data.user) {
+        setCredential({
+          businessName: res.data.tenant.business_name,
+          email: res.data.user.email,
+          password: res.data.temporaryPassword,
+        });
+      } else {
+        setCheckoutLinkSent({ businessName: res.data.tenant.business_name, checkoutUrl: res.data.checkoutUrl });
+      }
       setRequests((r) => r.filter((req) => req.id !== id));
+      fetchRequests();
     } catch (err) {
       showToast(err.response?.data?.error?.message || 'Approval failed.', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleConfirmPayment = async (id, method) => {
+    setActionLoading(id);
+    try {
+      await apiClient.patch(`/api/v1/admin/requests/${id}/confirm-payment`, { method });
+      setAwaitingPaymentRequests((r) => r.filter((req) => req.id !== id));
+      showToast('Payment confirmed — tenant activated.');
+    } catch (err) {
+      showToast(err.response?.data?.error?.message || 'Failed to confirm payment.', 'error');
     } finally {
       setActionLoading(null);
     }
@@ -362,6 +401,32 @@ export default function AdminPanel() {
           </div>
         )}
 
+        {/* WhatsApp signup approval result — no credential (Tier 1 has no
+            dashboard login), just confirmation the payment link went out. */}
+        {checkoutLinkSent && (
+          <div style={S.modalOverlay}>
+            <div style={S.modal}>
+              <div style={S.modalStripe} />
+              <div style={S.modalBody}>
+                <div style={S.modalIcon}>💬</div>
+                <h3 style={S.modalTitle}>Payment Link Sent</h3>
+                <p style={S.modalSub}>
+                  <strong>{checkoutLinkSent.businessName}</strong> was approved. A Stripe payment link
+                  was sent to them over WhatsApp — the account activates once you confirm payment below
+                  (under "Awaiting Payment Confirmation").
+                </p>
+                <div style={S.credBox}>
+                  <div style={S.credRow}>
+                    <span style={S.credLabel}>Checkout link</span>
+                    <span style={{ ...S.credValue, wordBreak: 'break-all', fontSize: '11px' }}>{checkoutLinkSent.checkoutUrl}</span>
+                  </div>
+                </div>
+                <button style={S.modalClose} onClick={() => setCheckoutLinkSent(null)}>Done</button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ── Tab 0: Pending Requests ────────────────────── */}
         {tab === 0 && (
           <section style={S.section}>
@@ -387,8 +452,13 @@ export default function AdminPanel() {
                     <div style={S.requestInfo}>
                       <div style={S.requestAvatar}>{req.business_name[0]}</div>
                       <div>
-                        <div style={S.requestBiz}>{req.business_name}</div>
-                        <div style={S.requestMeta}>{req.contact_name} · {req.email} · {req.phone}</div>
+                        <div style={S.requestBiz}>
+                          {req.business_name}
+                          {req.source === 'whatsapp' && <span style={S.waBadge}>💬 WhatsApp signup</span>}
+                        </div>
+                        <div style={S.requestMeta}>
+                          {req.contact_name} · {req.email || 'no email'} · {req.phone}
+                        </div>
                         {req.message && <div style={S.requestMsg}>"{req.message}"</div>}
                         <div style={S.requestDate}>{new Date(req.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
                       </div>
@@ -412,6 +482,46 @@ export default function AdminPanel() {
                   </div>
                 ))}
               </div>
+            )}
+
+            {/* WhatsApp signups (Part 3) that are approved but not yet
+                activated — a human still has to confirm payment (QR paid
+                via the Stripe link sent over WhatsApp, or cash) before the
+                tenant goes live and the number starts routing. */}
+            {awaitingPaymentRequests.length > 0 && (
+              <>
+                <h2 style={S.subheading}>Awaiting Payment Confirmation</h2>
+                <div style={S.cardList}>
+                  {awaitingPaymentRequests.map((req) => (
+                    <div key={req.id} style={S.requestCard}>
+                      <div style={S.requestInfo}>
+                        <div style={S.requestAvatar}>{req.business_name[0]}</div>
+                        <div>
+                          <div style={S.requestBiz}>
+                            {req.business_name}
+                            <span style={S.waBadge}>💬 WhatsApp signup</span>
+                          </div>
+                          <div style={S.requestMeta}>
+                            {req.phone} · requested number: {req.requested_whatsapp_number}
+                          </div>
+                          <div style={S.requestMeta}>
+                            Payment status: <strong>{req.payment_status === 'cash_pending' ? 'Prospect says paid in cash' : 'Payment link sent, not yet confirmed'}</strong>
+                          </div>
+                        </div>
+                      </div>
+                      <div style={S.requestActions}>
+                        <button
+                          style={{ ...S.approveBtn, opacity: actionLoading === req.id ? 0.6 : 1 }}
+                          disabled={actionLoading === req.id}
+                          onClick={() => handleConfirmPayment(req.id, req.payment_status === 'cash_pending' ? 'cash' : 'qr')}
+                        >
+                          {actionLoading === req.id ? '…' : 'Confirm Payment & Activate'}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </section>
         )}
@@ -998,6 +1108,12 @@ const S = {
   requestMsg: { fontSize: '12px', color: '#94a3b8', fontStyle: 'italic', marginBottom: '4px' },
   requestDate: { fontSize: '11px', color: '#cbd5e1' },
   requestActions: { display: 'flex', gap: '8px', flexShrink: 0 },
+  waBadge: {
+    marginLeft: '8px', fontSize: '10px', fontWeight: '700', color: '#059669',
+    backgroundColor: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '10px',
+    padding: '2px 8px', verticalAlign: 'middle',
+  },
+  subheading: { fontSize: '15px', fontWeight: '700', color: '#0c1b2e', margin: '28px 0 12px' },
   approveBtn: {
     padding: '9px 20px', background: 'linear-gradient(135deg, #16a34a, #15803d)',
     color: '#fff', border: 'none', borderRadius: '9px', fontSize: '13px',
