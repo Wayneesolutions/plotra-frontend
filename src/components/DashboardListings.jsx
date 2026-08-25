@@ -41,11 +41,14 @@ export default function DashboardListings() {
   const [filters, setFilters] = useState({ q: '', min_price: '', max_price: '', property_type: '' });
   const [filterInputs, setFilterInputs] = useState({ q: '', min_price: '', max_price: '', property_type: '' });
 
-  // Per-listing WhatsApp attribution — gated to growth/unlimited plans
-  // (plans.multi_agent_whatsapp, surfaced via /billing/status rather than
-  // inferring it from the plan name client-side). teamMembers only
-  // fetched when this is actually true — no point loading the team list
-  // for a Starter tenant who can't use the feature anyway.
+  // Per-listing WhatsApp attribution — only makes sense for a plan with
+  // more than one WhatsApp number to assign FROM (plans.max_whatsapp_numbers,
+  // surfaced via /billing/status). Re-pointed here from the old
+  // multi_agent_whatsapp boolean to the new tier flag (Part 2, build-order
+  // item 7) — see listingService.js's validateAssignedAgent for the
+  // matching backend-side re-point. teamMembers only fetched when this is
+  // actually true — no point loading the team list for a single-number
+  // tenant who can't use the feature anyway.
   const [multiAgentEnabled, setMultiAgentEnabled] = useState(false);
   const [teamMembers, setTeamMembers] = useState([]);
 
@@ -64,7 +67,7 @@ export default function DashboardListings() {
   const checkMultiAgentPlan = async () => {
     try {
       const res = await apiClient.get('/api/v1/dashboard/billing/status');
-      const enabled = !!res.data.billing?.multi_agent_whatsapp;
+      const enabled = (res.data.billing?.max_whatsapp_numbers ?? 1) > 1;
       setMultiAgentEnabled(enabled);
       if (enabled) {
         const usersRes = await apiClient.get('/api/v1/dashboard/users');
