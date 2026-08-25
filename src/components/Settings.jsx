@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import apiClient from '../api/apiClient';
 import Layout from './Layout.jsx';
 import ChangePassword from './ChangePassword.jsx';
@@ -22,6 +22,63 @@ export default function Settings() {
   const [inviteSubmitting, setInviteSubmitting] = useState(false);
   const [inviteResult, setInviteResult] = useState(null);
   const [inviteError, setInviteError] = useState(null);
+
+  // WhatsApp numbers — owner-only, wires GET/POST/DELETE
+  // /api/v1/dashboard/whatsapp-numbers. Distinct from "Connect Your
+  // WhatsApp Number" above: that's a personal number for texting in
+  // listings (users.phone), this is the tenant's buyer-facing number(s)
+  // that inbound leads/messages route to. Capped by the plan
+  // (plans.max_whatsapp_numbers) — the backend rejects an add past that,
+  // surfaced below as a plain error message rather than blocked client-side,
+  // so this doesn't silently drift out of sync if the plan changes.
+  const [whatsappNumbers, setWhatsappNumbers] = useState([]);
+  const [numbersLoading, setNumbersLoading] = useState(false);
+  const [newNumberForm, setNewNumberForm] = useState({ whatsappNumber: '', label: '' });
+  const [numberSubmitting, setNumberSubmitting] = useState(false);
+  const [numberError, setNumberError] = useState(null);
+
+  useEffect(() => {
+    if (storedUser?.role !== 'owner') return;
+    setNumbersLoading(true);
+    apiClient.get('/api/v1/dashboard/whatsapp-numbers')
+      .then((res) => setWhatsappNumbers(res.data.numbers || []))
+      .catch(() => { /* non-fatal — section still renders, just empty */ })
+      .finally(() => setNumbersLoading(false));
+  }, [storedUser?.role]);
+
+  const handleAddNumber = async (e) => {
+    e.preventDefault();
+    setNumberSubmitting(true);
+    setNumberError(null);
+    try {
+      const res = await apiClient.post('/api/v1/dashboard/whatsapp-numbers', newNumberForm);
+      setWhatsappNumbers((prev) => [...prev, res.data.number]);
+      setNewNumberForm({ whatsappNumber: '', label: '' });
+    } catch (err) {
+      setNumberError(err.response?.data?.error?.message || 'Failed to add WhatsApp number.');
+    } finally {
+      setNumberSubmitting(false);
+    }
+  };
+
+  const handleRemoveNumber = async (id) => {
+    if (!window.confirm('Remove this WhatsApp number? Messages sent to it will stop routing to this account.')) return;
+    try {
+      await apiClient.delete(`/api/v1/dashboard/whatsapp-numbers/${id}`);
+      setWhatsappNumbers((prev) => prev.filter((n) => n.id !== id));
+    } catch (err) {
+      setNumberError(err.response?.data?.error?.message || 'Failed to remove WhatsApp number.');
+    }
+  };
+
+  const handleSetDefaultNumber = async (id) => {
+    try {
+      const res = await apiClient.patch(`/api/v1/dashboard/whatsapp-numbers/${id}/default`);
+      setWhatsappNumbers((prev) => prev.map((n) => ({ ...n, is_default: n.id === res.data.number.id })));
+    } catch (err) {
+      setNumberError(err.response?.data?.error?.message || 'Failed to set default number.');
+    }
+  };
 
   const handleInviteSubmit = async (e) => {
     e.preventDefault();
@@ -133,6 +190,62 @@ export default function Settings() {
           </section>
         )}
 
+        {storedUser?.role === 'owner' && (
+          <section style={styles.card}>
+            <h3 style={styles.cardTitle}>Buyer-Facing WhatsApp Numbers</h3>
+            <p style={styles.cardHelp}>
+              The number(s) buyers message when they tap "Get details on WhatsApp" on a listing, or when
+              a WhatsApp message routes to your account. How many you can add depends on your plan.
+            </p>
+
+            {numberError && <div style={styles.banner}>⚠️ {numberError}</div>}
+
+            {numbersLoading ? (
+              <p style={styles.cardHelp}>Loading…</p>
+            ) : whatsappNumbers.length === 0 ? (
+              <p style={styles.cardHelp}>No numbers added yet.</p>
+            ) : (
+              <div style={styles.numberList}>
+                {whatsappNumbers.map((n) => (
+                  <div key={n.id} style={styles.numberRow}>
+                    <div>
+                      <strong>{n.whatsapp_number}</strong>
+                      {n.label && <span style={styles.numberLabel}> — {n.label}</span>}
+                      {n.is_default && <span style={styles.defaultTag}>Default</span>}
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      {!n.is_default && (
+                        <button onClick={() => handleSetDefaultNumber(n.id)} style={styles.linkBtn}>Make default</button>
+                      )}
+                      <button onClick={() => handleRemoveNumber(n.id)} style={{ ...styles.linkBtn, color: '#dc2626' }}>Remove</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <form onSubmit={handleAddNumber} style={{ ...styles.form, marginTop: '14px' }}>
+              <input
+                required
+                type="tel"
+                placeholder="e.g. 9876543210"
+                value={newNumberForm.whatsappNumber}
+                onChange={(e) => setNewNumberForm({ ...newNumberForm, whatsappNumber: e.target.value })}
+                style={styles.input}
+              />
+              <input
+                placeholder="Label (optional, e.g. Front desk)"
+                value={newNumberForm.label}
+                onChange={(e) => setNewNumberForm({ ...newNumberForm, label: e.target.value })}
+                style={styles.input}
+              />
+              <button type="submit" disabled={numberSubmitting} style={styles.submitBtn}>
+                {numberSubmitting ? 'Adding…' : 'Add Number'}
+              </button>
+            </form>
+          </section>
+        )}
+
         {showPasswordModal && <ChangePassword onClose={() => setShowPasswordModal(false)} />}
       </div>
     </Layout>
@@ -149,6 +262,11 @@ const styles = {
   codeBadge: { backgroundColor: '#dcfce7', padding: '2px 6px', borderRadius: '4px', fontFamily: 'monospace' },
   banner: { padding: '10px', borderRadius: '6px', fontSize: '13px', marginBottom: '14px' },
   form: { display: 'flex', gap: '10px' },
+  numberList: { display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '4px' },
+  numberRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 12px', backgroundColor: '#f9fafb', borderRadius: '6px', fontSize: '13px' },
+  numberLabel: { color: '#6b7280' },
+  defaultTag: { marginLeft: '8px', fontSize: '10px', fontWeight: '700', color: '#166534', backgroundColor: '#dcfce7', padding: '2px 7px', borderRadius: '10px', textTransform: 'uppercase' },
+  linkBtn: { border: 'none', background: 'none', color: '#2563eb', fontSize: '12.5px', fontWeight: '600', cursor: 'pointer', padding: 0 },
   input: { flex: 1, padding: '10px 12px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '14px' },
   submitBtn: { padding: '10px 18px', borderRadius: '6px', border: 'none', backgroundColor: '#2563eb', color: '#fff', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap' },
   secondaryBtn: { padding: '9px 16px', border: '1px solid #d1d5db', backgroundColor: '#fff', borderRadius: '6px', fontWeight: '500', cursor: 'pointer', fontSize: '13px' },
