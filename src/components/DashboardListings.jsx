@@ -606,12 +606,12 @@ export default function DashboardListings() {
                     >
                       ✎ Edit
                     </button>
-                    {/* Flat-only — a builder profile (developer rating,
-                        possession record, nearby comparisons) doesn't apply
-                        to a plot or villa, so the option isn't even offered
-                        for those, rather than showing it and rejecting it
-                        server-side. See builderProfileController.js. */}
-                    {item.property_type === 'Flat' && (
+                    {/* Flat/Commercial only — a builder profile (developer
+                        rating, possession record, nearby comparisons)
+                        doesn't apply to a plot or villa, so the option isn't
+                        even offered for those, rather than showing it and
+                        rejecting it server-side. See builderProfileController.js. */}
+                    {['Flat', 'Commercial'].includes(item.property_type) && (
                       <button
                         className="pve-action-btn"
                         onClick={() => setBuilderModalListing(item)}

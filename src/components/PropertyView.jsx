@@ -175,11 +175,13 @@ export default function PropertyView() {
   const { listing, media, landmarks, dealer } = data;
 
   // Developer profile / rating / possession record / nearby-comparison
-  // content is Flat-only — the backend already won't return builderProfile
-  // for a non-Flat listing (see builderProfileController.js), but this is
-  // a second, client-side gate so a house never renders this section
-  // under any circumstance, including a stale/cached response.
-  const showBuilderSection = !!builderProfile && listing.property_type === 'Flat';
+  // content only applies to a unit inside a larger named project — a flat
+  // in a residential tower, or a shop/retail unit in a mall. The backend
+  // already won't return builderProfile for a plot/villa listing (see
+  // builderProfileController.js's BUILDER_ELIGIBLE_TYPES), but this is a
+  // second, client-side gate so one never renders this section under any
+  // circumstance, including a stale/cached response.
+  const showBuilderSection = !!builderProfile && ['Flat', 'Commercial'].includes(listing.property_type);
 
   const formattedPrice = listing.price != null
     ? new Intl.NumberFormat('en-IN', {
