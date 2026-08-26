@@ -4,8 +4,8 @@ import apiClient from '../api/apiClient';
 
 /**
  * Internal dealer ops panel — Dashboard / Listings / Leads·WhatsApp /
- * Documents / AI Call Log / Site Visits / Team. Matches the WayneState
- * Pro design system approved in the Lovable mockup (audio-buddy-speak):
+ * Documents / AI Call Log / Site Visits / Team. Matches the Plotra
+ * design system approved in the Lovable mockup (audio-buddy-speak):
  * charcoal sidebar, stone content area, brass accent, teal for verified
  * states, rust for warnings. Wired to the real /api/v1/dashboard/ops/*
  * endpoints — no mock data.

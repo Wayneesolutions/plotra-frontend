@@ -5,7 +5,7 @@ import { API_BASE_URL } from '../api/config';
 
 /**
  * Public marketing homepage — what a prospective client OR an investor
- * sees at "/". Restyled to match the WayneState Pro design system
+ * sees at "/". Restyled to match the Plotra design system
  * approved in the Lovable mockup (lock-reveal-plot): charcoal ink,
  * brass/gold accent, deep teal for "verified" states, blueprint-grid
  * texture. The address-protected property card is the signature visual
@@ -29,7 +29,7 @@ export default function LandingPage() {
         <div style={S.navInner}>
           <div style={S.navLogo}>
             <span style={S.navLogoMark}>◆</span>
-            <span style={S.navBrand}>WayneState <em style={S.navBrandAccent}>Pro</em></span>
+            <span style={S.navBrand}>Plotra</span>
           </div>
           <div style={S.navLinks}>
             <a href="#features" style={S.navLink}>Features</a>
@@ -156,7 +156,7 @@ export default function LandingPage() {
 
       {/* ══ FOOTER ═══════════════════════════════════════════ */}
       <footer style={S.footer}>
-        <p style={S.footerTxt}>© {new Date().getFullYear()} WayneState Pro · Made in Ludhiana, Punjab</p>
+        <p style={S.footerTxt}>© {new Date().getFullYear()} Plotra · Made in Ludhiana, Punjab</p>
       </footer>
     </div>
   );
