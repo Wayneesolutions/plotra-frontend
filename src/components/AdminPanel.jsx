@@ -361,7 +361,26 @@ export default function AdminPanel() {
           </div>
 
           <nav style={S.nav}>
-            <div style={S.navSection}>PLATFORM MANAGEMENT</div>
+            <div style={S.navSection}>DEALER DASHBOARD</div>
+            {[
+              { label: 'Listings',   icon: '🏠', path: '/dashboard',          desc: 'All property listings' },
+              { label: 'Leads',      icon: '💬', path: '/dashboard/leads',     desc: 'Buyer inquiries & contacts' },
+              { label: 'Ops',        icon: '🗂',  path: '/dashboard/ops',       desc: 'Documents, calls, visits' },
+              { label: 'Analytics',  icon: '📊', path: '/dashboard/analytics', desc: 'Views, traffic, performance' },
+              { label: 'Settings',   icon: '⚙️', path: '/dashboard/settings',  desc: 'WhatsApp number, team, password' },
+            ].map((l) => (
+              <button key={l.path} style={S.navItem} onClick={() => navigate(l.path)}>
+                <div style={S.navItemInner}>
+                  <div style={S.navItemTop}>
+                    <span style={S.navIcon}>{l.icon}</span>
+                    <span>{l.label}</span>
+                  </div>
+                  <div style={S.navDesc}>{l.desc}</div>
+                </div>
+              </button>
+            ))}
+
+            <div style={{ ...S.navSection, marginTop: '12px' }}>PLATFORM MANAGEMENT</div>
             {TABS.map((t, i) => (
               <button key={t.label} style={{ ...S.navItem, ...(tab === i ? S.navItemActive : {}) }} onClick={() => setTab(i)}>
                 <div style={S.navItemInner}>
@@ -380,7 +399,6 @@ export default function AdminPanel() {
         </div>
 
         <div style={S.sideBottom}>
-          <button style={S.backBtn} onClick={() => navigate('/dashboard')}>← Back to Dashboard</button>
           <div style={S.userInfo}>
             <div style={S.userAvatar}>{user.name?.[0] || 'A'}</div>
             <div>
