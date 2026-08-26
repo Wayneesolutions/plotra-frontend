@@ -161,7 +161,7 @@ export default function PropertyView() {
     <div style={S.screen}>
       <div style={S.errCard}>
         <span style={{ fontSize: '36px' }}>⚠️</span>
-        <p style={{ color: '#dc2626', margin: 0, fontSize: '15px' }}>{error}</p>
+        <p style={{ color: 'oklch(0.577 0.245 27.325)', margin: 0, fontSize: '15px' }}>{error}</p>
       </div>
     </div>
   );
@@ -222,7 +222,7 @@ export default function PropertyView() {
           <div style={S.navLogo}>
             <div style={S.navLogoIcon}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                <path d="M3 9.5L12 3l9 6.5V21H15v-6H9v6H3V9.5Z" fill="#0c1b2e"/>
+                <path d="M3 9.5L12 3l9 6.5V21H15v-6H9v6H3V9.5Z" fill="oklch(0.219 0.032 264.2)"/>
               </svg>
             </div>
             <span style={S.navBrand}>Plotra</span>
@@ -321,7 +321,7 @@ export default function PropertyView() {
           <div style={S.chipRow}>
             <span style={S.typeChip}>{listing.property_type}</span>
             <span style={S.statusChip}>
-              <span style={{ color: '#059669', fontSize: '8px' }}>●</span> Available
+              <span style={{ color: 'oklch(0.6 0.13 178.5)', fontSize: '8px' }}>●</span> Available
             </span>
           </div>
           <h1 style={S.propTitle}>{listing.title}</h1>
@@ -613,7 +613,7 @@ export default function PropertyView() {
         <div style={S.footerLogoRow}>
           <div style={S.footerIcon}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-              <path d="M3 9.5L12 3l9 6.5V21H15v-6H9v6H3V9.5Z" fill="#c8a96e"/>
+              <path d="M3 9.5L12 3l9 6.5V21H15v-6H9v6H3V9.5Z" fill="oklch(0.7 0.184 33.5)"/>
             </svg>
           </div>
           <span style={S.footerBrand}>Plotra</span>
@@ -655,11 +655,11 @@ const S = {
   screen: {
     display: 'flex', flexDirection: 'column',
     alignItems: 'center', justifyContent: 'center',
-    minHeight: '100vh', gap: '16px', backgroundColor: '#f2f5fb',
+    minHeight: '100vh', gap: '16px', backgroundColor: 'oklch(0.982 0.008 85)',
   },
   spinRing: {
     width: '40px', height: '40px',
-    border: '3px solid #e2e8f0', borderTop: '3px solid #0c1b2e',
+    border: '3px solid #e2e8f0', borderTop: '3px solid oklch(0.219 0.032 264.2)',
     borderRadius: '50%', animation: 'spin 0.75s linear infinite',
   },
   screenTxt: { color: '#64748b', fontSize: '14px', margin: 0, fontWeight: '500' },
@@ -671,7 +671,7 @@ const S = {
 
   /* Site nav */
   siteNav: {
-    backgroundColor: '#0c1b2e', height: '52px',
+    backgroundColor: 'oklch(0.219 0.032 264.2)', height: '52px',
     display: 'flex', alignItems: 'center',
     borderBottom: '1px solid rgba(200,169,110,0.15)',
   },
@@ -682,11 +682,11 @@ const S = {
   navLogo: { display: 'flex', alignItems: 'center', gap: '9px' },
   navLogoIcon: {
     width: '26px', height: '26px', borderRadius: '7px',
-    backgroundColor: '#c8a96e',
+    backgroundColor: 'oklch(0.7 0.184 33.5)',
     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   },
   navBrand: {
-    fontSize: '12px', fontWeight: '800', color: '#c8a96e',
+    fontSize: '12px', fontWeight: '800', color: 'oklch(0.7 0.184 33.5)',
     letterSpacing: '2px', textTransform: 'uppercase',
   },
   navLabel: {
@@ -697,7 +697,7 @@ const S = {
   /* Hero */
   hero: {
     display: 'flex',
-    backgroundColor: '#050b14',
+    backgroundColor: 'oklch(0.219 0.032 264.2)',
     overflow: 'hidden',
     gap: '2px',
   },
@@ -719,7 +719,7 @@ const S = {
     zIndex: 1,
   },
   heroEmpty: {
-    height: '220px', backgroundColor: '#0c1b2e',
+    height: '220px', backgroundColor: 'oklch(0.219 0.032 264.2)',
     display: 'flex', flexDirection: 'column',
     alignItems: 'center', justifyContent: 'center', width: '100%',
   },
@@ -729,14 +729,14 @@ const S = {
   locationHintMsg: { backgroundColor: 'rgba(17, 24, 39, 0.8)', color: '#e5e7eb', fontSize: '12px', padding: '6px 10px', borderRadius: '6px', display: 'inline-block' },
   locationSavedMsg: { backgroundColor: 'rgba(22, 101, 52, 0.9)', color: '#fff', fontSize: '12px', padding: '6px 10px', borderRadius: '6px', display: 'inline-block' },
   locationErrorMsg: { backgroundColor: 'rgba(153, 27, 27, 0.9)', color: '#fff', fontSize: '12px', padding: '6px 10px', borderRadius: '6px', marginTop: '6px', display: 'inline-block' },
-  locationBanner: { backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: '#111827', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' },
+  locationBanner: { backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', color: 'oklch(0.219 0.032 264.2)', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' },
   locationBannerActions: { display: 'flex', gap: '8px', marginTop: '8px' },
-  locationSaveBtn: { flex: 1, backgroundColor: '#111827', color: '#fff', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', cursor: 'pointer' },
-  locationCancelBtn: { flex: 1, backgroundColor: '#f3f4f6', color: '#111827', border: '1px solid #d1d5db', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', cursor: 'pointer' },
+  locationSaveBtn: { flex: 1, backgroundColor: 'oklch(0.219 0.032 264.2)', color: '#fff', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', cursor: 'pointer' },
+  locationCancelBtn: { flex: 1, backgroundColor: '#f3f4f6', color: 'oklch(0.219 0.032 264.2)', border: '1px solid #d1d5db', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', cursor: 'pointer' },
 
   /* Anchor strip */
   anchor: {
-    backgroundColor: '#0c1b2e',
+    backgroundColor: 'oklch(0.219 0.032 264.2)',
     display: 'flex', alignItems: 'center',
     padding: '16px 20px', gap: '8px',
   },
@@ -757,19 +757,19 @@ const S = {
   propHead: { display: 'flex', flexDirection: 'column', gap: '8px' },
   chipRow: { display: 'flex', alignItems: 'center', gap: '8px' },
   typeChip: {
-    fontSize: '11px', fontWeight: '700', color: '#0c1b2e',
-    backgroundColor: '#f0e9d8', padding: '4px 11px', borderRadius: '20px',
+    fontSize: '11px', fontWeight: '700', color: 'oklch(0.219 0.032 264.2)',
+    backgroundColor: 'oklch(0.7 0.184 33.5 / 0.10)', padding: '4px 11px', borderRadius: '20px',
     textTransform: 'uppercase', letterSpacing: '0.5px',
   },
   statusChip: {
-    fontSize: '11px', fontWeight: '700', color: '#059669',
+    fontSize: '11px', fontWeight: '700', color: 'oklch(0.6 0.13 178.5)',
     backgroundColor: '#ecfdf5', padding: '4px 11px', borderRadius: '20px',
     display: 'flex', alignItems: 'center', gap: '5px',
     border: '1px solid #a7f3d0',
   },
   propTitle: {
     margin: 0, fontSize: '26px', fontWeight: '900',
-    color: '#0c1b2e', lineHeight: '1.22', letterSpacing: '-0.3px',
+    color: 'oklch(0.219 0.032 264.2)', lineHeight: '1.22', letterSpacing: '-0.3px',
   },
   propAddr: { margin: 0, fontSize: '14px', color: '#64748b', lineHeight: '1.5' },
 
@@ -792,10 +792,10 @@ const S = {
   sectionHead: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' },
   sectionAccent: {
     width: '4px', height: '18px', borderRadius: '2px',
-    background: 'linear-gradient(180deg, #c8a96e, #b08848)',
+    background: 'linear-gradient(180deg, oklch(0.7 0.184 33.5), oklch(0.62 0.16 33.5))',
     flexShrink: 0,
   },
-  sectionTitle: { margin: 0, fontSize: '13px', fontWeight: '800', color: '#0c1b2e', textTransform: 'uppercase', letterSpacing: '0.8px' },
+  sectionTitle: { margin: 0, fontSize: '13px', fontWeight: '800', color: 'oklch(0.219 0.032 264.2)', textTransform: 'uppercase', letterSpacing: '0.8px' },
   descTxt: { margin: 0, fontSize: '14px', color: '#475569', lineHeight: '1.8' },
 
   /* Landmarks */
@@ -812,10 +812,10 @@ const S = {
   },
   landmarkText: { display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 },
   lmType: { fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.4px', fontWeight: '700' },
-  lmName: { fontSize: '14px', color: '#0c1b2e', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  lmName: { fontSize: '14px', color: 'oklch(0.219 0.032 264.2)', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
   landmarkRight: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px', flexShrink: 0 },
   distPill: {
-    fontSize: '13px', fontWeight: '700', color: '#0c1b2e',
+    fontSize: '13px', fontWeight: '700', color: 'oklch(0.219 0.032 264.2)',
     backgroundColor: '#f0f4fa', padding: '3px 9px', borderRadius: '6px',
   },
   timeRow: { fontSize: '11px', color: '#94a3b8' },
@@ -825,7 +825,7 @@ const S = {
   intelSubhead: { fontSize: '12px', textTransform: 'uppercase', color: '#6b7280', margin: '0 0 6px 0', fontWeight: '700' },
   citedItem: { borderLeft: '2px solid #eff2f8', paddingLeft: '10px', marginBottom: '10px' },
   citedCategory: { fontSize: '10px', textTransform: 'uppercase', color: '#94a3b8', fontWeight: 'bold' },
-  sourceLink: { fontSize: '11px', color: '#0c1b2e', fontWeight: '600', textDecoration: 'none' },
+  sourceLink: { fontSize: '11px', color: 'oklch(0.219 0.032 264.2)', fontWeight: '600', textDecoration: 'none' },
 
   /* Developer rating / possession-record stat cards */
   devStatsRow: { display: 'flex', gap: '12px', marginBottom: '18px', flexWrap: 'wrap' },
@@ -835,7 +835,7 @@ const S = {
     display: 'flex', flexDirection: 'column', gap: '4px',
   },
   devStatLbl: { fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.4px', fontWeight: '700' },
-  devStatVal: { fontSize: '20px', fontWeight: '800', color: '#0c1b2e' },
+  devStatVal: { fontSize: '20px', fontWeight: '800', color: 'oklch(0.219 0.032 264.2)' },
   devStatMax: { fontSize: '13px', fontWeight: '600', color: '#94a3b8', marginLeft: '2px' },
 
   /* Compare Nearby Projects */
@@ -846,14 +846,14 @@ const S = {
     textDecoration: 'none', color: 'inherit',
   },
   compareMain: { display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 },
-  compareTitle: { fontSize: '14px', fontWeight: '700', color: '#0c1b2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  compareTitle: { fontSize: '14px', fontWeight: '700', color: 'oklch(0.219 0.032 264.2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
   compareMeta: { fontSize: '12px', color: '#94a3b8' },
   compareRight: { display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 },
   comparePill: {
-    fontSize: '12px', fontWeight: '700', color: '#92702f',
-    backgroundColor: '#fdfbf6', border: '1px solid #eadfc7', borderRadius: '20px', padding: '3px 10px',
+    fontSize: '12px', fontWeight: '700', color: 'oklch(0.55 0.14 33.5)',
+    backgroundColor: 'oklch(0.7 0.184 33.5 / 0.06)', border: '1px solid oklch(0.7 0.184 33.5 / 0.16)', borderRadius: '20px', padding: '3px 10px',
   },
-  comparePrice: { fontSize: '13px', fontWeight: '700', color: '#0c1b2e' },
+  comparePrice: { fontSize: '13px', fontWeight: '700', color: 'oklch(0.219 0.032 264.2)' },
 
   /* Photo gallery */
   photoScroll: {
@@ -880,12 +880,12 @@ const S = {
   leadSuccess: { display: 'flex', alignItems: 'center', gap: '14px' },
   successCircle: {
     width: '44px', height: '44px', borderRadius: '50%',
-    background: 'linear-gradient(135deg, #059669, #047857)',
+    background: 'linear-gradient(135deg, oklch(0.6 0.13 178.5), oklch(0.5 0.12 178.5))',
     color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
     fontSize: '20px', fontWeight: '700', flexShrink: 0,
     boxShadow: '0 4px 14px rgba(5,150,105,0.35)',
   },
-  successTitle: { margin: '0 0 4px', fontSize: '15px', fontWeight: '700', color: '#059669' },
+  successTitle: { margin: '0 0 4px', fontSize: '15px', fontWeight: '700', color: 'oklch(0.6 0.13 178.5)' },
   successNote:  { margin: 0, fontSize: '13px', color: '#64748b' },
 
   leadPrompt: { display: 'flex', alignItems: 'center', gap: '14px' },
@@ -893,39 +893,39 @@ const S = {
     width: '44px', height: '44px', borderRadius: '50%', backgroundColor: '#e8edf8',
     display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0,
   },
-  promptTitle: { margin: '0 0 3px', fontSize: '14px', fontWeight: '700', color: '#0c1b2e' },
+  promptTitle: { margin: '0 0 3px', fontSize: '14px', fontWeight: '700', color: 'oklch(0.219 0.032 264.2)' },
   promptNote:  { margin: 0, fontSize: '12px', color: '#64748b' },
   leadTrigger: {
     marginLeft: 'auto', padding: '10px 18px', border: 'none',
-    background: 'linear-gradient(135deg, #0c1b2e 0%, #1a3558 100%)',
+    background: 'linear-gradient(135deg, oklch(0.219 0.032 264.2) 0%, oklch(0.317 0.132 285.5) 100%)',
     color: '#fff', borderRadius: '9px', fontSize: '13px', fontWeight: '700',
     cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
     boxShadow: '0 4px 12px rgba(12,27,46,0.22)',
   },
 
   leadForm:   { display: 'flex', flexDirection: 'column', gap: '12px' },
-  leadTitle:  { margin: '0 0 3px', fontSize: '17px', fontWeight: '800', color: '#0c1b2e' },
+  leadTitle:  { margin: '0 0 3px', fontSize: '17px', fontWeight: '800', color: 'oklch(0.219 0.032 264.2)' },
   leadSub:    { margin: '0 0 4px', fontSize: '13px', color: '#64748b' },
   leadInput: {
     padding: '12px 14px', fontSize: '14px',
     border: '1.5px solid #e2e8f0', borderRadius: '10px',
-    width: '100%', color: '#0c1b2e', backgroundColor: '#ffffff',
+    width: '100%', color: 'oklch(0.219 0.032 264.2)', backgroundColor: '#ffffff',
   },
   leadBtn: {
     padding: '14px', border: 'none', borderRadius: '10px',
-    background: 'linear-gradient(135deg, #0c1b2e 0%, #1a3558 100%)',
+    background: 'linear-gradient(135deg, oklch(0.219 0.032 264.2) 0%, oklch(0.317 0.132 285.5) 100%)',
     color: '#fff', fontWeight: '700', fontSize: '14px', cursor: 'pointer',
     boxShadow: '0 4px 14px rgba(12,27,46,0.22)',
   },
   phoneErr: {
-    backgroundColor: '#fff5f5', color: '#c53030',
+    backgroundColor: '#fff5f5', color: 'oklch(0.55 0.22 27.325)',
     padding: '10px 14px', borderRadius: '8px', fontSize: '13px',
     border: '1px solid #fed7d7',
   },
 
   /* Footer */
   footer: {
-    backgroundColor: '#0c1b2e', padding: '20px',
+    backgroundColor: 'oklch(0.219 0.032 264.2)', padding: '20px',
     textAlign: 'center', borderTop: '1px solid rgba(200,169,110,0.15)',
   },
   footerLogoRow: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '6px' },
@@ -934,6 +934,6 @@ const S = {
     backgroundColor: 'rgba(200,169,110,0.18)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
   },
-  footerBrand: { fontSize: '12px', fontWeight: '800', color: '#c8a96e', letterSpacing: '1.5px', textTransform: 'uppercase' },
+  footerBrand: { fontSize: '12px', fontWeight: '800', color: 'oklch(0.7 0.184 33.5)', letterSpacing: '1.5px', textTransform: 'uppercase' },
   footerTxt:   { margin: 0, fontSize: '11px', color: 'rgba(255,255,255,0.28)' },
 };

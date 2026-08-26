@@ -66,10 +66,10 @@ export default function PlotBoundaryTracer({ listingId, centerLat, centerLng, on
               drawingModes: [maps.drawing.OverlayType.POLYGON],
             },
             polygonOptions: {
-              fillColor: '#2563eb',
+              fillColor: 'oklch(0.317 0.132 285.5)',
               fillOpacity: 0.2,
               strokeWeight: 2,
-              strokeColor: '#2563eb',
+              strokeColor: 'oklch(0.317 0.132 285.5)',
               editable: true,
               draggable: true,
             },
@@ -140,7 +140,7 @@ export default function PlotBoundaryTracer({ listingId, centerLat, centerLng, on
         <button
           onClick={handleSave}
           disabled={saving}
-          style={{ ...styles.saveBtn, backgroundColor: saving ? '#9ca3af' : '#2563eb' }}
+          style={{ ...styles.saveBtn, backgroundColor: saving ? '#9ca3af' : 'oklch(0.317 0.132 285.5)' }}
         >
           {saving ? 'Saving…' : '💾 Save Property Boundary'}
         </button>
@@ -151,7 +151,7 @@ export default function PlotBoundaryTracer({ listingId, centerLat, centerLng, on
 
 const styles = {
   container: { display: 'flex', flexDirection: 'column', width: '100%', height: '520px', gap: '12px' },
-  errorBanner: { padding: '10px', backgroundColor: '#fef2f2', border: '1px solid #fee2e2', color: '#991b1b', fontSize: '13px', borderRadius: '6px' },
+  errorBanner: { padding: '10px', backgroundColor: 'oklch(0.577 0.245 27.325 / 0.06)', border: '1px solid oklch(0.577 0.245 27.325 / 0.15)', color: 'oklch(0.45 0.2 27.325)', fontSize: '13px', borderRadius: '6px' },
   canvasFrame: { flex: 1, width: '100%', borderRadius: '8px', border: '1px solid #e5e7eb', overflow: 'hidden' },
   footerPanel: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', paddingTop: '4px' },
   helperTxt: { margin: 0, fontSize: '13px', color: '#4b5563', maxWidth: '70%', lineHeight: '1.4' },

@@ -47,13 +47,13 @@ export default function ChangePassword({ onClose }) {
         {statusMessage && (
           <div style={{
             ...S.banner,
-            backgroundColor: isError ? '#fff5f5'  : '#ecfdf5',
-            color:           isError ? '#c53030'  : '#059669',
-            border: `1px solid ${isError ? '#fed7d7' : '#a7f3d0'}`,
+            backgroundColor: isError ? 'oklch(0.577 0.245 27.325 / 0.06)'  : 'oklch(0.78 0.128 178.5 / 0.12)',
+            color:           isError ? 'oklch(0.55 0.22 27.325)'  : 'oklch(0.6 0.13 178.5)',
+            border: `1px solid ${isError ? 'oklch(0.577 0.245 27.325 / 0.25)' : 'oklch(0.78 0.128 178.5 / 0.4)'}`,
           }}>
             <span style={{
               ...S.bannerIcon,
-              backgroundColor: isError ? '#fecaca' : '#a7f3d0',
+              backgroundColor: isError ? 'oklch(0.577 0.245 27.325 / 0.3)' : 'oklch(0.78 0.128 178.5 / 0.4)',
             }}>
               {isError ? '!' : '✓'}
             </span>
@@ -123,7 +123,7 @@ const S = {
   },
   stripe: {
     height: '4px',
-    background: 'linear-gradient(90deg, #c8a96e 0%, #e8c98e 50%, #c8a96e 100%)',
+    background: 'linear-gradient(90deg, oklch(0.7 0.184 33.5) 0%, oklch(0.8 0.15 40) 50%, oklch(0.7 0.184 33.5) 100%)',
   },
   head: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
@@ -132,9 +132,9 @@ const S = {
   },
   eyebrow: {
     margin: '0 0 4px', fontSize: '11px', fontWeight: '700',
-    color: '#c8a96e', textTransform: 'uppercase', letterSpacing: '1.5px',
+    color: 'oklch(0.7 0.184 33.5)', textTransform: 'uppercase', letterSpacing: '1.5px',
   },
-  title: { margin: 0, fontSize: '19px', fontWeight: '800', color: '#0c1b2e' },
+  title: { margin: 0, fontSize: '19px', fontWeight: '800', color: 'oklch(0.219 0.032 264.2)' },
   closeBtn: {
     width: '32px', height: '32px', borderRadius: '8px',
     background: '#f1f5f9', border: 'none', cursor: 'pointer',
@@ -151,7 +151,7 @@ const S = {
   bannerIcon: {
     width: '22px', height: '22px', borderRadius: '50%',
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-    fontSize: '11px', fontWeight: '800', flexShrink: 0, color: '#0c1b2e',
+    fontSize: '11px', fontWeight: '800', flexShrink: 0, color: 'oklch(0.219 0.032 264.2)',
   },
 
   form: { display: 'flex', flexDirection: 'column', gap: '18px', padding: '20px 26px 26px' },
@@ -163,7 +163,7 @@ const S = {
   input: {
     padding: '13px 15px', fontSize: '14px',
     border: '1.5px solid #e2e8f0', borderRadius: '10px',
-    width: '100%', color: '#0c1b2e', backgroundColor: '#fafbfd',
+    width: '100%', color: 'oklch(0.219 0.032 264.2)', backgroundColor: '#fafbfd',
   },
   hint: { margin: 0, fontSize: '12px', color: '#94a3b8', lineHeight: '1.5' },
 
@@ -175,7 +175,7 @@ const S = {
   },
   submitBtn: {
     padding: '11px 24px', borderRadius: '9px', border: 'none',
-    background: 'linear-gradient(135deg, #0c1b2e 0%, #1a3558 100%)',
+    background: 'linear-gradient(135deg, oklch(0.219 0.032 264.2) 0%, oklch(0.317 0.132 285.5) 100%)',
     color: '#fff', cursor: 'pointer', fontSize: '14px', fontWeight: '700',
     boxShadow: '0 4px 12px rgba(12,27,46,0.22)',
   },

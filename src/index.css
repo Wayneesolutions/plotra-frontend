@@ -1,5 +1,27 @@
 /* ══════════════════════════════════════════════════
    Plotra — Global Design System
+
+   Shared base layer for every OLD (plain-JSX, inline-style) component —
+   src/pages/*.tsx has its own separate Tailwind token set (src/styles.css,
+   "Midnight Ink / Deep Indigo / Electric Coral / Digital Mint / Soft
+   Lavender"). This file brings the rest of the app (dashboard, admin, ops,
+   the public listing page, auth) onto the SAME palette and type scale —
+   see each component's own S = {...} object for where these get applied
+   (fontFamily: 'inherit' on most root containers means this body/heading
+   rule below cascades to them for free; a few components set their own
+   explicit font stack and are fixed individually).
+
+   Token reference (kept in sync with src/styles.css's :root — same
+   values, since inline styles can't read CSS custom properties set on a
+   different stylesheet's cascade the way Tailwind's @theme can):
+     ink            oklch(0.219 0.032 264.2)   dark navy-charcoal — headers, dark surfaces
+     ink-foreground oklch(0.98  0.005 90)      near-white, for text on ink
+     indigo-deep    oklch(0.317 0.132 285.5)   deep indigo — secondary dark accent
+     coral          oklch(0.7   0.184 33.5)    PRIMARY accent — buttons, links, focus rings
+     mint           oklch(0.78  0.128 178.5)   success / verified states
+     lavender       oklch(0.93  0.03  300)     light secondary surface
+     cream          oklch(0.982 0.008 85)      page background
+     destructive    oklch(0.577 0.245 27.325)  errors / delete
    ══════════════════════════════════════════════════ */
 
 /* ── Resets ──────────────────────────────────────── */
@@ -9,24 +31,32 @@ html { scroll-behavior: smooth; }
 /* ── Base ────────────────────────────────────────── */
 body {
   margin: 0;
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background-color: #f2f5fb;
-  color: #0c1b2e;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: oklch(0.982 0.008 85); /* cream */
+  color: oklch(0.219 0.032 264.2); /* ink */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Headings use the display face throughout — matches src/styles.css's
+   `h1, h2, h3, h4, .font-display` rule so a heading looks the same
+   whether it's on an old inline-style page or a new Tailwind one. */
+h1, h2, h3, h4 {
+  font-family: 'Space Grotesk', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  letter-spacing: -0.03em;
+}
+
 /* ── Text selection ──────────────────────────────── */
 ::selection {
-  background: rgba(200, 169, 110, 0.25);
-  color: #0c1b2e;
+  background: oklch(0.7 0.184 33.5 / 0.25); /* coral */
+  color: oklch(0.219 0.032 264.2); /* ink */
 }
 
 /* ── Custom scrollbar ────────────────────────────── */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #c5d5e4; border-radius: 8px; }
-::-webkit-scrollbar-thumb:hover { background: #8fa8be; }
+::-webkit-scrollbar-thumb { background: oklch(0.93 0.03 300); border-radius: 8px; } /* lavender */
+::-webkit-scrollbar-thumb:hover { background: oklch(0.78 0.128 178.5); } /* mint */
 
 /* ── Input / Textarea / Select ───────────────────── */
 input, textarea, select {
@@ -36,8 +66,8 @@ input:focus,
 textarea:focus,
 select:focus {
   outline: none !important;
-  border-color: #c8a96e !important;
-  box-shadow: 0 0 0 3.5px rgba(200, 169, 110, 0.20) !important;
+  border-color: oklch(0.7 0.184 33.5) !important; /* coral */
+  box-shadow: 0 0 0 3.5px oklch(0.7 0.184 33.5 / 0.20) !important;
   background-color: #ffffff !important;
 }
 
@@ -94,7 +124,7 @@ button:not([disabled]):active { filter: brightness(0.95); transform: scale(0.985
 
 /* Gradient text (headline accent) */
 .pve-grad-text {
-  background: linear-gradient(130deg, #ffffff 15%, #d4ae72 100%);
+  background: linear-gradient(130deg, #ffffff 15%, oklch(0.7 0.184 33.5) 100%); /* coral */
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -132,7 +162,7 @@ button:not([disabled]):active { filter: brightness(0.95); transform: scale(0.985
   box-shadow: 0 18px 44px rgba(12, 27, 46, 0.13) !important;
 }
 .pve-card:hover .pve-card-price {
-  color: #c8a96e !important;
+  color: oklch(0.7 0.184 33.5) !important; /* coral */
 }
 
 /* Action buttons inside cards */
@@ -140,16 +170,16 @@ button:not([disabled]):active { filter: brightness(0.95); transform: scale(0.985
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease !important;
 }
 .pve-action-btn:hover {
-  background-color: #0c1b2e !important;
+  background-color: oklch(0.219 0.032 264.2) !important; /* ink */
   color: #ffffff !important;
-  border-color: #0c1b2e !important;
+  border-color: oklch(0.219 0.032 264.2) !important;
   filter: none !important;
 }
 
 .pve-action-btn-blue:hover {
-  background-color: #1d4ed8 !important;
+  background-color: oklch(0.317 0.132 285.5) !important; /* indigo-deep */
   color: #ffffff !important;
-  border-color: #1d4ed8 !important;
+  border-color: oklch(0.317 0.132 285.5) !important;
   filter: none !important;
 }
 
@@ -160,8 +190,8 @@ button:not([disabled]):active { filter: brightness(0.95); transform: scale(0.985
   transition: background 0.15s ease, color 0.15s ease !important;
 }
 .pve-topbar-btn:hover {
-  background: rgba(200, 169, 110, 0.15) !important;
-  color: #c8a96e !important;
+  background: oklch(0.7 0.184 33.5 / 0.15) !important; /* coral */
+  color: oklch(0.7 0.184 33.5) !important;
   filter: none !important;
 }
 

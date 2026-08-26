@@ -171,13 +171,13 @@ const S = {
   sectionHead: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' },
   sectionAccent: {
     width: '4px', height: '18px', borderRadius: '2px',
-    background: 'linear-gradient(180deg, #c8a96e, #b08848)', flexShrink: 0,
+    background: 'linear-gradient(180deg, oklch(0.7 0.184 33.5), oklch(0.62 0.16 33.5))', flexShrink: 0,
   },
-  sectionTitle: { margin: 0, fontSize: '13px', fontWeight: '800', color: '#0c1b2e', textTransform: 'uppercase', letterSpacing: '0.8px' },
+  sectionTitle: { margin: 0, fontSize: '13px', fontWeight: '800', color: 'oklch(0.219 0.032 264.2)', textTransform: 'uppercase', letterSpacing: '0.8px' },
 
   openBtn: {
-    width: '100%', padding: '14px', border: '1.5px dashed #c8a96e', borderRadius: '10px',
-    background: '#fdfbf6', color: '#0c1b2e', fontSize: '14px', fontWeight: '700', cursor: 'pointer',
+    width: '100%', padding: '14px', border: '1.5px dashed oklch(0.7 0.184 33.5)', borderRadius: '10px',
+    background: 'oklch(0.7 0.184 33.5 / 0.06)', color: 'oklch(0.219 0.032 264.2)', fontSize: '14px', fontWeight: '700', cursor: 'pointer',
   },
 
   form: { display: 'flex', flexDirection: 'column', gap: '14px' },
@@ -187,33 +187,33 @@ const S = {
   label: { fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.4px' },
   input: {
     padding: '10px 12px', fontSize: '14px', border: '1.5px solid #e2e8f0', borderRadius: '9px',
-    color: '#0c1b2e', backgroundColor: '#fff', width: '100%', boxSizing: 'border-box',
+    color: 'oklch(0.219 0.032 264.2)', backgroundColor: '#fff', width: '100%', boxSizing: 'border-box',
   },
   errorBox: {
-    backgroundColor: '#fff5f5', color: '#c53030', padding: '10px 14px',
-    borderRadius: '8px', fontSize: '13px', border: '1px solid #fed7d7',
+    backgroundColor: 'oklch(0.577 0.245 27.325 / 0.06)', color: 'oklch(0.55 0.22 27.325)', padding: '10px 14px',
+    borderRadius: '8px', fontSize: '13px', border: '1px solid oklch(0.577 0.245 27.325 / 0.25)',
   },
   submitBtn: {
     padding: '13px', border: 'none', borderRadius: '10px',
-    background: 'linear-gradient(135deg, #0c1b2e 0%, #1a3558 100%)',
+    background: 'linear-gradient(135deg, oklch(0.219 0.032 264.2) 0%, oklch(0.317 0.132 285.5) 100%)',
     color: '#fff', fontWeight: '700', fontSize: '14px', cursor: 'pointer',
   },
 
   result: { marginTop: '18px', paddingTop: '18px', borderTop: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: '14px' },
-  resultHeadline: { fontSize: '15px', fontWeight: '700', color: '#0c1b2e', lineHeight: '1.5' },
+  resultHeadline: { fontSize: '15px', fontWeight: '700', color: 'oklch(0.219 0.032 264.2)', lineHeight: '1.5' },
   resultGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' },
   resultCard: {
     display: 'flex', flexDirection: 'column', gap: '4px', padding: '12px 14px',
     backgroundColor: '#f8fafd', borderRadius: '10px', border: '1px solid #eef2f7',
   },
   resultLabel: { fontSize: '10px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.4px' },
-  resultValue: { fontSize: '16px', fontWeight: '800', color: '#0c1b2e' },
+  resultValue: { fontSize: '16px', fontWeight: '800', color: 'oklch(0.219 0.032 264.2)' },
 
   tableWrap: { border: '1px solid #eef2f7', borderRadius: '10px', overflow: 'hidden' },
   table: { width: '100%', borderCollapse: 'collapse', fontSize: '12px' },
   th: { padding: '9px 12px', textAlign: 'left', fontWeight: '700', color: '#64748b', backgroundColor: '#f8fafd', borderBottom: '1px solid #eef2f7' },
-  td: { padding: '9px 12px', color: '#334155', borderBottom: '1px solid #f8fafd' },
-  trHighlight: { backgroundColor: '#fdfbf0' },
+  td: { padding: '9px 12px', color: 'oklch(0.219 0.032 264.2)', borderBottom: '1px solid #f8fafd' },
+  trHighlight: { backgroundColor: 'oklch(0.7 0.184 33.5 / 0.06)' },
 
   disclaimer: { margin: 0, fontSize: '11px', color: '#94a3b8', lineHeight: '1.6', fontStyle: 'italic' },
 };

@@ -222,7 +222,7 @@ export default function DashboardListings() {
   if (error) return (
     <div style={S.centerScreen}>
       <span style={{ fontSize: '32px' }}>⚠️</span>
-      <p style={{ color: '#dc2626', fontSize: '15px', margin: 0 }}>{error}</p>
+      <p style={{ color: 'oklch(0.577 0.245 27.325)', fontSize: '15px', margin: 0 }}>{error}</p>
     </div>
   );
 
@@ -234,7 +234,7 @@ export default function DashboardListings() {
         <div style={S.navLeft}>
           <div style={S.navLogo}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M3 9.5L12 3l9 6.5V21H15v-6H9v6H3V9.5Z" fill="#0c1b2e"/>
+              <path d="M3 9.5L12 3l9 6.5V21H15v-6H9v6H3V9.5Z" fill="oklch(0.219 0.032 264.2)"/>
             </svg>
           </div>
           <span style={S.navBrand}>Plotra</span>
@@ -451,19 +451,19 @@ export default function DashboardListings() {
               label: 'Total Properties',
               value: listings.length,
               icon: '🏘',
-              bg: 'linear-gradient(135deg, #0c1b2e 0%, #1a3558 100%)',
+              bg: 'linear-gradient(135deg, oklch(0.219 0.032 264.2) 0%, oklch(0.317 0.132 285.5) 100%)',
             },
             {
               label: 'Active Listings',
               value: activeCount,
               icon: '✅',
-              bg: 'linear-gradient(135deg, #064e3b 0%, #059669 100%)',
+              bg: 'linear-gradient(135deg, oklch(0.35 0.09 178.5) 0%, oklch(0.6 0.13 178.5) 100%)',
             },
             {
               label: 'Total Views',
               value: totalViews,
               icon: '📊',
-              bg: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
+              bg: 'linear-gradient(135deg, oklch(0.317 0.132 285.5) 0%, oklch(0.317 0.132 285.5) 100%)',
             },
           ].map(s => (
             <div key={s.label} className="pve-stat-card" style={{ ...S.statCard, background: s.bg }}>
@@ -561,16 +561,16 @@ export default function DashboardListings() {
                   className="pve-card pve-fade-up"
                   style={{
                     ...S.card,
-                    borderLeft: `4px solid ${isActive ? '#c8a96e' : '#f59e0b'}`,
+                    borderLeft: `4px solid ${isActive ? 'oklch(0.7 0.184 33.5)' : 'oklch(0.7 0.184 33.5)'}`,
                   }}
                 >
                   {/* Card top */}
                   <div style={S.cardTop}>
                     <span style={{
                       ...S.badge,
-                      backgroundColor: isActive ? '#ecfdf5' : '#fffbeb',
-                      color:           isActive ? '#059669' : '#d97706',
-                      border: `1px solid ${isActive ? '#a7f3d0' : '#fde68a'}`,
+                      backgroundColor: isActive ? 'oklch(0.78 0.128 178.5 / 0.12)' : 'oklch(0.7 0.184 33.5 / 0.08)',
+                      color:           isActive ? 'oklch(0.6 0.13 178.5)' : 'oklch(0.6 0.18 33.5)',
+                      border: `1px solid ${isActive ? 'oklch(0.78 0.128 178.5 / 0.4)' : 'oklch(0.7 0.184 33.5 / 0.3)'}`,
                     }}>
                       <span style={{ fontSize: '7px', marginRight: '4px' }}>
                         {isActive ? '●' : '○'}
@@ -790,16 +790,16 @@ function MField({ label, children }) {
    Styles
    ══════════════════════════════════════════════════ */
 const S = {
-  root: { minHeight: '100vh', backgroundColor: '#f2f5fb' },
+  root: { minHeight: '100vh', backgroundColor: 'oklch(0.982 0.008 85)' },
 
   /* Loading */
   centerScreen: {
     display: 'flex', flexDirection: 'column', alignItems: 'center',
-    justifyContent: 'center', height: '100vh', gap: '16px', backgroundColor: '#f2f5fb',
+    justifyContent: 'center', height: '100vh', gap: '16px', backgroundColor: 'oklch(0.982 0.008 85)',
   },
   spinRing: {
     width: '44px', height: '44px',
-    border: '3px solid #e2e8f0', borderTop: '3px solid #0c1b2e',
+    border: '3px solid #e2e8f0', borderTop: '3px solid oklch(0.219 0.032 264.2)',
     borderRadius: '50%', animation: 'spin 0.75s linear infinite',
   },
   centerTxt: { color: '#64748b', fontSize: '14px', margin: 0, fontWeight: '500' },
@@ -807,7 +807,7 @@ const S = {
   /* ── Nav ─────────────────────────────────────────── */
   nav: {
     height: '62px',
-    background: 'linear-gradient(90deg, #080f1c 0%, #0c1b2e 100%)',
+    background: 'linear-gradient(90deg, oklch(0.219 0.032 264.2) 0%, oklch(0.219 0.032 264.2) 100%)',
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     padding: '0 28px', position: 'sticky', top: 0, zIndex: 100,
     boxShadow: '0 2px 20px rgba(0,0,0,0.32)',
@@ -815,28 +815,28 @@ const S = {
   navLeft: { display: 'flex', alignItems: 'center', gap: '12px' },
   navLogo: {
     width: '34px', height: '34px', borderRadius: '9px',
-    backgroundColor: '#c8a96e',
+    backgroundColor: 'oklch(0.7 0.184 33.5)',
     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
     boxShadow: '0 2px 8px rgba(200,169,110,0.35)',
   },
   navBrand: {
-    fontSize: '13px', fontWeight: '800', color: '#c8a96e',
+    fontSize: '13px', fontWeight: '800', color: 'oklch(0.7 0.184 33.5)',
     letterSpacing: '2px', textTransform: 'uppercase',
   },
   navDivider: { width: '1px', height: '18px', backgroundColor: 'rgba(255,255,255,0.12)', margin: '0 2px' },
   navSection: { fontSize: '12px', color: 'rgba(255,255,255,0.38)', fontWeight: '500' },
   navBadge: {
-    fontSize: '11px', fontWeight: '700', color: '#0c1b2e',
-    backgroundColor: '#c8a96e', padding: '3px 8px', borderRadius: '20px',
+    fontSize: '11px', fontWeight: '700', color: 'oklch(0.219 0.032 264.2)',
+    backgroundColor: 'oklch(0.7 0.184 33.5)', padding: '3px 8px', borderRadius: '20px',
     letterSpacing: '0.3px',
   },
   navRight: { display: 'flex', alignItems: 'center', gap: '10px' },
   userChip: { display: 'flex', alignItems: 'center', gap: '10px' },
   avatar: {
     width: '34px', height: '34px', borderRadius: '50%',
-    background: 'linear-gradient(135deg, #c8a96e 0%, #b08848 100%)',
+    background: 'linear-gradient(135deg, oklch(0.7 0.184 33.5) 0%, oklch(0.62 0.16 33.5) 100%)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontSize: '14px', fontWeight: '800', color: '#0c1b2e', flexShrink: 0,
+    fontSize: '14px', fontWeight: '800', color: 'oklch(0.219 0.032 264.2)', flexShrink: 0,
   },
   userMeta: { display: 'flex', flexDirection: 'column', gap: '1px' },
   userName: { fontSize: '13px', fontWeight: '600', color: '#fff', lineHeight: '1.2' },
@@ -861,11 +861,11 @@ const S = {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     marginBottom: '28px',
   },
-  welcomeTitle: { margin: '0 0 4px 0', fontSize: '22px', fontWeight: '800', color: '#0c1b2e' },
+  welcomeTitle: { margin: '0 0 4px 0', fontSize: '22px', fontWeight: '800', color: 'oklch(0.219 0.032 264.2)' },
   welcomeSub:   { margin: 0, fontSize: '13px', color: '#64748b' },
   addBtn: {
     padding: '12px 22px',
-    background: 'linear-gradient(135deg, #0c1b2e 0%, #1a3558 100%)',
+    background: 'linear-gradient(135deg, oklch(0.219 0.032 264.2) 0%, oklch(0.317 0.132 285.5) 100%)',
     color: '#fff', border: 'none', borderRadius: '10px',
     fontWeight: '700', fontSize: '13px', cursor: 'pointer',
     letterSpacing: '0.3px', whiteSpace: 'nowrap',
@@ -896,11 +896,11 @@ const S = {
   filterInput: {
     padding: '10px 12px', fontSize: '13px',
     border: '1.5px solid #e2e8f0', borderRadius: '9px',
-    color: '#0c1b2e', backgroundColor: '#fafbfd',
+    color: 'oklch(0.219 0.032 264.2)', backgroundColor: '#fafbfd',
   },
   filterSearchBtn: {
     padding: '10px 18px', border: 'none', borderRadius: '9px',
-    background: 'linear-gradient(135deg, #0c1b2e 0%, #1a3558 100%)',
+    background: 'linear-gradient(135deg, oklch(0.219 0.032 264.2) 0%, oklch(0.317 0.132 285.5) 100%)',
     color: '#fff', fontWeight: '700', fontSize: '13px', cursor: 'pointer',
   },
   filterClearBtn: {
@@ -908,7 +908,7 @@ const S = {
     border: '1.5px solid #e2e8f0', backgroundColor: '#fff',
     color: '#475569', fontWeight: '600', fontSize: '13px', cursor: 'pointer',
   },
-  sectionTitle: { margin: '0 0 4px 0', fontSize: '18px', fontWeight: '800', color: '#0c1b2e' },
+  sectionTitle: { margin: '0 0 4px 0', fontSize: '18px', fontWeight: '800', color: 'oklch(0.219 0.032 264.2)' },
   sectionSub:   { margin: 0, fontSize: '13px', color: '#64748b' },
 
   /* Empty state */
@@ -919,7 +919,7 @@ const S = {
     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px',
   },
   emptyIconWrap: { fontSize: '48px' },
-  emptyTitle: { margin: 0, fontSize: '19px', fontWeight: '800', color: '#0c1b2e' },
+  emptyTitle: { margin: 0, fontSize: '19px', fontWeight: '800', color: 'oklch(0.219 0.032 264.2)' },
   emptySub:   { margin: 0, fontSize: '14px', color: '#64748b' },
 
   /* Grid */
@@ -948,7 +948,7 @@ const S = {
     backgroundColor: '#f1f5f9', padding: '4px 10px', borderRadius: '20px',
     textTransform: 'uppercase', letterSpacing: '0.4px',
   },
-  cardTitle: { margin: '0 0 6px 0', fontSize: '17px', fontWeight: '700', color: '#0c1b2e', lineHeight: '1.3' },
+  cardTitle: { margin: '0 0 6px 0', fontSize: '17px', fontWeight: '700', color: 'oklch(0.219 0.032 264.2)', lineHeight: '1.3' },
   cardAddr: {
     margin: '0 0 16px 0', fontSize: '13px', color: '#64748b',
     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
@@ -964,8 +964,8 @@ const S = {
     fontSize: '10px', color: '#94a3b8',
     textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '700',
   },
-  metaPrice: { fontSize: '15px', fontWeight: '800', color: '#0c1b2e', transition: 'color 0.2s' },
-  metaVal:   { fontSize: '14px', fontWeight: '700', color: '#0c1b2e' },
+  metaPrice: { fontSize: '15px', fontWeight: '800', color: 'oklch(0.219 0.032 264.2)', transition: 'color 0.2s' },
+  metaVal:   { fontSize: '14px', fontWeight: '700', color: 'oklch(0.219 0.032 264.2)' },
   viewsRow: {
     display: 'flex', alignItems: 'center', gap: '6px',
     fontSize: '12px', color: '#94a3b8', fontWeight: '500',
@@ -980,9 +980,9 @@ const S = {
     border: '1.5px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer',
     backgroundColor: '#fff', color: '#475569', textAlign: 'center',
   },
-  actionBtnBlue:  { backgroundColor: '#eff6ff', color: '#1d4ed8', borderColor: '#bfdbfe' },
-  actionBtnGreen: { backgroundColor: '#f0fdf4', color: '#059669', borderColor: '#a7f3d0' },
-  actionBtnEdit:  { backgroundColor: '#fdfbf6', color: '#92702f', borderColor: '#eadfc7' },
+  actionBtnBlue:  { backgroundColor: 'oklch(0.317 0.132 285.5 / 0.08)', color: 'oklch(0.317 0.132 285.5)', borderColor: 'oklch(0.317 0.132 285.5 / 0.25)' },
+  actionBtnGreen: { backgroundColor: 'oklch(0.78 0.128 178.5 / 0.12)', color: 'oklch(0.6 0.13 178.5)', borderColor: 'oklch(0.78 0.128 178.5 / 0.4)' },
+  actionBtnEdit:  { backgroundColor: 'oklch(0.7 0.184 33.5 / 0.06)', color: 'oklch(0.55 0.14 33.5)', borderColor: 'oklch(0.7 0.184 33.5 / 0.16)' },
 
   /* Overlay / Modal */
   overlay: {
@@ -1000,7 +1000,7 @@ const S = {
   },
   modalStripe: {
     height: '4px',
-    background: 'linear-gradient(90deg, #c8a96e 0%, #e8c98e 50%, #c8a96e 100%)',
+    background: 'linear-gradient(90deg, oklch(0.7 0.184 33.5) 0%, oklch(0.8 0.15 40) 50%, oklch(0.7 0.184 33.5) 100%)',
   },
   modalHead: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
@@ -1009,9 +1009,9 @@ const S = {
   },
   modalEye: {
     margin: '0 0 4px', fontSize: '11px', fontWeight: '700',
-    color: '#c8a96e', textTransform: 'uppercase', letterSpacing: '1.2px',
+    color: 'oklch(0.7 0.184 33.5)', textTransform: 'uppercase', letterSpacing: '1.2px',
   },
-  modalTitle: { margin: 0, fontSize: '18px', fontWeight: '800', color: '#0c1b2e' },
+  modalTitle: { margin: 0, fontSize: '18px', fontWeight: '800', color: 'oklch(0.219 0.032 264.2)' },
   closeBtn: {
     width: '32px', height: '32px', borderRadius: '8px',
     background: '#f1f5f9', border: 'none', cursor: 'pointer',
@@ -1023,7 +1023,7 @@ const S = {
   fi: {
     padding: '11px 13px', fontSize: '14px',
     border: '1.5px solid #e2e8f0', borderRadius: '9px',
-    width: '100%', color: '#0c1b2e', backgroundColor: '#fafbfd',
+    width: '100%', color: 'oklch(0.219 0.032 264.2)', backgroundColor: '#fafbfd',
   },
   modalFoot: { display: 'flex', justifyContent: 'flex-end', gap: '10px', paddingTop: '4px' },
   cancelBtn: {
@@ -1033,7 +1033,7 @@ const S = {
   },
   submitBtn: {
     padding: '10px 24px', borderRadius: '9px', border: 'none',
-    background: 'linear-gradient(135deg, #0c1b2e 0%, #1a3558 100%)',
+    background: 'linear-gradient(135deg, oklch(0.219 0.032 264.2) 0%, oklch(0.317 0.132 285.5) 100%)',
     color: '#fff', cursor: 'pointer', fontSize: '14px', fontWeight: '700',
     boxShadow: '0 4px 12px rgba(12,27,46,0.22)',
   },
@@ -1042,14 +1042,14 @@ const S = {
   uploadLabel: {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     padding: '12px', borderRadius: '10px', cursor: 'pointer',
-    border: '2px dashed #c8a96e', color: '#b08848',
+    border: '2px dashed oklch(0.7 0.184 33.5)', color: 'oklch(0.62 0.16 33.5)',
     fontSize: '13px', fontWeight: '700', letterSpacing: '0.3px',
-    backgroundColor: '#fffbf0', userSelect: 'none',
+    backgroundColor: 'oklch(0.7 0.184 33.5 / 0.06)', userSelect: 'none',
     transition: 'background 0.15s',
   },
   miniSpin: {
     width: '16px', height: '16px', borderRadius: '50%',
-    border: '2px solid #e2e8f0', borderTop: '2px solid #c8a96e',
+    border: '2px solid #e2e8f0', borderTop: '2px solid oklch(0.7 0.184 33.5)',
     animation: 'spin 0.7s linear infinite', display: 'inline-block',
   },
   photoEmpty: {

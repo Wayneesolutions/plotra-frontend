@@ -351,7 +351,7 @@ export default function AdminPanel() {
           <div style={S.logoRow}>
             <div style={S.logoBox}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="M3 9.5L12 3l9 6.5V21H15v-6H9v6H3V9.5Z" fill="#0c1b2e"/>
+                <path d="M3 9.5L12 3l9 6.5V21H15v-6H9v6H3V9.5Z" fill="oklch(0.219 0.032 264.2)"/>
               </svg>
             </div>
             <div>
@@ -953,7 +953,7 @@ export default function AdminPanel() {
                           <div
                             style={{
                               width: '44px', height: '24px', borderRadius: '12px', cursor: isToggling ? 'not-allowed' : 'pointer',
-                              background: plan.is_active ? '#16a34a' : '#d1d5db',
+                              background: plan.is_active ? 'oklch(0.6 0.13 178.5)' : '#d1d5db',
                               position: 'relative', transition: 'background 0.2s', flexShrink: 0,
                               opacity: isToggling ? 0.6 : 1,
                             }}
@@ -967,7 +967,7 @@ export default function AdminPanel() {
                               boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
                             }} />
                           </div>
-                          <span style={{ fontSize: '13px', fontWeight: '600', color: plan.is_active ? '#15803d' : '#9ca3af' }}>
+                          <span style={{ fontSize: '13px', fontWeight: '600', color: plan.is_active ? 'oklch(0.45 0.11 178.5)' : '#9ca3af' }}>
                             {isToggling ? '…' : (plan.is_active ? 'Active' : 'Inactive')}
                           </span>
                         </div>
@@ -1051,17 +1051,17 @@ export default function AdminPanel() {
         {deleteConfirm && (
           <div style={S.modalOverlay}>
             <div style={{ ...S.modal, maxWidth: '420px' }}>
-              <div style={{ height: '4px', background: 'linear-gradient(90deg, #dc2626, #ef4444)' }} />
+              <div style={{ height: '4px', background: 'linear-gradient(90deg, oklch(0.577 0.245 27.325), oklch(0.6 0.23 27.325))' }} />
               <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-                <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: '#fef2f2', border: '1.5px solid #fecaca', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: 'oklch(0.577 0.245 27.325 / 0.06)', border: '1.5px solid oklch(0.577 0.245 27.325 / 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="oklch(0.577 0.245 27.325)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="3 6 5 6 21 6"/>
                     <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
                     <path d="M10 11v6M14 11v6"/>
                     <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
                   </svg>
                 </div>
-                <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#0c1b2e', margin: '0 0 8px' }}>Delete Plan</h3>
+                <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'oklch(0.219 0.032 264.2)', margin: '0 0 8px' }}>Delete Plan</h3>
                 <p style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.6', margin: '0 0 8px' }}>
                   Are you sure you want to delete <strong>"{plans.find(p => p.key === deleteConfirm)?.label}"</strong>?
                 </p>
@@ -1077,7 +1077,7 @@ export default function AdminPanel() {
                     Cancel
                   </button>
                   <button
-                    style={{ flex: 1, padding: '11px', background: 'linear-gradient(135deg, #dc2626, #b91c1c)', color: '#fff', border: 'none', borderRadius: '9px', fontSize: '13px', fontWeight: '700', cursor: deleteLoading ? 'not-allowed' : 'pointer', opacity: deleteLoading ? 0.6 : 1 }}
+                    style={{ flex: 1, padding: '11px', background: 'linear-gradient(135deg, oklch(0.577 0.245 27.325), oklch(0.5 0.22 27.325))', color: '#fff', border: 'none', borderRadius: '9px', fontSize: '13px', fontWeight: '700', cursor: deleteLoading ? 'not-allowed' : 'pointer', opacity: deleteLoading ? 0.6 : 1 }}
                     onClick={handleDeletePlan}
                     disabled={deleteLoading}
                   >
@@ -1099,19 +1099,19 @@ const S = {
   // Sidebar
   sidebar: {
     width: '260px', flexShrink: 0,
-    background: 'linear-gradient(180deg, #060d18 0%, #0b1929 100%)',
+    background: 'linear-gradient(180deg, oklch(0.219 0.032 264.2) 0%, oklch(0.219 0.032 264.2) 100%)',
     display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
     padding: '28px 0',
   },
   sideTop: { display: 'flex', flexDirection: 'column', gap: '32px' },
   logoRow: { display: 'flex', alignItems: 'center', gap: '12px', padding: '0 24px' },
   logoBox: {
-    width: '38px', height: '38px', borderRadius: '10px', backgroundColor: '#c8a96e', flexShrink: 0,
+    width: '38px', height: '38px', borderRadius: '10px', backgroundColor: 'oklch(0.7 0.184 33.5)', flexShrink: 0,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     boxShadow: '0 4px 12px rgba(200,169,110,0.35)',
   },
   logoName: { fontSize: '14px', fontWeight: '800', color: '#ffffff', letterSpacing: '0.5px' },
-  logoBadge: { fontSize: '10px', fontWeight: '600', color: '#c8a96e', textTransform: 'uppercase', letterSpacing: '1px' },
+  logoBadge: { fontSize: '10px', fontWeight: '600', color: 'oklch(0.7 0.184 33.5)', textTransform: 'uppercase', letterSpacing: '1px' },
   nav: { display: 'flex', flexDirection: 'column', gap: '4px', padding: '0 12px' },
   navSection: {
     fontSize: '10px', fontWeight: '700', color: 'rgba(255,255,255,0.25)',
@@ -1124,13 +1124,13 @@ const S = {
     fontSize: '13px', fontWeight: '500', cursor: 'pointer', textAlign: 'left', width: '100%',
     transition: 'background 0.15s, color 0.15s',
   },
-  navItemActive: { background: 'rgba(200,169,110,0.15)', color: '#c8a96e' },
+  navItemActive: { background: 'rgba(200,169,110,0.15)', color: 'oklch(0.7 0.184 33.5)' },
   navItemInner: { display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 },
   navItemTop: { display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' },
   navDesc: { fontSize: '11px', color: 'rgba(255,255,255,0.35)', fontWeight: '400', paddingLeft: '23px' },
   navIcon: { fontSize: '15px', flexShrink: 0 },
   navBadge: {
-    marginLeft: 'auto', backgroundColor: '#c8a96e', color: '#0c1b2e',
+    marginLeft: 'auto', backgroundColor: 'oklch(0.7 0.184 33.5)', color: 'oklch(0.219 0.032 264.2)',
     fontSize: '10px', fontWeight: '800', borderRadius: '999px',
     padding: '2px 7px', minWidth: '18px', textAlign: 'center',
   },
@@ -1145,7 +1145,7 @@ const S = {
     width: '34px', height: '34px', borderRadius: '50%', flexShrink: 0,
     background: 'rgba(200,169,110,0.20)', border: '1px solid rgba(200,169,110,0.35)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    color: '#c8a96e', fontSize: '14px', fontWeight: '700',
+    color: 'oklch(0.7 0.184 33.5)', fontSize: '14px', fontWeight: '700',
   },
   userName: { fontSize: '13px', fontWeight: '600', color: '#fff' },
   userEmail: { fontSize: '11px', color: 'rgba(255,255,255,0.4)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '150px' },
@@ -1164,13 +1164,13 @@ const S = {
     padding: '12px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: '600',
     boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
   },
-  toastSuccess: { backgroundColor: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0' },
-  toastError: { backgroundColor: '#fff5f5', color: '#c53030', border: '1px solid #fed7d7' },
+  toastSuccess: { backgroundColor: 'oklch(0.78 0.128 178.5 / 0.12)', color: 'oklch(0.45 0.11 178.5)', border: '1px solid oklch(0.78 0.128 178.5 / 0.4)' },
+  toastError: { backgroundColor: 'oklch(0.577 0.245 27.325 / 0.06)', color: 'oklch(0.55 0.22 27.325)', border: '1px solid oklch(0.577 0.245 27.325 / 0.25)' },
 
   // Section
   section: { padding: '36px 40px' },
   sectionHead: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '28px' },
-  pageTitle: { fontSize: '22px', fontWeight: '800', color: '#0c1b2e', margin: '0 0 6px 0' },
+  pageTitle: { fontSize: '22px', fontWeight: '800', color: 'oklch(0.219 0.032 264.2)', margin: '0 0 6px 0' },
   pageSubtitle: { fontSize: '13px', color: '#64748b', margin: 0 },
   refreshBtn: {
     padding: '9px 18px', border: '1.5px solid #e2e8f0', borderRadius: '9px',
@@ -1197,29 +1197,29 @@ const S = {
   requestInfo: { display: 'flex', alignItems: 'flex-start', gap: '16px', flex: 1 },
   requestAvatar: {
     width: '44px', height: '44px', borderRadius: '12px', flexShrink: 0,
-    background: 'linear-gradient(135deg, #0c1b2e, #1a3558)',
-    color: '#c8a96e', fontSize: '18px', fontWeight: '700',
+    background: 'linear-gradient(135deg, oklch(0.219 0.032 264.2), oklch(0.317 0.132 285.5))',
+    color: 'oklch(0.7 0.184 33.5)', fontSize: '18px', fontWeight: '700',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
   },
-  requestBiz: { fontSize: '15px', fontWeight: '700', color: '#0c1b2e', marginBottom: '4px' },
+  requestBiz: { fontSize: '15px', fontWeight: '700', color: 'oklch(0.219 0.032 264.2)', marginBottom: '4px' },
   requestMeta: { fontSize: '12px', color: '#64748b', marginBottom: '4px' },
   requestMsg: { fontSize: '12px', color: '#94a3b8', fontStyle: 'italic', marginBottom: '4px' },
   requestDate: { fontSize: '11px', color: '#cbd5e1' },
   requestActions: { display: 'flex', gap: '8px', flexShrink: 0 },
   waBadge: {
-    marginLeft: '8px', fontSize: '10px', fontWeight: '700', color: '#059669',
-    backgroundColor: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '10px',
+    marginLeft: '8px', fontSize: '10px', fontWeight: '700', color: 'oklch(0.6 0.13 178.5)',
+    backgroundColor: 'oklch(0.78 0.128 178.5 / 0.12)', border: '1px solid oklch(0.78 0.128 178.5 / 0.4)', borderRadius: '10px',
     padding: '2px 8px', verticalAlign: 'middle',
   },
-  subheading: { fontSize: '15px', fontWeight: '700', color: '#0c1b2e', margin: '28px 0 12px' },
+  subheading: { fontSize: '15px', fontWeight: '700', color: 'oklch(0.219 0.032 264.2)', margin: '28px 0 12px' },
   approveBtn: {
-    padding: '9px 20px', background: 'linear-gradient(135deg, #16a34a, #15803d)',
+    padding: '9px 20px', background: 'linear-gradient(135deg, oklch(0.6 0.13 178.5), oklch(0.45 0.11 178.5))',
     color: '#fff', border: 'none', borderRadius: '9px', fontSize: '13px',
     fontWeight: '700', cursor: 'pointer', boxShadow: '0 2px 8px rgba(22,163,74,0.30)',
   },
   rejectBtn: {
-    padding: '9px 20px', background: '#fff', color: '#dc2626',
-    border: '1.5px solid #fca5a5', borderRadius: '9px',
+    padding: '9px 20px', background: '#fff', color: 'oklch(0.577 0.245 27.325)',
+    border: '1.5px solid oklch(0.577 0.245 27.325 / 0.5)', borderRadius: '9px',
     fontSize: '13px', fontWeight: '700', cursor: 'pointer',
   },
 
@@ -1228,36 +1228,36 @@ const S = {
   table: { width: '100%', borderCollapse: 'collapse' },
   th: { padding: '14px 20px', textAlign: 'left', fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.7px', borderBottom: '1px solid #f1f5f9', backgroundColor: '#fafbfd' },
   tr: { borderBottom: '1px solid #f1f5f9' },
-  td: { padding: '16px 20px', fontSize: '14px', color: '#334155' },
-  tenantName: { fontWeight: '600', color: '#0c1b2e' },
+  td: { padding: '16px 20px', fontSize: '14px', color: 'oklch(0.219 0.032 264.2)' },
+  tenantName: { fontWeight: '600', color: 'oklch(0.219 0.032 264.2)' },
   planBadge: { padding: '3px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' },
   planColors: {
-    starter: { background: '#eff6ff', color: '#1d4ed8' },
-    growth: { background: '#fefce8', color: '#ca8a04' },
-    unlimited: { background: '#f0fdf4', color: '#15803d' },
-    tier1: { background: '#f0fdfa', color: '#0f766e' },
-    tier2: { background: '#eef2ff', color: '#4338ca' },
-    tier3: { background: '#fdf4ff', color: '#a21caf' },
+    starter: { background: 'oklch(0.317 0.132 285.5 / 0.08)', color: 'oklch(0.317 0.132 285.5)' },
+    growth: { background: 'oklch(0.7 0.184 33.5 / 0.06)', color: 'oklch(0.62 0.17 40)' },
+    unlimited: { background: 'oklch(0.78 0.128 178.5 / 0.12)', color: 'oklch(0.45 0.11 178.5)' },
+    tier1: { background: 'oklch(0.78 0.128 178.5 / 0.12)', color: 'oklch(0.5 0.12 178.5)' },
+    tier2: { background: 'oklch(0.317 0.132 285.5 / 0.08)', color: 'oklch(0.35 0.14 285.5)' },
+    tier3: { background: 'oklch(0.7 0.184 33.5 / 0.06)', color: 'oklch(0.55 0.19 33.5)' },
   },
   planSelect: {
     border: '1.5px solid #e2e8f0', borderRadius: '8px', padding: '5px 8px',
-    fontSize: '12px', fontWeight: '700', color: '#0c1b2e', backgroundColor: '#fff', cursor: 'pointer',
+    fontSize: '12px', fontWeight: '700', color: 'oklch(0.219 0.032 264.2)', backgroundColor: '#fff', cursor: 'pointer',
   },
   statusBadge: { padding: '3px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '700' },
-  statusActive: { background: '#f0fdf4', color: '#15803d' },
-  statusInactive: { background: '#fff5f5', color: '#dc2626' },
+  statusActive: { background: 'oklch(0.78 0.128 178.5 / 0.12)', color: 'oklch(0.45 0.11 178.5)' },
+  statusInactive: { background: 'oklch(0.577 0.245 27.325 / 0.06)', color: 'oklch(0.577 0.245 27.325)' },
 
   // Create form (shared by Create Tenant + Ad Placements tabs)
   formCard: { background: '#fff', borderRadius: '16px', border: '1px solid #e2e8f0', padding: '32px', maxWidth: '760px' },
   createForm: { display: 'flex', flexDirection: 'column', gap: '0' },
   formError: {
     display: 'flex', alignItems: 'center', gap: '10px',
-    backgroundColor: '#fff5f5', color: '#c53030', padding: '12px 16px',
+    backgroundColor: 'oklch(0.577 0.245 27.325 / 0.06)', color: 'oklch(0.55 0.22 27.325)', padding: '12px 16px',
     borderRadius: '10px', fontSize: '13px', fontWeight: '500', marginBottom: '20px',
-    border: '1px solid #fed7d7',
+    border: '1px solid oklch(0.577 0.245 27.325 / 0.25)',
   },
   formErrorIcon: {
-    width: '20px', height: '20px', borderRadius: '50%', backgroundColor: '#fed7d7', color: '#c53030',
+    width: '20px', height: '20px', borderRadius: '50%', backgroundColor: 'oklch(0.577 0.245 27.325 / 0.25)', color: 'oklch(0.55 0.22 27.325)',
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '800', flexShrink: 0,
   },
   formGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' },
@@ -1265,11 +1265,11 @@ const S = {
   formLabel: { fontSize: '11px', fontWeight: '700', color: '#374151', textTransform: 'uppercase', letterSpacing: '0.7px' },
   formInput: {
     padding: '12px 14px', fontSize: '14px', border: '1.5px solid #e2e8f0',
-    borderRadius: '10px', color: '#0c1b2e', backgroundColor: '#fafbfd',
+    borderRadius: '10px', color: 'oklch(0.219 0.032 264.2)', backgroundColor: '#fafbfd',
     transition: 'border-color 0.15s', boxSizing: 'border-box', width: '100%',
   },
   createBtn: {
-    padding: '13px 28px', background: 'linear-gradient(135deg, #0c1b2e 0%, #1a3558 100%)',
+    padding: '13px 28px', background: 'linear-gradient(135deg, oklch(0.219 0.032 264.2) 0%, oklch(0.317 0.132 285.5) 100%)',
     color: '#fff', border: 'none', borderRadius: '11px', fontWeight: '700',
     fontSize: '14px', cursor: 'pointer', alignSelf: 'flex-start',
     boxShadow: '0 4px 16px rgba(12,27,46,0.25)',
@@ -1295,9 +1295,9 @@ const S = {
   },
   planCardMeta: { display: 'flex', alignItems: 'center', gap: '8px' },
   planCardDot: { width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0 },
-  planCardKey: { fontSize: '11px', fontWeight: '800', color: '#0c1b2e', letterSpacing: '1px' },
+  planCardKey: { fontSize: '11px', fontWeight: '800', color: 'oklch(0.219 0.032 264.2)', letterSpacing: '1px' },
   planCardPriceRow: { padding: '4px 20px 16px', display: 'flex', alignItems: 'baseline', gap: '4px' },
-  planCardPrice: { fontSize: '32px', fontWeight: '800', color: '#0c1b2e', letterSpacing: '-1px' },
+  planCardPrice: { fontSize: '32px', fontWeight: '800', color: 'oklch(0.219 0.032 264.2)', letterSpacing: '-1px' },
   planCardPricePer: { fontSize: '13px', color: '#94a3b8', fontWeight: '500' },
   planCardDivider: { height: '1px', background: '#f1f5f9', margin: '0 20px' },
   planCardStats: { display: 'flex', gap: '0', padding: '14px 20px' },
@@ -1323,23 +1323,23 @@ const S = {
   },
   planDeleteBtn: {
     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
-    padding: '10px 16px', border: '1.5px solid #fecaca', borderRadius: '10px',
-    background: '#fff5f5', color: '#dc2626', fontSize: '13px', fontWeight: '600', cursor: 'pointer',
+    padding: '10px 16px', border: '1.5px solid oklch(0.577 0.245 27.325 / 0.3)', borderRadius: '10px',
+    background: 'oklch(0.577 0.245 27.325 / 0.06)', color: 'oklch(0.577 0.245 27.325)', fontSize: '13px', fontWeight: '600', cursor: 'pointer',
     transition: 'background 0.15s',
   },
   planAccentColors: {
-    starter:   { accent: '#1d4ed8', gradient: 'linear-gradient(90deg, #1d4ed8, #3b82f6)' },
-    growth:    { accent: '#b45309', gradient: 'linear-gradient(90deg, #b45309, #c8a96e)' },
-    unlimited: { accent: '#065f46', gradient: 'linear-gradient(90deg, #065f46, #10b981)' },
+    starter:   { accent: 'oklch(0.317 0.132 285.5)', gradient: 'linear-gradient(90deg, oklch(0.317 0.132 285.5), oklch(0.5 0.15 285.5))' },
+    growth:    { accent: 'oklch(0.55 0.18 40)', gradient: 'linear-gradient(90deg, oklch(0.55 0.18 40), oklch(0.7 0.184 33.5))' },
+    unlimited: { accent: 'oklch(0.4 0.1 178.5)', gradient: 'linear-gradient(90deg, oklch(0.4 0.1 178.5), oklch(0.65 0.14 178.5))' },
     _default:  { accent: '#6b7280', gradient: 'linear-gradient(90deg, #6b7280, #9ca3af)' },
   },
   planCreateCard: {
-    background: '#fff', borderRadius: '16px', border: '1.5px solid #c8a96e',
+    background: '#fff', borderRadius: '16px', border: '1.5px solid oklch(0.7 0.184 33.5)',
     padding: '24px', marginBottom: '24px',
     boxShadow: '0 4px 16px rgba(200,169,110,0.12)',
   },
   planCreateHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' },
-  planCreateTitle: { fontSize: '15px', fontWeight: '700', color: '#0c1b2e' },
+  planCreateTitle: { fontSize: '15px', fontWeight: '700', color: 'oklch(0.219 0.032 264.2)' },
   planCreateClose: {
     width: '28px', height: '28px', border: 'none', borderRadius: '8px',
     background: '#f1f5f9', color: '#64748b', cursor: 'pointer', fontSize: '13px',
@@ -1358,10 +1358,10 @@ const S = {
     borderRadius: '20px', overflow: 'hidden',
     boxShadow: '0 24px 64px rgba(12,27,46,0.25)',
   },
-  modalStripe: { height: '4px', background: 'linear-gradient(90deg, #c8a96e 0%, #e8c98e 50%, #c8a96e 100%)' },
+  modalStripe: { height: '4px', background: 'linear-gradient(90deg, oklch(0.7 0.184 33.5) 0%, oklch(0.8 0.15 40) 50%, oklch(0.7 0.184 33.5) 100%)' },
   modalBody: { padding: '36px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' },
   modalIcon: { fontSize: '36px', marginBottom: '16px' },
-  modalTitle: { fontSize: '22px', fontWeight: '800', color: '#0c1b2e', margin: '0 0 10px 0' },
+  modalTitle: { fontSize: '22px', fontWeight: '800', color: 'oklch(0.219 0.032 264.2)', margin: '0 0 10px 0' },
   modalSub: { fontSize: '14px', color: '#64748b', margin: '0 0 24px 0', lineHeight: '1.6' },
   credBox: {
     width: '100%', backgroundColor: '#f8fafc', borderRadius: '12px',
@@ -1370,11 +1370,11 @@ const S = {
   credRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', gap: '12px' },
   credDivider: { height: '1px', backgroundColor: '#e2e8f0' },
   credLabel: { fontSize: '11px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.7px', flexShrink: 0 },
-  credValue: { fontSize: '14px', color: '#0c1b2e', fontWeight: '500', wordBreak: 'break-all', textAlign: 'right' },
-  credPassword: { fontFamily: 'monospace', color: '#0c1b2e', fontWeight: '700', fontSize: '15px' },
-  modalNote: { fontSize: '12px', color: '#f59e0b', fontWeight: '600', margin: '0 0 24px 0' },
+  credValue: { fontSize: '14px', color: 'oklch(0.219 0.032 264.2)', fontWeight: '500', wordBreak: 'break-all', textAlign: 'right' },
+  credPassword: { fontFamily: 'monospace', color: 'oklch(0.219 0.032 264.2)', fontWeight: '700', fontSize: '15px' },
+  modalNote: { fontSize: '12px', color: 'oklch(0.7 0.184 33.5)', fontWeight: '600', margin: '0 0 24px 0' },
   modalClose: {
-    padding: '12px 36px', background: 'linear-gradient(135deg, #0c1b2e, #1a3558)',
+    padding: '12px 36px', background: 'linear-gradient(135deg, oklch(0.219 0.032 264.2), oklch(0.317 0.132 285.5))',
     color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '700',
     fontSize: '14px', cursor: 'pointer',
   },

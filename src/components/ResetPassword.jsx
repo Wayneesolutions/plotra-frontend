@@ -51,7 +51,7 @@ export default function ResetPassword() {
         <div style={S.logoRow}>
           <div style={S.logoIcon}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M3 9.5L12 3l9 6.5V21H15v-6H9v6H3V9.5Z" fill="#0c1b2e" />
+              <path d="M3 9.5L12 3l9 6.5V21H15v-6H9v6H3V9.5Z" fill="oklch(0.219 0.032 264.2)" />
             </svg>
           </div>
           <span style={S.brand}>Plotra</span>
@@ -62,9 +62,9 @@ export default function ResetPassword() {
         {message && (
           <div style={{
             ...S.banner,
-            backgroundColor: message.type === 'error' ? '#fff5f5' : '#ecfdf5',
-            color: message.type === 'error' ? '#c53030' : '#059669',
-            border: `1px solid ${message.type === 'error' ? '#fed7d7' : '#a7f3d0'}`,
+            backgroundColor: message.type === 'error' ? 'oklch(0.577 0.245 27.325 / 0.06)' : 'oklch(0.78 0.128 178.5 / 0.12)',
+            color: message.type === 'error' ? 'oklch(0.55 0.22 27.325)' : 'oklch(0.6 0.13 178.5)',
+            border: `1px solid ${message.type === 'error' ? 'oklch(0.577 0.245 27.325 / 0.25)' : 'oklch(0.78 0.128 178.5 / 0.4)'}`,
           }}>
             {message.text}
           </div>
@@ -103,27 +103,27 @@ export default function ResetPassword() {
 const S = {
   root: {
     minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#f2f5fb', padding: '20px',
+    backgroundColor: 'oklch(0.982 0.008 85)', padding: '20px',
   },
   card: {
     width: '100%', maxWidth: '420px', backgroundColor: '#fff', borderRadius: '18px',
     padding: '36px 32px', boxShadow: '0 24px 64px rgba(12,27,46,0.10)',
   },
   logoRow: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' },
-  logoIcon: { width: '32px', height: '32px', borderRadius: '9px', backgroundColor: '#c8a96e', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  brand: { fontSize: '13px', fontWeight: '800', color: '#0c1b2e', letterSpacing: '1.5px', textTransform: 'uppercase' },
-  title: { fontSize: '22px', fontWeight: '800', color: '#0c1b2e', margin: '0 0 20px' },
+  logoIcon: { width: '32px', height: '32px', borderRadius: '9px', backgroundColor: 'oklch(0.7 0.184 33.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  brand: { fontSize: '13px', fontWeight: '800', color: 'oklch(0.219 0.032 264.2)', letterSpacing: '1.5px', textTransform: 'uppercase' },
+  title: { fontSize: '22px', fontWeight: '800', color: 'oklch(0.219 0.032 264.2)', margin: '0 0 20px' },
   banner: { padding: '14px 16px', borderRadius: '10px', fontSize: '13px', marginBottom: '16px' },
   form: { display: 'flex', flexDirection: 'column', gap: '16px' },
   field: { display: 'flex', flexDirection: 'column', gap: '6px' },
   label: { fontSize: '11px', fontWeight: '700', color: '#374151', textTransform: 'uppercase', letterSpacing: '0.6px' },
   input: {
     padding: '12px 14px', fontSize: '14px', border: '1.5px solid #e2e8f0', borderRadius: '10px',
-    width: '100%', color: '#0c1b2e', backgroundColor: '#fafbfd', boxSizing: 'border-box',
+    width: '100%', color: 'oklch(0.219 0.032 264.2)', backgroundColor: '#fafbfd', boxSizing: 'border-box',
   },
   submitBtn: {
     padding: '13px', border: 'none', borderRadius: '10px',
-    background: 'linear-gradient(135deg, #0c1b2e 0%, #1a3558 100%)',
+    background: 'linear-gradient(135deg, oklch(0.219 0.032 264.2) 0%, oklch(0.317 0.132 285.5) 100%)',
     color: '#fff', fontWeight: '700', fontSize: '14px', cursor: 'pointer',
   },
   backLink: { display: 'block', textAlign: 'center', marginTop: '24px', fontSize: '13px', color: '#64748b', textDecoration: 'none' },
