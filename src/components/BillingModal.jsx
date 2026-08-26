@@ -147,7 +147,7 @@ export default function BillingModal({ onClose }) {
                     <div key={p.key} style={{ ...S.planRow, ...(p.key === status?.plan ? S.planRowActive : {}) }}>
                       <div>
                         <div style={S.planName}>{p.label}</div>
-                        <div style={S.planPrice}>₹{p.priceINR.toLocaleString('en-IN')}/month</div>
+                        <div style={S.planPrice}>₹{(p.priceINR ?? 0).toLocaleString('en-IN')}/month</div>
                       </div>
                       <button
                         onClick={() => handlePay(p.key)}
