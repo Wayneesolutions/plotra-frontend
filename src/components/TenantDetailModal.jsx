@@ -100,7 +100,7 @@ export default function TenantDetailModal({ tenantId, onClose, onChanged }) {
               </div>
 
               <div style={S.usageCard}>
-                <div style={{ fontWeight: 700, marginBottom: 12, fontSize: 15, color: '#0c1b2e' }}>Usage This Month</div>
+                <div style={{ fontWeight: 700, marginBottom: 12, fontSize: 15, color: 'oklch(0.219 0.032 264.2)' }}>Usage This Month</div>
                 <div style={S.usageGrid}>
                   <div>
                     <div style={S.infoLabel}>Listing Views</div>
@@ -172,37 +172,37 @@ const S = {
     backgroundColor: '#ffffff', borderRadius: '18px', width: '100%', maxWidth: '720px',
     boxShadow: '0 24px 72px rgba(6,12,24,0.30)', overflow: 'hidden', maxHeight: '88vh', overflowY: 'auto',
   },
-  stripe: { height: '4px', background: 'linear-gradient(90deg, #c8a96e 0%, #e8c98e 50%, #c8a96e 100%)' },
+  stripe: { height: '4px', background: 'linear-gradient(90deg, oklch(0.7 0.184 33.5) 0%, oklch(0.8 0.15 40) 50%, oklch(0.7 0.184 33.5) 100%)' },
   loading: { padding: '60px', textAlign: 'center', color: '#94a3b8' },
   head: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
     padding: '20px 24px 16px', borderBottom: '1px solid #f1f5f9',
   },
-  eyebrow: { margin: '0 0 4px', fontSize: '11px', fontWeight: '700', color: '#c8a96e', textTransform: 'uppercase', letterSpacing: '1.2px' },
-  title: { margin: 0, fontSize: '20px', fontWeight: '800', color: '#0c1b2e', display: 'flex', alignItems: 'center', gap: '10px' },
+  eyebrow: { margin: '0 0 4px', fontSize: '11px', fontWeight: '700', color: 'oklch(0.7 0.184 33.5)', textTransform: 'uppercase', letterSpacing: '1.2px' },
+  title: { margin: 0, fontSize: '20px', fontWeight: '800', color: 'oklch(0.219 0.032 264.2)', display: 'flex', alignItems: 'center', gap: '10px' },
   closeBtn: { width: '32px', height: '32px', borderRadius: '8px', background: '#f1f5f9', border: 'none', cursor: 'pointer', fontSize: '14px', color: '#64748b', flexShrink: 0 },
-  banner: { margin: '0 0 16px', padding: '10px 14px', borderRadius: '10px', fontSize: '13px', backgroundColor: '#fff5f5', color: '#c53030', border: '1px solid #fed7d7' },
+  banner: { margin: '0 0 16px', padding: '10px 14px', borderRadius: '10px', fontSize: '13px', backgroundColor: 'oklch(0.577 0.245 27.325 / 0.06)', color: 'oklch(0.55 0.22 27.325)', border: '1px solid oklch(0.577 0.245 27.325 / 0.25)' },
   body: { padding: '20px 24px 24px', display: 'flex', flexDirection: 'column', gap: '18px' },
   infoGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' },
   infoItem: { background: '#fff', borderRadius: '12px', padding: '14px 16px', boxShadow: '0 2px 10px rgba(12,27,46,0.06)' },
   infoLabel: { fontSize: '10.5px', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.5px', marginBottom: '4px' },
-  infoVal: { fontSize: '14px', fontWeight: '700', color: '#0c1b2e' },
+  infoVal: { fontSize: '14px', fontWeight: '700', color: 'oklch(0.219 0.032 264.2)' },
   usageCard: { background: '#fff', borderRadius: '12px', padding: '16px 18px', boxShadow: '0 2px 10px rgba(12,27,46,0.06)' },
   usageGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' },
   tableWrap: { overflowX: 'auto', border: '1px solid #eef2f7', borderRadius: '12px' },
   table: { width: '100%', borderCollapse: 'collapse' },
   th: { textAlign: 'left', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#64748b', padding: '10px 14px', borderBottom: '1px solid #e2e8f0' },
-  td: { padding: '10px 14px', fontSize: '13px', borderBottom: '1px solid #f1f5f9', color: '#0c1b2e' },
+  td: { padding: '10px 14px', fontSize: '13px', borderBottom: '1px solid #f1f5f9', color: 'oklch(0.219 0.032 264.2)' },
   statusPill: { fontSize: '10px', fontWeight: '700', padding: '3px 9px', borderRadius: '999px' },
-  statusActive: { backgroundColor: '#dcfce7', color: '#166534' },
-  statusOther: { backgroundColor: '#fef3c7', color: '#92400e' },
+  statusActive: { backgroundColor: 'oklch(0.78 0.128 178.5 / 0.15)', color: 'oklch(0.4 0.1 178.5)' },
+  statusOther: { backgroundColor: 'oklch(0.7 0.184 33.5 / 0.2)', color: 'oklch(0.5 0.13 40)' },
   actionsRow: { display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' },
   dangerOrDarkBtn: (status) => ({
     padding: '10px 16px', borderRadius: '9px', border: 'none', fontWeight: '700', fontSize: '13px', cursor: 'pointer',
-    background: status === 'suspended' ? '#0c1b2e' : '#fee2e2',
-    color: status === 'suspended' ? '#fff' : '#b91c1c',
+    background: status === 'suspended' ? 'oklch(0.219 0.032 264.2)' : 'oklch(0.577 0.245 27.325 / 0.15)',
+    color: status === 'suspended' ? '#fff' : 'oklch(0.5 0.22 27.325)',
   }),
-  planSelect: { fontSize: '13px', padding: '9px 12px', borderRadius: '9px', border: '1.5px solid #e2e8f0', color: '#0c1b2e', background: '#fff' },
-  goldBtn: { padding: '10px 16px', borderRadius: '9px', border: 'none', background: 'linear-gradient(135deg, #c8a96e, #e8c98e)', color: '#0c1b2e', fontWeight: '700', fontSize: '13px', cursor: 'pointer' },
-  cancelBtn: { marginTop: '14px', padding: '10px 16px', borderRadius: '9px', border: 'none', background: '#f1f5f9', color: '#0c1b2e', fontWeight: '700', fontSize: '13px', cursor: 'pointer' },
+  planSelect: { fontSize: '13px', padding: '9px 12px', borderRadius: '9px', border: '1.5px solid #e2e8f0', color: 'oklch(0.219 0.032 264.2)', background: '#fff' },
+  goldBtn: { padding: '10px 16px', borderRadius: '9px', border: 'none', background: 'linear-gradient(135deg, oklch(0.7 0.184 33.5), oklch(0.8 0.15 40))', color: 'oklch(0.219 0.032 264.2)', fontWeight: '700', fontSize: '13px', cursor: 'pointer' },
+  cancelBtn: { marginTop: '14px', padding: '10px 16px', borderRadius: '9px', border: 'none', background: '#f1f5f9', color: 'oklch(0.219 0.032 264.2)', fontWeight: '700', fontSize: '13px', cursor: 'pointer' },
 };

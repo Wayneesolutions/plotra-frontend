@@ -96,13 +96,13 @@ const S = {
     backgroundColor: '#ffffff', borderRadius: '18px', width: '100%', maxWidth: '440px',
     boxShadow: '0 24px 72px rgba(6,12,24,0.30)', overflow: 'hidden',
   },
-  stripe: { height: '4px', background: 'linear-gradient(90deg, #c8a96e 0%, #e8c98e 50%, #c8a96e 100%)' },
+  stripe: { height: '4px', background: 'linear-gradient(90deg, oklch(0.7 0.184 33.5) 0%, oklch(0.8 0.15 40) 50%, oklch(0.7 0.184 33.5) 100%)' },
   head: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
     padding: '22px 26px 16px', borderBottom: '1px solid #f1f5f9',
   },
-  eyebrow: { margin: '0 0 4px', fontSize: '11px', fontWeight: '700', color: '#c8a96e', textTransform: 'uppercase', letterSpacing: '1.5px' },
-  title: { margin: 0, fontSize: '19px', fontWeight: '800', color: '#0c1b2e' },
+  eyebrow: { margin: '0 0 4px', fontSize: '11px', fontWeight: '700', color: 'oklch(0.7 0.184 33.5)', textTransform: 'uppercase', letterSpacing: '1.5px' },
+  title: { margin: 0, fontSize: '19px', fontWeight: '800', color: 'oklch(0.219 0.032 264.2)' },
   closeBtn: {
     width: '32px', height: '32px', borderRadius: '8px', background: '#f1f5f9', border: 'none',
     cursor: 'pointer', fontSize: '14px', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
@@ -114,28 +114,28 @@ const S = {
   label: { fontSize: '11px', fontWeight: '700', color: '#374151', textTransform: 'uppercase', letterSpacing: '0.6px' },
   input: {
     padding: '11px 13px', fontSize: '14px', border: '1.5px solid #e2e8f0', borderRadius: '9px',
-    width: '100%', color: '#0c1b2e', backgroundColor: '#fafbfd', boxSizing: 'border-box',
+    width: '100%', color: 'oklch(0.219 0.032 264.2)', backgroundColor: '#fafbfd', boxSizing: 'border-box',
   },
   errorBox: {
-    backgroundColor: '#fff5f5', color: '#c53030', padding: '10px 14px',
-    borderRadius: '8px', fontSize: '13px', border: '1px solid #fed7d7',
+    backgroundColor: 'oklch(0.577 0.245 27.325 / 0.06)', color: 'oklch(0.55 0.22 27.325)', padding: '10px 14px',
+    borderRadius: '8px', fontSize: '13px', border: '1px solid oklch(0.577 0.245 27.325 / 0.25)',
   },
   submitBtn: {
     padding: '12px', border: 'none', borderRadius: '10px',
-    background: 'linear-gradient(135deg, #0c1b2e 0%, #1a3558 100%)',
+    background: 'linear-gradient(135deg, oklch(0.219 0.032 264.2) 0%, oklch(0.317 0.132 285.5) 100%)',
     color: '#fff', fontWeight: '700', fontSize: '14px', cursor: 'pointer',
   },
-  successText: { fontSize: '14px', color: '#334155', lineHeight: '1.6', margin: '0 0 16px' },
+  successText: { fontSize: '14px', color: 'oklch(0.219 0.032 264.2)', lineHeight: '1.6', margin: '0 0 16px' },
   credBox: {
     display: 'flex', flexDirection: 'column', gap: '4px',
     backgroundColor: '#f8fafc', border: '1.5px solid #e2e8f0', borderRadius: '10px',
     padding: '14px 16px', marginBottom: '16px',
   },
   credLabel: { fontSize: '11px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' },
-  credValue: { fontSize: '16px', fontWeight: '700', color: '#0c1b2e', fontFamily: 'monospace' },
+  credValue: { fontSize: '16px', fontWeight: '700', color: 'oklch(0.219 0.032 264.2)', fontFamily: 'monospace' },
   doneBtn: {
     width: '100%', padding: '12px', border: 'none', borderRadius: '10px',
-    background: 'linear-gradient(135deg, #0c1b2e 0%, #1a3558 100%)',
+    background: 'linear-gradient(135deg, oklch(0.219 0.032 264.2) 0%, oklch(0.317 0.132 285.5) 100%)',
     color: '#fff', fontWeight: '700', fontSize: '14px', cursor: 'pointer',
   },
 };

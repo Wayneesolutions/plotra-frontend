@@ -57,13 +57,13 @@ export default function Layout({ children }) {
 }
 
 const styles = {
-  page: { minHeight: '100vh', backgroundColor: '#f9fafb', fontFamily: 'system-ui, sans-serif' },
-  nav: { backgroundColor: '#111827', borderBottom: '1px solid #1f2937' },
+  page: { minHeight: '100vh', backgroundColor: '#f9fafb', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" },
+  nav: { backgroundColor: 'oklch(0.219 0.032 264.2)', borderBottom: '1px solid oklch(0.219 0.032 264.2)' },
   navInner: { maxWidth: '1200px', margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', gap: '28px', height: '56px' },
   brand: { color: '#fff', fontWeight: '800', fontSize: '16px', letterSpacing: '0.5px' },
   navLinks: { display: 'flex', gap: '4px', flex: 1 },
   navLink: { color: '#9ca3af', textDecoration: 'none', fontSize: '13px', fontWeight: '600', padding: '8px 12px', borderRadius: '6px' },
-  navLinkActive: { color: '#fff', backgroundColor: '#1f2937' },
+  navLinkActive: { color: '#fff', backgroundColor: 'oklch(0.219 0.032 264.2)' },
   navRight: { display: 'flex', alignItems: 'center', gap: '14px' },
   userLabel: { fontSize: '12px', color: '#9ca3af' },
   logoutBtn: { backgroundColor: 'transparent', color: '#e5e7eb', border: '1px solid #374151', padding: '7px 14px', borderRadius: '6px', fontWeight: '500', cursor: 'pointer', fontSize: '12px' },

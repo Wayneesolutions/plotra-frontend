@@ -4,11 +4,12 @@ import apiClient from '../api/apiClient';
 
 /**
  * Internal dealer ops panel — Dashboard / Listings / Leads·WhatsApp /
- * Documents / AI Call Log / Site Visits / Team. Matches the Plotra
- * design system approved in the Lovable mockup (audio-buddy-speak):
- * charcoal sidebar, stone content area, brass accent, teal for verified
- * states, rust for warnings. Wired to the real /api/v1/dashboard/ops/*
- * endpoints — no mock data.
+ * Documents / AI Call Log / Site Visits / Team. Recolored onto Plotra's
+ * shared design tokens (ink sidebar, cream content area, coral accent,
+ * mint for verified states, destructive-red for warnings) — was
+ * previously its own separate charcoal/brass/teal/rust palette from an
+ * earlier Lovable mockup, now unified with the rest of the app. Wired to
+ * the real /api/v1/dashboard/ops/* endpoints — no mock data.
  */
 
 const NAV = [
@@ -200,9 +201,9 @@ function LeadsTab() {
 }
 
 function pillColor(status) {
-  if (status === 'qualified' || status === 'closed') return { background: 'rgba(47,93,83,0.14)', color: '#2F5D53' };
-  if (status === 'lost') return { background: 'rgba(181,80,44,0.12)', color: '#8F3E20' };
-  return { background: 'rgba(169,131,47,0.14)', color: '#82611F' };
+  if (status === 'qualified' || status === 'closed') return { background: 'rgba(47,93,83,0.14)', color: 'oklch(0.6 0.13 178.5)' };
+  if (status === 'lost') return { background: 'rgba(181,80,44,0.12)', color: 'oklch(0.577 0.245 27.325)' };
+  return { background: 'rgba(169,131,47,0.14)', color: 'oklch(0.7 0.184 33.5)' };
 }
 
 /* ═══════════════════════ DOCUMENTS ═══════════════════════ */
@@ -371,21 +372,21 @@ function VisitsTab() {
 
 /* ═══════════════════════ STYLES ═══════════════════════ */
 
-const INK = '#171B23';
-const STONE = '#F5F3EC';
-const BRASS = '#A9832F';
-const BRASS_DARK = '#82611F';
-const TEAL = '#2F5D53';
-const RUST = '#B5502C';
-const RUST_DARK = '#8F3E20';
+const INK = 'oklch(0.219 0.032 264.2)';
+const STONE = 'oklch(0.982 0.008 85)';
+const BRASS = 'oklch(0.65 0.17 33.5)';
+const BRASS_DARK = 'oklch(0.7 0.184 33.5)';
+const TEAL = 'oklch(0.6 0.13 178.5)';
+const RUST = 'oklch(0.55 0.22 27.325)';
+const RUST_DARK = 'oklch(0.577 0.245 27.325)';
 const LINE = 'rgba(23,27,35,0.12)';
 
 const S = {
-  root: { display: 'flex', minHeight: '100vh', background: STONE, fontFamily: "'Inter', sans-serif", color: INK },
+  root: { display: 'flex', minHeight: '100vh', background: STONE, fontFamily: "'Plus Jakarta Sans', sans-serif", color: INK },
   sidebar: { width: '240px', flexShrink: 0, background: INK, color: STONE, display: 'flex', flexDirection: 'column', padding: '24px 16px' },
   brand: { display: 'flex', alignItems: 'center', gap: '10px', padding: '0 8px 24px', borderBottom: '1px solid rgba(245,243,236,0.1)', marginBottom: '20px' },
   brandMark: { color: BRASS, fontSize: '18px' },
-  brandName: { fontFamily: "'Newsreader', serif", fontSize: '16px', fontWeight: 600, lineHeight: 1.1 },
+  brandName: { fontFamily: "'Space Grotesk', sans-serif", fontSize: '16px', fontWeight: 600, lineHeight: 1.1 },
   brandSub: { fontFamily: "'IBM Plex Mono', monospace", fontSize: '10px', letterSpacing: '0.06em', color: 'rgba(245,243,236,0.5)' },
   nav: { display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 },
   navItem: { textAlign: 'left', background: 'none', border: 'none', color: 'rgba(245,243,236,0.7)', padding: '10px 12px', borderRadius: '4px', fontSize: '14px', fontWeight: 500, cursor: 'pointer' },
@@ -393,7 +394,7 @@ const S = {
   backBtn: { marginTop: '12px', background: 'none', border: '1px solid rgba(245,243,236,0.15)', color: 'rgba(245,243,236,0.6)', padding: '10px', borderRadius: '4px', fontSize: '12.5px', cursor: 'pointer' },
 
   main: { flex: 1, padding: '40px 48px', overflowY: 'auto' },
-  pageTitle: { fontFamily: "'Newsreader', serif", fontSize: '28px', fontWeight: 500, margin: '0 0 4px' },
+  pageTitle: { fontFamily: "'Space Grotesk', sans-serif", fontSize: '28px', fontWeight: 500, margin: '0 0 4px' },
   pageSub: { fontSize: '14px', color: 'rgba(23,27,35,0.6)', margin: '0 0 28px' },
 
   cardRow: { display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '32px' },
@@ -403,7 +404,7 @@ const S = {
   statNote: { fontFamily: "'IBM Plex Mono', monospace", fontSize: '10.5px', color: RUST_DARK, marginTop: '4px' },
 
   panel: { background: '#fff', border: `1px solid ${LINE}`, borderRadius: '4px', overflow: 'hidden' },
-  panelHeader: { fontFamily: "'Newsreader', serif", fontSize: '17px', fontWeight: 600, padding: '18px 22px', borderBottom: `1px solid ${LINE}` },
+  panelHeader: { fontFamily: "'Space Grotesk', sans-serif", fontSize: '17px', fontWeight: 600, padding: '18px 22px', borderBottom: `1px solid ${LINE}` },
   emptyState: { padding: '28px 22px', fontSize: '13.5px', color: 'rgba(23,27,35,0.5)' },
   errorBox: { background: 'rgba(181,80,44,0.08)', color: RUST_DARK, padding: '12px 16px', borderRadius: '4px', fontSize: '13.5px', marginBottom: '18px' },
   loading: { fontSize: '14px', color: 'rgba(23,27,35,0.5)' },
@@ -423,7 +424,7 @@ const S = {
   pill: { fontFamily: "'IBM Plex Mono', monospace", fontSize: '10.5px', textTransform: 'uppercase', padding: '3px 8px', borderRadius: '3px', alignSelf: 'flex-start' },
 
   threadPane: { flex: 1, background: '#fff', border: `1px solid ${LINE}`, borderRadius: '4px', padding: '18px 22px', overflowY: 'auto' },
-  threadHeader: { fontFamily: "'Newsreader', serif", fontSize: '16px', fontWeight: 600, marginBottom: '14px' },
+  threadHeader: { fontFamily: "'Space Grotesk', sans-serif", fontSize: '16px', fontWeight: 600, marginBottom: '14px' },
   msgBubble: { maxWidth: '75%', padding: '10px 14px', borderRadius: '6px', fontSize: '13.5px', marginBottom: '10px' },
   msgOutbound: { background: INK, color: STONE, marginLeft: 'auto' },
   msgInbound: { background: STONE },

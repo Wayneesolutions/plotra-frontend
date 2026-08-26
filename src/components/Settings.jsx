@@ -142,7 +142,7 @@ export default function Settings() {
           )}
 
           {statusMessage && (
-            <div style={{ ...styles.banner, backgroundColor: isError ? '#fef2f2' : '#f0fdf4', color: isError ? '#991b1b' : '#166534' }}>
+            <div style={{ ...styles.banner, backgroundColor: isError ? '#fef2f2' : '#f0fdf4', color: isError ? 'oklch(0.45 0.2 27.325)' : 'oklch(0.4 0.1 178.5)' }}>
               {statusMessage}
             </div>
           )}
@@ -222,7 +222,7 @@ export default function Settings() {
                       {!n.is_default && (
                         <button onClick={() => handleSetDefaultNumber(n.id)} style={styles.linkBtn}>Make default</button>
                       )}
-                      <button onClick={() => handleRemoveNumber(n.id)} style={{ ...styles.linkBtn, color: '#dc2626' }}>Remove</button>
+                      <button onClick={() => handleRemoveNumber(n.id)} style={{ ...styles.linkBtn, color: 'oklch(0.577 0.245 27.325)' }}>Remove</button>
                     </div>
                   </div>
                 ))}
@@ -261,18 +261,18 @@ const styles = {
   container: { display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '640px' },
   pageTitle: { margin: 0, fontSize: '24px', color: '#111' },
   card: { backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '20px' },
-  cardTitle: { margin: '0 0 8px 0', fontSize: '16px', color: '#111827' },
+  cardTitle: { margin: '0 0 8px 0', fontSize: '16px', color: 'oklch(0.219 0.032 264.2)' },
   cardHelp: { margin: '0 0 16px 0', fontSize: '13px', color: '#6b7280', lineHeight: '1.5' },
-  currentPhoneBox: { backgroundColor: '#f0fdf4', color: '#166534', padding: '10px 12px', borderRadius: '6px', fontSize: '13px', marginBottom: '14px' },
+  currentPhoneBox: { backgroundColor: '#f0fdf4', color: 'oklch(0.4 0.1 178.5)', padding: '10px 12px', borderRadius: '6px', fontSize: '13px', marginBottom: '14px' },
   codeBadge: { backgroundColor: '#dcfce7', padding: '2px 6px', borderRadius: '4px', fontFamily: 'monospace' },
   banner: { padding: '10px', borderRadius: '6px', fontSize: '13px', marginBottom: '14px' },
   form: { display: 'flex', gap: '10px' },
   numberList: { display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '4px' },
   numberRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 12px', backgroundColor: '#f9fafb', borderRadius: '6px', fontSize: '13px' },
   numberLabel: { color: '#6b7280' },
-  defaultTag: { marginLeft: '8px', fontSize: '10px', fontWeight: '700', color: '#166534', backgroundColor: '#dcfce7', padding: '2px 7px', borderRadius: '10px', textTransform: 'uppercase' },
-  linkBtn: { border: 'none', background: 'none', color: '#2563eb', fontSize: '12.5px', fontWeight: '600', cursor: 'pointer', padding: 0 },
+  defaultTag: { marginLeft: '8px', fontSize: '10px', fontWeight: '700', color: 'oklch(0.4 0.1 178.5)', backgroundColor: '#dcfce7', padding: '2px 7px', borderRadius: '10px', textTransform: 'uppercase' },
+  linkBtn: { border: 'none', background: 'none', color: 'oklch(0.7 0.184 33.5)', fontSize: '12.5px', fontWeight: '600', cursor: 'pointer', padding: 0 },
   input: { flex: 1, padding: '10px 12px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '14px' },
-  submitBtn: { padding: '10px 18px', borderRadius: '6px', border: 'none', backgroundColor: '#2563eb', color: '#fff', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap' },
+  submitBtn: { padding: '10px 18px', borderRadius: '6px', border: 'none', backgroundColor: 'oklch(0.7 0.184 33.5)', color: '#fff', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap' },
   secondaryBtn: { padding: '9px 16px', border: '1px solid #d1d5db', backgroundColor: '#fff', borderRadius: '6px', fontWeight: '500', cursor: 'pointer', fontSize: '13px' },
 };
