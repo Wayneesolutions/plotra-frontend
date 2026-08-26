@@ -269,6 +269,22 @@ export default function DashboardListings() {
           )}
           <button
             className="pve-topbar-btn"
+            onClick={() => navigate('/dashboard/leads')}
+            style={S.iconBtn}
+            title="Leads Inbox"
+          >
+            💬
+          </button>
+          <button
+            className="pve-topbar-btn"
+            onClick={() => navigate('/dashboard/analytics')}
+            style={S.iconBtn}
+            title="Analytics"
+          >
+            📊
+          </button>
+          <button
+            className="pve-topbar-btn"
             onClick={() => navigate('/dashboard/ops')}
             style={S.iconBtn}
             title="Ops Panel — leads, documents, calls, visits"

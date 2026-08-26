@@ -40,8 +40,8 @@ export default function OpsPanel() {
         <div style={S.brand}>
           <span style={S.brandMark}>◆</span>
           <div>
-            <div style={S.brandName}>WayneState</div>
-            <div style={S.brandSub}>PRO · OPS</div>
+            <div style={S.brandName}>Plotra</div>
+            <div style={S.brandSub}>OPS PANEL</div>
           </div>
         </div>
         <nav style={S.nav}>

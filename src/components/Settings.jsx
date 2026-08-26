@@ -36,13 +36,18 @@ export default function Settings() {
   const [newNumberForm, setNewNumberForm] = useState({ whatsappNumber: '', label: '' });
   const [numberSubmitting, setNumberSubmitting] = useState(false);
   const [numberError, setNumberError] = useState(null);
+  const [maxWhatsappNumbers, setMaxWhatsappNumbers] = useState(1);
 
   useEffect(() => {
     if (storedUser?.role !== 'owner') return;
     setNumbersLoading(true);
-    apiClient.get('/api/v1/dashboard/whatsapp-numbers')
-      .then((res) => setWhatsappNumbers(res.data.numbers || []))
-      .catch(() => { /* non-fatal — section still renders, just empty */ })
+    Promise.all([
+      apiClient.get('/api/v1/dashboard/whatsapp-numbers'),
+      apiClient.get('/api/v1/dashboard/billing/status'),
+    ]).then(([numRes, billingRes]) => {
+      setWhatsappNumbers(numRes.data.numbers || []);
+      setMaxWhatsappNumbers(billingRes.data.billing?.max_whatsapp_numbers ?? 1);
+    }).catch(() => {})
       .finally(() => setNumbersLoading(false));
   }, [storedUser?.role]);
 
@@ -190,7 +195,7 @@ export default function Settings() {
           </section>
         )}
 
-        {storedUser?.role === 'owner' && (
+        {storedUser?.role === 'owner' && maxWhatsappNumbers > 1 && (
           <section style={styles.card}>
             <h3 style={styles.cardTitle}>Buyer-Facing WhatsApp Numbers</h3>
             <p style={styles.cardHelp}>
