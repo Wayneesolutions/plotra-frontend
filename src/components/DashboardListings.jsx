@@ -7,6 +7,7 @@ import BuilderProfileManager from './BuilderProfileManager.jsx';
 // NEW — Phase 7
 import BillingModal from './BillingModal.jsx';
 import InviteUserModal from './InviteUserModal.jsx';
+import PropertyEditModal from './PropertyEditModal.jsx';
 
 export default function DashboardListings() {
   const navigate   = useNavigate();
@@ -32,6 +33,7 @@ export default function DashboardListings() {
   const [showPwModal, setShowPwModal]     = useState(false);
   const [showBillingModal, setShowBillingModal] = useState(false); // NEW — Phase 7
   const [showInviteModal, setShowInviteModal] = useState(false); // NEW — gap #7
+  const [editListing, setEditListing] = useState(null); // NEW — gap: no Edit/Delete/Deactivate existed
   const [copiedSlug, setCopiedSlug]       = useState(null);
 
   // Search/filter — "search by area or budget" (area lives in the address
@@ -41,11 +43,14 @@ export default function DashboardListings() {
   const [filters, setFilters] = useState({ q: '', min_price: '', max_price: '', property_type: '' });
   const [filterInputs, setFilterInputs] = useState({ q: '', min_price: '', max_price: '', property_type: '' });
 
-  // Per-listing WhatsApp attribution — gated to growth/unlimited plans
-  // (plans.multi_agent_whatsapp, surfaced via /billing/status rather than
-  // inferring it from the plan name client-side). teamMembers only
-  // fetched when this is actually true — no point loading the team list
-  // for a Starter tenant who can't use the feature anyway.
+  // Per-listing WhatsApp attribution — only makes sense for a plan with
+  // more than one WhatsApp number to assign FROM (plans.max_whatsapp_numbers,
+  // surfaced via /billing/status). Re-pointed here from the old
+  // multi_agent_whatsapp boolean to the new tier flag (Part 2, build-order
+  // item 7) — see listingService.js's validateAssignedAgent for the
+  // matching backend-side re-point. teamMembers only fetched when this is
+  // actually true — no point loading the team list for a single-number
+  // tenant who can't use the feature anyway.
   const [multiAgentEnabled, setMultiAgentEnabled] = useState(false);
   const [teamMembers, setTeamMembers] = useState([]);
 
@@ -64,7 +69,7 @@ export default function DashboardListings() {
   const checkMultiAgentPlan = async () => {
     try {
       const res = await apiClient.get('/api/v1/dashboard/billing/status');
-      const enabled = !!res.data.billing?.multi_agent_whatsapp;
+      const enabled = (res.data.billing?.max_whatsapp_numbers ?? 1) > 1;
       setMultiAgentEnabled(enabled);
       if (enabled) {
         const usersRes = await apiClient.get('/api/v1/dashboard/users');
@@ -299,6 +304,14 @@ export default function DashboardListings() {
       {showPwModal && <ChangePassword onClose={() => setShowPwModal(false)} />}
       {showBillingModal && <BillingModal onClose={() => setShowBillingModal(false)} />}
       {showInviteModal && <InviteUserModal onClose={() => setShowInviteModal(false)} />}
+      {editListing && (
+        <PropertyEditModal
+          listing={editListing}
+          onClose={() => setEditListing(null)}
+          onSaved={() => { setEditListing(null); fetchListings(); }}
+          onDeleted={() => { setEditListing(null); fetchListings(); }}
+        />
+      )}
       {builderModalListing && (
         <BuilderProfileManager
           listing={builderModalListing}
@@ -586,12 +599,19 @@ export default function DashboardListings() {
                     >
                       🗺 Trace
                     </button>
-                    {/* Flat-only — a builder profile (developer rating,
-                        possession record, nearby comparisons) doesn't apply
-                        to a plot or villa, so the option isn't even offered
-                        for those, rather than showing it and rejecting it
-                        server-side. See builderProfileController.js. */}
-                    {item.property_type === 'Flat' && (
+                    <button
+                      className="pve-action-btn"
+                      onClick={() => setEditListing(item)}
+                      style={{ ...S.actionBtn, ...S.actionBtnEdit }}
+                    >
+                      ✎ Edit
+                    </button>
+                    {/* Flat/Commercial only — a builder profile (developer
+                        rating, possession record, nearby comparisons)
+                        doesn't apply to a plot or villa, so the option isn't
+                        even offered for those, rather than showing it and
+                        rejecting it server-side. See builderProfileController.js. */}
+                    {['Flat', 'Commercial'].includes(item.property_type) && (
                       <button
                         className="pve-action-btn"
                         onClick={() => setBuilderModalListing(item)}
@@ -928,6 +948,7 @@ const S = {
   },
   actionBtnBlue:  { backgroundColor: '#eff6ff', color: '#1d4ed8', borderColor: '#bfdbfe' },
   actionBtnGreen: { backgroundColor: '#f0fdf4', color: '#059669', borderColor: '#a7f3d0' },
+  actionBtnEdit:  { backgroundColor: '#fdfbf6', color: '#92702f', borderColor: '#eadfc7' },
 
   /* Overlay / Modal */
   overlay: {

@@ -175,11 +175,13 @@ export default function PropertyView() {
   const { listing, media, landmarks, dealer } = data;
 
   // Developer profile / rating / possession record / nearby-comparison
-  // content is Flat-only — the backend already won't return builderProfile
-  // for a non-Flat listing (see builderProfileController.js), but this is
-  // a second, client-side gate so a house never renders this section
-  // under any circumstance, including a stale/cached response.
-  const showBuilderSection = !!builderProfile && listing.property_type === 'Flat';
+  // content only applies to a unit inside a larger named project — a flat
+  // in a residential tower, or a shop/retail unit in a mall. The backend
+  // already won't return builderProfile for a plot/villa listing (see
+  // builderProfileController.js's BUILDER_ELIGIBLE_TYPES), but this is a
+  // second, client-side gate so one never renders this section under any
+  // circumstance, including a stale/cached response.
+  const showBuilderSection = !!builderProfile && ['Flat', 'Commercial'].includes(listing.property_type);
 
   const formattedPrice = listing.price != null
     ? new Intl.NumberFormat('en-IN', {
@@ -199,7 +201,16 @@ export default function PropertyView() {
   const canAdjustLocation = listing.status !== 'active';
   const hasSatellite  = !!(media?.satellite_image_url || (listing.lat != null && listing.lng != null));
   const hasStreetview = !!(media?.streetview_image_url || (listing.lat != null && listing.lng != null));
-  const bothImages    = hasSatellite && hasStreetview;
+  // Satellite is a pin-correction tool, not a buyer-facing view — it only
+  // ever shows pre-approval, while a dealer can still drag the pin to fix
+  // a geocode that's slightly off. Once that's confirmed and the listing
+  // goes active, satellite has done its job and drops away; street view
+  // carries forward to the public listing on its own, pinned to that same
+  // confirmed lat/lng, alongside the dealer's real "Property Photos".
+  const showSatellite  = canAdjustLocation && hasSatellite;
+  const showStreetview = hasStreetview;
+  const bothImages     = showSatellite && showStreetview;
+  const showHeroSection = canAdjustLocation || showStreetview;
   const photos        = media?.photo_urls || [];
 
   return (
@@ -220,9 +231,19 @@ export default function PropertyView() {
         </div>
       </header>
 
-      {/* ══ HERO — interactive satellite + street view ══════════════ */}
+      {/* ══ HERO — satellite (pre-approval only) + street view ══════
+          Satellite is the pin-correction tool: shown only while a dealer
+          can still drag the pin to fix a geocode that's slightly off
+          (canAdjustLocation, i.e. status !== 'active'). Once the location
+          is confirmed and the listing goes live, satellite drops away —
+          street view carries forward on its own, pinned to that same
+          confirmed lat/lng, so a buyer still gets a real sense of the
+          location alongside the dealer's "Property Photos" further down
+          the page. Dealers/realtors see and can use the satellite pin
+          editor exactly as before while a listing is pending. */}
+      {showHeroSection && (
       <section style={{ ...S.hero, flexDirection: bothImages ? 'row' : 'column' }}>
-        {hasSatellite && (
+        {showSatellite && (
           <div style={{ ...S.heroSlot, flex: bothImages ? 1 : 'unset', height: bothImages ? '280px' : '260px' }}>
             <InteractiveSatellite
               key={mapKey}
@@ -257,13 +278,13 @@ export default function PropertyView() {
             )}
           </div>
         )}
-        {hasStreetview && (
+        {showStreetview && (
           <div style={{ ...S.heroSlot, flex: bothImages ? 1 : 'unset', height: bothImages ? '280px' : '260px' }}>
             <InteractiveStreetView lat={listing.lat} lng={listing.lng} fallbackUrl={media?.streetview_image_url} />
             <div style={S.heroBadge}>📸 Street View</div>
           </div>
         )}
-        {!hasSatellite && !hasStreetview && (
+        {canAdjustLocation && !hasSatellite && !hasStreetview && (
           <div style={S.heroEmpty}>
             <span style={{ fontSize: '48px' }}>🏠</span>
             <p style={{ color: '#94a3b8', margin: '8px 0 0', fontSize: '14px' }}>
@@ -272,6 +293,7 @@ export default function PropertyView() {
           </div>
         )}
       </section>
+      )}
 
       {/* ══ ANCHOR STRIP (price + area + type) ══════════════════ */}
       <div style={S.anchor}>
