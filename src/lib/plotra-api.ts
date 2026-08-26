@@ -78,7 +78,13 @@ export function submitAccessRequest(input: {
 }) {
   return request<{ message: string }>("/api/v1/public/request-access", {
     method: "POST",
-    body: JSON.stringify(input),
+    body: JSON.stringify({
+      business_name: input.businessName,
+      contact_name: input.contactName,
+      email: input.email,
+      phone: input.phone,
+      message: input.message,
+    }),
   });
 }
 
