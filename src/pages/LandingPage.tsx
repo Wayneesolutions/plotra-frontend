@@ -111,10 +111,7 @@ function Hero() {
         </div>
       </div>
 
-      <div className="absolute inset-x-0 bottom-6 flex flex-col items-center gap-2 text-ink-foreground/70">
-        <span className="label-eyebrow">Scroll to explore</span>
-        <span className="scroll-cue text-sm">↓</span>
-      </div>
+    
     </section>
   );
 }
@@ -128,7 +125,7 @@ function Bridge() {
     "No app for your buyers",
   ];
   return (
-    <section className="-mt-8 rounded-t-[2.5rem] bg-lavender py-6">
+    <section className=" rounded-t-[2.5rem] bg-lavender py-6">
       <div
         className="flex overflow-hidden"
         style={{
