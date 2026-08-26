@@ -277,6 +277,24 @@ export default function DashboardListings() {
           </button>
           <button
             className="pve-topbar-btn"
+            onClick={() => navigate('/dashboard/settings')}
+            style={S.iconBtn}
+            title="Settings — WhatsApp number, team"
+          >
+            ⚙️
+          </button>
+          {storedUser?.role === 'super_admin' && (
+            <button
+              className="pve-topbar-btn"
+              onClick={() => navigate('/admin')}
+              style={S.iconBtn}
+              title="Admin Panel"
+            >
+              🛡️
+            </button>
+          )}
+          <button
+            className="pve-topbar-btn"
             onClick={() => setShowBillingModal(true)}
             style={S.iconBtn}
             title="Billing & Plan"
@@ -289,7 +307,7 @@ export default function DashboardListings() {
             style={S.iconBtn}
             title="Change Password"
           >
-            ⚙
+            🔑
           </button>
           <button
             className="pve-topbar-btn"
