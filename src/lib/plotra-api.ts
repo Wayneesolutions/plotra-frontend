@@ -76,7 +76,7 @@ export function submitAccessRequest(input: {
   phone: string;
   message?: string;
 }) {
-  return request<{ message: string }>("/api/v1/access-requests", {
+  return request<{ message: string }>("/api/v1/public/request-access", {
     method: "POST",
     body: JSON.stringify(input),
   });
