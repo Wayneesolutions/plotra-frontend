@@ -3,7 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/apiClient';
 import TenantDetailModal from './TenantDetailModal.jsx';
 
-const TABS = ['Pending Requests', 'All Tenants', 'Create Tenant', 'Ad Placements', 'Plans'];
+const TABS = [
+  { label: 'Pending Requests', icon: '📋', desc: 'Approve or reject new dealer signups' },
+  { label: 'All Tenants',      icon: '🏢', desc: 'View and manage all active accounts' },
+  { label: 'Create Tenant',    icon: '➕', desc: 'Manually onboard a new dealer account' },
+  { label: 'Ad Placements',    icon: '📢', desc: 'Manage ads shown across listing pages' },
+  { label: 'Plans',            icon: '💳', desc: 'Edit pricing tiers and feature limits' },
+];
 const AD_POSITIONS = ['calculator_result', 'listing_sidebar', 'listing_footer'];
 
 export default function AdminPanel() {
@@ -355,19 +361,26 @@ export default function AdminPanel() {
           </div>
 
           <nav style={S.nav}>
-            {TABS.map((label, i) => (
-              <button key={label} style={{ ...S.navItem, ...(tab === i ? S.navItemActive : {}) }} onClick={() => setTab(i)}>
-                <span style={S.navIcon}>{['📋', '🏢', '➕', '📢', '💳'][i]}</span>
-                {label}
-                {i === 0 && requests.length > 0 && (
-                  <span style={S.navBadge}>{requests.length}</span>
-                )}
+            <div style={S.navSection}>PLATFORM MANAGEMENT</div>
+            {TABS.map((t, i) => (
+              <button key={t.label} style={{ ...S.navItem, ...(tab === i ? S.navItemActive : {}) }} onClick={() => setTab(i)}>
+                <div style={S.navItemInner}>
+                  <div style={S.navItemTop}>
+                    <span style={S.navIcon}>{t.icon}</span>
+                    <span>{t.label}</span>
+                    {i === 0 && requests.length > 0 && (
+                      <span style={S.navBadge}>{requests.length}</span>
+                    )}
+                  </div>
+                  <div style={S.navDesc}>{t.desc}</div>
+                </div>
               </button>
             ))}
           </nav>
         </div>
 
         <div style={S.sideBottom}>
+          <button style={S.backBtn} onClick={() => navigate('/dashboard')}>← Back to Dashboard</button>
           <div style={S.userInfo}>
             <div style={S.userAvatar}>{user.name?.[0] || 'A'}</div>
             <div>
@@ -1082,19 +1095,31 @@ const S = {
   logoName: { fontSize: '14px', fontWeight: '800', color: '#ffffff', letterSpacing: '0.5px' },
   logoBadge: { fontSize: '10px', fontWeight: '600', color: '#c8a96e', textTransform: 'uppercase', letterSpacing: '1px' },
   nav: { display: 'flex', flexDirection: 'column', gap: '4px', padding: '0 12px' },
+  navSection: {
+    fontSize: '10px', fontWeight: '700', color: 'rgba(255,255,255,0.25)',
+    letterSpacing: '1.2px', textTransform: 'uppercase', padding: '8px 14px 4px',
+  },
   navItem: {
-    display: 'flex', alignItems: 'center', gap: '10px',
-    padding: '11px 14px', borderRadius: '10px', border: 'none',
+    display: 'flex', alignItems: 'flex-start', gap: '10px',
+    padding: '10px 14px', borderRadius: '10px', border: 'none',
     background: 'transparent', color: 'rgba(255,255,255,0.55)',
     fontSize: '13px', fontWeight: '500', cursor: 'pointer', textAlign: 'left', width: '100%',
     transition: 'background 0.15s, color 0.15s',
   },
   navItemActive: { background: 'rgba(200,169,110,0.15)', color: '#c8a96e' },
+  navItemInner: { display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 },
+  navItemTop: { display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' },
+  navDesc: { fontSize: '11px', color: 'rgba(255,255,255,0.35)', fontWeight: '400', paddingLeft: '23px' },
   navIcon: { fontSize: '15px', flexShrink: 0 },
   navBadge: {
     marginLeft: 'auto', backgroundColor: '#c8a96e', color: '#0c1b2e',
     fontSize: '10px', fontWeight: '800', borderRadius: '999px',
     padding: '2px 7px', minWidth: '18px', textAlign: 'center',
+  },
+  backBtn: {
+    display: 'block', width: '100%', padding: '9px 14px', borderRadius: '8px',
+    border: '1px solid rgba(255,255,255,0.1)', background: 'transparent',
+    color: 'rgba(255,255,255,0.45)', fontSize: '12px', cursor: 'pointer', textAlign: 'left',
   },
   sideBottom: { padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '12px' },
   userInfo: { display: 'flex', alignItems: 'center', gap: '10px' },
