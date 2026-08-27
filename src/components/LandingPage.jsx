@@ -156,7 +156,7 @@ export default function LandingPage() {
 
       {/* ══ FOOTER ═══════════════════════════════════════════ */}
       <footer style={S.footer}>
-        <p style={S.footerTxt}>© {new Date().getFullYear()} WayneState Pro · Made in Ludhiana, Punjab</p>
+        <p style={S.footerTxt}>© {new Date().getFullYear()} Plotra · Made in Ludhiana, Punjab</p>
       </footer>
     </div>
   );
