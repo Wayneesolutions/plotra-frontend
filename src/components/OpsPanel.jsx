@@ -12,11 +12,9 @@ import apiClient from '../api/apiClient';
  */
 
 const NAV = [
-  { key: 'overview', label: 'Dashboard' },
-  { key: 'leads', label: 'Leads · WhatsApp' },
-  { key: 'documents', label: 'Documents' },
-  { key: 'calls', label: 'AI Call Log' },
-  { key: 'visits', label: 'Site Visits' },
+  { key: 'overview',   label: 'Dashboard' },
+  { key: 'documents',  label: 'Documents' },
+  { key: 'visits',     label: 'Site Visits' },
 ];
 
 const fmtDate = (d) => d ? new Date(d).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
@@ -49,11 +47,9 @@ export default function OpsPanel({ bare = false }) {
           ))}
         </div>
         <div style={S.bareContent}>
-          {tab === 'overview' && <OverviewTab />}
-          {tab === 'leads' && <LeadsTab />}
+          {tab === 'overview'  && <OverviewTab />}
           {tab === 'documents' && <DocumentsTab />}
-          {tab === 'calls' && <CallsTab />}
-          {tab === 'visits' && <VisitsTab />}
+          {tab === 'visits'    && <VisitsTab />}
         </div>
       </div>
     );
@@ -84,11 +80,9 @@ export default function OpsPanel({ bare = false }) {
       </aside>
 
       <main style={S.main}>
-        {tab === 'overview' && <OverviewTab />}
-        {tab === 'leads' && <LeadsTab />}
+        {tab === 'overview'  && <OverviewTab />}
         {tab === 'documents' && <DocumentsTab />}
-        {tab === 'calls' && <CallsTab />}
-        {tab === 'visits' && <VisitsTab />}
+        {tab === 'visits'    && <VisitsTab />}
       </main>
     </div>
   );
