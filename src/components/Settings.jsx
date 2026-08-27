@@ -75,6 +75,60 @@ export default function Settings({ bare = false }) {
     loadTeamUsers();
   }, [storedUser?.role]);
 
+  // Pending agent signups — owner-only, wires GET/POST
+  // /api/v1/dashboard/agent-signups. These are prospective agents who
+  // texted "join as agent" on WhatsApp and finished the conversational
+  // name/address collection (agentSignupController.js/agentSignupWorker.js)
+  // — approving creates their users row and makes their phone immediately
+  // live for the existing WhatsApp listing-intake flow.
+  const [agentSignups, setAgentSignups] = useState([]);
+  const [signupsLoading, setSignupsLoading] = useState(false);
+  const [signupError, setSignupError] = useState(null);
+  const [signupActionLoading, setSignupActionLoading] = useState(null);
+  const [signupCredential, setSignupCredential] = useState(null);
+
+  const loadAgentSignups = () => {
+    setSignupsLoading(true);
+    apiClient.get('/api/v1/dashboard/agent-signups')
+      .then((res) => setAgentSignups(res.data.signups || []))
+      .catch(() => {})
+      .finally(() => setSignupsLoading(false));
+  };
+
+  useEffect(() => {
+    if (storedUser?.role !== 'owner') return;
+    loadAgentSignups();
+  }, [storedUser?.role]);
+
+  const handleApproveSignup = async (id) => {
+    setSignupActionLoading(id);
+    setSignupError(null);
+    try {
+      const res = await apiClient.post(`/api/v1/dashboard/agent-signups/${id}/approve`);
+      setAgentSignups((prev) => prev.filter((s) => s.id !== id));
+      setSignupCredential({ name: res.data.user.name, email: res.data.user.email, password: res.data.temporaryPassword });
+      loadTeamUsers(); // the newly-approved agent now also shows up in Team Members
+    } catch (err) {
+      setSignupError(err.response?.data?.error?.message || 'Failed to approve this request.');
+    } finally {
+      setSignupActionLoading(null);
+    }
+  };
+
+  const handleRejectSignup = async (id) => {
+    if (!window.confirm('Reject this agent signup request?')) return;
+    setSignupActionLoading(id);
+    setSignupError(null);
+    try {
+      await apiClient.post(`/api/v1/dashboard/agent-signups/${id}/reject`);
+      setAgentSignups((prev) => prev.filter((s) => s.id !== id));
+    } catch (err) {
+      setSignupError(err.response?.data?.error?.message || 'Failed to reject this request.');
+    } finally {
+      setSignupActionLoading(null);
+    }
+  };
+
   const startEditPhone = (user) => {
     setEditingUserId(user.id);
     setEditPhoneValue(user.phone || '');
@@ -288,6 +342,59 @@ export default function Settings({ bare = false }) {
           </section>
         )}
 
+        {storedUser?.role === 'owner' && (
+          <section style={styles.card}>
+            <h3 style={styles.cardTitle}>Pending Agent Signups</h3>
+            <p style={styles.cardHelp}>
+              Prospective agents who texted "join as agent" on WhatsApp and finished providing
+              their details. Approving creates their login and makes their number immediately
+              live for listing intake — no separate activation step.
+            </p>
+
+            {signupCredential && (
+              <div style={styles.currentPhoneBox}>
+                ✅ Approved <strong>{signupCredential.name}</strong>. Dashboard login (optional):{' '}
+                {signupCredential.email} / <code style={styles.codeBadge}>{signupCredential.password}</code>
+              </div>
+            )}
+            {signupError && <div style={styles.banner}>⚠️ {signupError}</div>}
+
+            {signupsLoading ? (
+              <p style={styles.cardHelp}>Loading…</p>
+            ) : agentSignups.length === 0 ? (
+              <p style={styles.cardHelp}>No pending signups.</p>
+            ) : (
+              <div style={styles.numberList}>
+                {agentSignups.map((s) => (
+                  <div key={s.id} style={styles.numberRow}>
+                    <div>
+                      <strong>{s.name}</strong>
+                      <span style={styles.numberLabel}> — {s.phone}</span>
+                      <div style={styles.signupAddress}>{s.address}</div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        onClick={() => handleApproveSignup(s.id)}
+                        disabled={signupActionLoading === s.id}
+                        style={{ ...styles.linkBtn, color: '#16a34a', opacity: signupActionLoading === s.id ? 0.6 : 1 }}
+                      >
+                        {signupActionLoading === s.id ? '…' : 'Approve'}
+                      </button>
+                      <button
+                        onClick={() => handleRejectSignup(s.id)}
+                        disabled={signupActionLoading === s.id}
+                        style={{ ...styles.linkBtn, color: '#dc2626', opacity: signupActionLoading === s.id ? 0.6 : 1 }}
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
         {storedUser?.role === 'owner' && maxWhatsappNumbers > 1 && (
           <section style={styles.card}>
             <h3 style={styles.cardTitle}>Buyer-Facing WhatsApp Numbers</h3>
@@ -368,6 +475,7 @@ const styles = {
   numberList: { display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '4px' },
   numberRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 12px', backgroundColor: '#f9fafb', borderRadius: '6px', fontSize: '13px' },
   numberLabel: { color: '#6b7280' },
+  signupAddress: { fontSize: '12px', color: '#94a3b8', marginTop: '2px' },
   defaultTag: { marginLeft: '8px', fontSize: '10px', fontWeight: '700', color: '#166534', backgroundColor: '#dcfce7', padding: '2px 7px', borderRadius: '10px', textTransform: 'uppercase' },
   linkBtn: { border: 'none', background: 'none', color: '#2563eb', fontSize: '12.5px', fontWeight: '600', cursor: 'pointer', padding: 0 },
   input: { flex: 1, padding: '10px 12px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '14px' },
