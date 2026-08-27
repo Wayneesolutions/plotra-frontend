@@ -34,23 +34,10 @@ export default function OpsPanel({ bare = false }) {
 
   if (bare) {
     return (
-      <div>
-        <div style={S.bareTabBar}>
-          {NAV.map((n) => (
-            <button
-              key={n.key}
-              onClick={() => setTab(n.key)}
-              style={{ ...S.bareTab, ...(tab === n.key ? S.bareTabActive : {}) }}
-            >
-              {n.label}
-            </button>
-          ))}
-        </div>
-        <div style={S.bareContent}>
-          {tab === 'overview'  && <OverviewTab />}
-          {tab === 'documents' && <DocumentsTab />}
-          {tab === 'visits'    && <VisitsTab />}
-        </div>
+      <div style={S.bareContent}>
+        <OverviewTab />
+        <DocumentsTab />
+        <VisitsTab />
       </div>
     );
   }
@@ -428,7 +415,7 @@ const S = {
     marginBottom: '-1px', whiteSpace: 'nowrap',
   },
   bareTabActive: { color: '#0c1b2e', borderBottomColor: '#c8a96e' },
-  bareContent: { maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' },
+  bareContent: { maxWidth: '1200px', margin: '0 auto', padding: '32px 24px', display: 'flex', flexDirection: 'column', gap: '40px' },
   pageTitle: { fontFamily: "'Newsreader', serif", fontSize: '28px', fontWeight: 500, margin: '0 0 4px' },
   pageSub: { fontSize: '14px', color: 'rgba(23,27,35,0.6)', margin: '0 0 28px' },
 
