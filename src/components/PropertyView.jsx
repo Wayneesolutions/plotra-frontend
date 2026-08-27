@@ -461,11 +461,24 @@ export default function PropertyView() {
               <div style={S.devStatsRow}>
                 {builderProfile.builderProfile.overall_rating != null && (
                   <div style={S.devStatCard}>
-                    <span style={S.devStatLbl}>Rating</span>
-                    <span style={S.devStatVal}>★ {Number(builderProfile.builderProfile.overall_rating).toFixed(1)}<span style={S.devStatMax}>/5</span></span>
-                    <a href={builderProfile.builderProfile.rating_source_url} target="_blank" rel="noopener noreferrer" style={S.sourceLink}>
-                      Source: {builderProfile.builderProfile.rating_source_title || 'link'}
-                    </a>
+                    <span style={S.devStatLbl}>
+                      {builderProfile.builderProfile.rating_is_ai_assessment ? "Plotra's Assessment" : 'Rating'}
+                    </span>
+                    <span style={S.devStatVal}>★ {Number(builderProfile.builderProfile.overall_rating).toFixed(1)}<span style={S.devStatMax}>/10</span></span>
+                    {builderProfile.builderProfile.rating_is_ai_assessment ? (
+                      <>
+                        <p style={{ ...S.descTxt, fontSize: '12px', margin: '2px 0 0' }}>
+                          {builderProfile.builderProfile.rating_basis}
+                        </p>
+                        <p style={{ ...S.sourceLink, cursor: 'default' }}>
+                          AI-generated assessment from the cited facts below — not an official or certified rating.
+                        </p>
+                      </>
+                    ) : (
+                      <a href={builderProfile.builderProfile.rating_source_url} target="_blank" rel="noopener noreferrer" style={S.sourceLink}>
+                        Source: {builderProfile.builderProfile.rating_source_title || 'link'}
+                      </a>
+                    )}
                   </div>
                 )}
                 {builderProfile.builderProfile.possession_total_count != null && (
