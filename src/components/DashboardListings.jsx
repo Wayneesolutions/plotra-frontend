@@ -712,13 +712,13 @@ export default function DashboardListings() {
 
       {/* ══ NON-LISTINGS TAB CONTENT ════════════════════════════ */}
       {activeTab === 'leads' && isGrowthPlus && (
-        <div style={S.pageBody}><LeadsInbox bare /></div>
+        <div style={S.pageBody}><div style={S.page}><LeadsInbox bare /></div></div>
       )}
       {activeTab === 'ops' && isGrowthPlus && (
         <div style={S.pageBody}><OpsPanel bare /></div>
       )}
       {activeTab === 'analytics' && isUnlimited && (
-        <div style={S.pageBody}><Analytics bare /></div>
+        <div style={S.pageBody}><div style={S.page}><Analytics bare /></div></div>
       )}
 
       {/* ══ MODAL: Create Listing ═══════════════════════════════ */}

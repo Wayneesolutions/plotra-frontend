@@ -30,9 +30,34 @@ const timeAgo = (d) => {
   return `${Math.round(hrs / 24)}d ago`;
 };
 
-export default function OpsPanel() {
+export default function OpsPanel({ bare = false }) {
   const navigate = useNavigate();
   const [tab, setTab] = useState('overview');
+
+  if (bare) {
+    return (
+      <div>
+        <div style={S.bareTabBar}>
+          {NAV.map((n) => (
+            <button
+              key={n.key}
+              onClick={() => setTab(n.key)}
+              style={{ ...S.bareTab, ...(tab === n.key ? S.bareTabActive : {}) }}
+            >
+              {n.label}
+            </button>
+          ))}
+        </div>
+        <div style={S.bareContent}>
+          {tab === 'overview' && <OverviewTab />}
+          {tab === 'leads' && <LeadsTab />}
+          {tab === 'documents' && <DocumentsTab />}
+          {tab === 'calls' && <CallsTab />}
+          {tab === 'visits' && <VisitsTab />}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={S.root}>
@@ -381,8 +406,8 @@ const RUST_DARK = '#8F3E20';
 const LINE = 'rgba(23,27,35,0.12)';
 
 const S = {
-  root: { display: 'flex', minHeight: '100vh', background: STONE, fontFamily: "'Inter', sans-serif", color: INK },
-  sidebar: { width: '240px', flexShrink: 0, background: INK, color: STONE, display: 'flex', flexDirection: 'column', padding: '24px 16px' },
+  root: { display: 'flex', height: '100vh', overflow: 'hidden', background: STONE, fontFamily: "'Inter', sans-serif", color: INK },
+  sidebar: { width: '240px', flexShrink: 0, background: INK, color: STONE, display: 'flex', flexDirection: 'column', padding: '24px 16px', overflowY: 'auto' },
   brand: { display: 'flex', alignItems: 'center', gap: '10px', padding: '0 8px 24px', borderBottom: '1px solid rgba(245,243,236,0.1)', marginBottom: '20px' },
   brandMark: { color: BRASS, fontSize: '18px' },
   brandName: { fontFamily: "'Newsreader', serif", fontSize: '16px', fontWeight: 600, lineHeight: 1.1 },
@@ -393,6 +418,23 @@ const S = {
   backBtn: { marginTop: '12px', background: 'none', border: '1px solid rgba(245,243,236,0.15)', color: 'rgba(245,243,236,0.6)', padding: '10px', borderRadius: '4px', fontSize: '12.5px', cursor: 'pointer' },
 
   main: { flex: 1, padding: '40px 48px', overflowY: 'auto' },
+
+  bareTabBar: {
+    display: 'flex', gap: 0,
+    borderBottom: '1px solid #e2e8f0',
+    padding: '0 24px',
+    backgroundColor: '#fff',
+    boxShadow: '0 1px 4px rgba(12,27,46,0.06)',
+    flexShrink: 0,
+  },
+  bareTab: {
+    padding: '13px 20px', border: 'none', background: 'none',
+    fontSize: '13px', fontWeight: '600', color: '#94a3b8',
+    cursor: 'pointer', borderBottom: '2px solid transparent',
+    marginBottom: '-1px', whiteSpace: 'nowrap',
+  },
+  bareTabActive: { color: '#0c1b2e', borderBottomColor: '#c8a96e' },
+  bareContent: { maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' },
   pageTitle: { fontFamily: "'Newsreader', serif", fontSize: '28px', fontWeight: 500, margin: '0 0 4px' },
   pageSub: { fontSize: '14px', color: 'rgba(23,27,35,0.6)', margin: '0 0 28px' },
 
