@@ -4,8 +4,8 @@ import axios from 'axios';
 import { API_BASE_URL } from '../api/config';
 import RentVsBuyCalculator from './RentVsBuyCalculator.jsx';
 import { InteractiveSatellite, InteractiveStreetView } from './PropertyMapMedia.jsx';
-// NEW — Phase 6 monetization
 import AdSlot from './AdSlot.jsx';
+import plotraIcon from '../assets/plotra-icon.png';
 
 // Display order + labels for builder_profile_claims.category — keeps the
 // developer section reading as distinct topics (delivery record, who runs
@@ -220,12 +220,8 @@ export default function PropertyView() {
       <header style={S.siteNav}>
         <div style={S.navInner}>
           <div style={S.navLogo}>
-            <div style={S.navLogoIcon}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                <path d="M3 9.5L12 3l9 6.5V21H15v-6H9v6H3V9.5Z" fill="#0c1b2e"/>
-              </svg>
-            </div>
-            <span style={S.navBrand}>WayneState Pro</span>
+            <img src={plotraIcon} alt="Plotra" style={{ height: '30px', width: 'auto', flexShrink: 0 }} />
+            <span style={S.navBrand}>Plotra</span>
           </div>
           <span style={S.navLabel}>Property Listing</span>
         </div>
@@ -624,12 +620,8 @@ export default function PropertyView() {
       {/* ══ FOOTER ══════════════════════════════════════════════ */}
       <footer style={S.footer}>
         <div style={S.footerLogoRow}>
-          <div style={S.footerIcon}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-              <path d="M3 9.5L12 3l9 6.5V21H15v-6H9v6H3V9.5Z" fill="#c8a96e"/>
-            </svg>
-          </div>
-          <span style={S.footerBrand}>WayneState Pro</span>
+          <img src={plotraIcon} alt="Plotra" style={{ height: '26px', width: 'auto', flexShrink: 0 }} />
+          <span style={S.footerBrand}>Plotra</span>
         </div>
         <p style={S.footerTxt}>Real Estate Visual Explorer · Dealer Powered Listing</p>
       </footer>
