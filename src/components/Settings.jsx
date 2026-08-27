@@ -129,6 +129,39 @@ export default function Settings({ bare = false }) {
     }
   };
 
+  // Web chat activation code — owner-only, wires GET/POST
+  // /api/v1/dashboard/web-chat-code(/regenerate). This is the code the
+  // owner hands to whoever embeds the public web chat widget
+  // (ChatWidget.jsx, at /widget) on their own site — entering it there
+  // activates the widget for this tenant.
+  const [webChatCode, setWebChatCode] = useState(null);
+  const [webChatCodeLoading, setWebChatCodeLoading] = useState(false);
+  const [webChatCodeError, setWebChatCodeError] = useState(null);
+  const [regeneratingCode, setRegeneratingCode] = useState(false);
+
+  useEffect(() => {
+    if (storedUser?.role !== 'owner') return;
+    setWebChatCodeLoading(true);
+    apiClient.get('/api/v1/dashboard/web-chat-code')
+      .then((res) => setWebChatCode(res.data.code))
+      .catch(() => setWebChatCodeError('Failed to load your web chat code.'))
+      .finally(() => setWebChatCodeLoading(false));
+  }, [storedUser?.role]);
+
+  const handleRegenerateCode = async () => {
+    if (!window.confirm('Regenerate your web chat code? The old code will stop working immediately.')) return;
+    setRegeneratingCode(true);
+    setWebChatCodeError(null);
+    try {
+      const res = await apiClient.post('/api/v1/dashboard/web-chat-code/regenerate');
+      setWebChatCode(res.data.code);
+    } catch (err) {
+      setWebChatCodeError(err.response?.data?.error?.message || 'Failed to regenerate the code.');
+    } finally {
+      setRegeneratingCode(false);
+    }
+  };
+
   const startEditPhone = (user) => {
     setEditingUserId(user.id);
     setEditPhoneValue(user.phone || '');
@@ -267,6 +300,31 @@ export default function Settings({ bare = false }) {
             </button>
           </form>
         </section>
+
+        {storedUser?.role === 'owner' && (
+          <section style={styles.card}>
+            <h3 style={styles.cardTitle}>Web Chat Widget</h3>
+            <p style={styles.cardHelp}>
+              Embed Plotra's chat widget on your own website so you (or your team) can add listings
+              by chatting, the same way you can over WhatsApp. Enter this code into the widget once
+              to activate it for your account.
+            </p>
+
+            {webChatCodeError && <div style={styles.banner}>⚠️ {webChatCodeError}</div>}
+
+            {webChatCodeLoading ? (
+              <p style={styles.cardHelp}>Loading…</p>
+            ) : webChatCode ? (
+              <div style={styles.currentPhoneBox}>
+                Your activation code: <code style={styles.codeBadge}>{webChatCode}</code>
+              </div>
+            ) : null}
+
+            <button onClick={handleRegenerateCode} disabled={regeneratingCode} style={styles.secondaryBtn}>
+              {regeneratingCode ? 'Regenerating…' : 'Regenerate Code'}
+            </button>
+          </section>
+        )}
 
         <section style={styles.card}>
           <h3 style={styles.cardTitle}>Password</h3>

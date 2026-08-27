@@ -17,6 +17,7 @@ const PricingPage = lazy(() => import('./pages/PricingPage.tsx'));
 const HowItWorksPage = lazy(() => import('./pages/HowItWorksPage.tsx'));
 const LegalPage = lazy(() => import('./pages/LegalPage.tsx'));
 const TeamPage = lazy(() => import('./pages/TeamPage.tsx'));
+const ChatWidgetPage = lazy(() => import('./pages/ChatWidgetPage.jsx'));
 
 export default function App() {
   return (
@@ -67,6 +68,11 @@ export default function App() {
 
           {/* Public property view */}
           <Route path="/p/:slug" element={<PropertyView />} />
+
+          {/* Public web chat widget — embeddable via iframe on a tenant's
+              own website, activated with the code from Settings.jsx's
+              "Web Chat Widget" section */}
+          <Route path="/widget" element={<ChatWidgetPage />} />
 
           {/* Unauthenticated users hitting unknown routes → landing page */}
           <Route path="*" element={<Navigate to="/" replace />} />
