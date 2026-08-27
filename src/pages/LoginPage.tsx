@@ -36,7 +36,7 @@ export default function LoginPage() {
           try {
             const { token, user } = await login(email, password);
             saveSession(token, user);
-            navigate("/dashboard");
+            navigate(user.role === "super_admin" ? "/admin" : "/dashboard");
           } catch (err) {
             const message =
               err instanceof ApiError ? err.message : "Could not reach Plotra. Try again.";

@@ -20,7 +20,7 @@ export function AuthShell({
   return (
     <>
       <SiteNav />
-      <main className="relative grid min-h-[100svh] place-items-center overflow-hidden px-5 py-24">
+      <main className="relative grid min-h-[100svh] place-items-center overflow-hidden px-5 pb-24 pt-36">
         <img
           src={media.heroAerial}
           alt=""
@@ -55,7 +55,7 @@ export function AuthField({
       <span className="label-eyebrow text-ink-foreground/55">{label}</span>
       <input
         {...props}
-        className="mt-2 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-ink-foreground outline-none transition-all duration-500 placeholder:text-ink-foreground/35 focus:border-primary focus:shadow-[var(--shadow-glow)] hover:bg-white/10 [&:-webkit-autofill]:[-webkit-text-fill-color:white] [&:-webkit-autofill]:[box-shadow:0_0_0px_1000px_rgba(0,0,0,0.3)_inset] [&:-webkit-autofill]:border-white/15"
+        className="mt-2 w-full rounded-xl border border-white/20 bg-white px-4 py-3 text-sm text-ink outline-none transition-all duration-500 placeholder:text-ink/35 focus:border-primary focus:shadow-[var(--shadow-glow)] [&:-webkit-autofill]:[-webkit-text-fill-color:#0c1b2e] [&:-webkit-autofill]:[box-shadow:0_0_0px_1000px_#fff_inset]"
       />
     </label>
   );

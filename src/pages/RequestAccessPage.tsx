@@ -35,7 +35,7 @@ export default function RequestAccessPage() {
         </div>
       </div>
 
-      <div className="flex items-center justify-center bg-background px-5 py-16 sm:px-10">
+      <div className="flex items-start justify-center bg-background px-5 pb-16 pt-28 sm:px-10 sm:pt-32">
         <Reveal className="w-full max-w-md">
           <Link to="/">
             <PlotraLogo />
@@ -120,7 +120,7 @@ export default function RequestAccessPage() {
                     name="message"
                     rows={3}
                     placeholder="Cities you work in, roughly how many listings you handle…"
-                    className="mt-2 w-full rounded-xl border border-border bg-card px-4 py-3 text-sm outline-none transition-all duration-500 focus:border-primary focus:shadow-[var(--shadow-glow)]"
+                    className="mt-2 w-full rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground outline-none transition-all duration-500 focus:border-primary focus:shadow-[var(--shadow-glow)]"
                   />
                 </label>
                 {error ? <p className="text-xs font-medium text-destructive">{error}</p> : null}
@@ -153,7 +153,7 @@ function Field({
       <span className="label-eyebrow text-muted-foreground">{label}</span>
       <input
         {...props}
-        className="mt-2 w-full rounded-xl border border-border bg-card px-4 py-3 text-sm outline-none transition-all duration-500 focus:border-primary focus:shadow-[var(--shadow-glow)]"
+        className="mt-2 w-full rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground outline-none transition-all duration-500 focus:border-primary focus:shadow-[var(--shadow-glow)]"
       />
     </label>
   );

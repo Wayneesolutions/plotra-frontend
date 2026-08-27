@@ -7,6 +7,7 @@ import PropertyEditModal from './PropertyEditModal.jsx';
 import LeadsInbox from './LeadsInbox.jsx';
 import OpsPanel from './OpsPanel.jsx';
 import Analytics from './Analytics.jsx';
+import plotraIcon from '../assets/plotra-icon.png';
 
 export default function DashboardListings() {
   const navigate   = useNavigate();
@@ -275,11 +276,7 @@ export default function DashboardListings() {
       {/* ══ TOP NAV ══════════════════════════════════════════════ */}
       <header style={S.nav} role="banner">
         <div style={S.navLeft}>
-          <div style={S.navLogo}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M3 9.5L12 3l9 6.5V21H15v-6H9v6H3V9.5Z" fill="#0c1b2e"/>
-            </svg>
-          </div>
+          <img src={plotraIcon} alt="Plotra" style={{ height: '32px', width: 'auto', flexShrink: 0 }} />
           <span style={S.navBrand}>Plotra</span>
           <div style={S.navDivider} />
           <div style={S.navMeta}>

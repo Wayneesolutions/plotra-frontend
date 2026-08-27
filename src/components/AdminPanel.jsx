@@ -2,6 +2,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/apiClient';
 import TenantDetailModal from './TenantDetailModal.jsx';
+import LeadsInbox from './LeadsInbox.jsx';
+import Analytics from './Analytics.jsx';
+import Settings from './Settings.jsx';
+import OpsPanel from './OpsPanel.jsx';
+import plotraIcon from '../assets/plotra-icon.png';
 
 const TABS = [
   { label: 'Pending Requests', icon: '📋', desc: 'Approve or reject new dealer signups' },
@@ -16,7 +21,7 @@ export default function AdminPanel() {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('pve_user') || '{}');
 
-  const [tab, setTab]           = useState(0);
+  const [tab, setTab]           = useState('listings');
   const [requests, setRequests] = useState([]);
   // WhatsApp signups (Part 3) that are approved but still waiting on a
   // human to confirm payment — see fetchRequests.
@@ -122,13 +127,10 @@ export default function AdminPanel() {
   }, []);
 
   useEffect(() => {
-    if (tab === 0) fetchRequests();
-    // Tab 1 (All Tenants) also needs the plan list — its plan column is
-    // an editable dropdown (Part 2, build-order item 9), sourced from the
-    // same active-plans list the Plans tab manages.
-    if (tab === 1) { fetchTenants(); fetchPlans(); }
-    if (tab === 3) fetchAds();
-    if (tab === 4) fetchPlans();
+    if (tab === 'Pending Requests') fetchRequests();
+    if (tab === 'All Tenants') { fetchTenants(); fetchPlans(); }
+    if (tab === 'Ad Placements') fetchAds();
+    if (tab === 'Plans') fetchPlans();
   }, [tab, fetchRequests, fetchTenants, fetchAds, fetchPlans]);
 
   const handleChangeTenantPlan = async (tenantId, newPlan) => {
@@ -349,11 +351,7 @@ export default function AdminPanel() {
       <aside style={S.sidebar}>
         <div style={S.sideTop}>
           <div style={S.logoRow}>
-            <div style={S.logoBox}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="M3 9.5L12 3l9 6.5V21H15v-6H9v6H3V9.5Z" fill="#0c1b2e"/>
-              </svg>
-            </div>
+            <img src={plotraIcon} alt="Plotra" style={{ height: '40px', width: 'auto', flexShrink: 0 }} />
             <div>
               <div style={S.logoName}>Plotra</div>
               <div style={S.logoBadge}>Super Admin</div>
@@ -363,13 +361,13 @@ export default function AdminPanel() {
           <nav style={S.nav}>
             <div style={S.navSection}>DEALER DASHBOARD</div>
             {[
-              { label: 'Listings',   icon: '🏠', path: '/dashboard',          desc: 'All property listings' },
-              { label: 'Leads',      icon: '💬', path: '/dashboard/leads',     desc: 'Buyer inquiries & contacts' },
-              { label: 'Ops',        icon: '🗂',  path: '/dashboard/ops',       desc: 'Documents, calls, visits' },
-              { label: 'Analytics',  icon: '📊', path: '/dashboard/analytics', desc: 'Views, traffic, performance' },
-              { label: 'Settings',   icon: '⚙️', path: '/dashboard/settings',  desc: 'WhatsApp number, team, password' },
+              { label: 'Listings',  icon: '🏠', key: 'listings',  desc: 'All property listings' },
+              { label: 'Leads',     icon: '💬', key: 'leads',     desc: 'Buyer inquiries & contacts' },
+              { label: 'Ops',       icon: '🗂',  key: 'ops',       desc: 'Documents, calls, visits' },
+              { label: 'Analytics', icon: '📊', key: 'analytics', desc: 'Views, traffic, performance' },
+              { label: 'Settings',  icon: '⚙️', key: 'settings',  desc: 'WhatsApp number, team, password' },
             ].map((l) => (
-              <button key={l.path} style={S.navItem} onClick={() => navigate(l.path)}>
+              <button key={l.key} style={{ ...S.navItem, ...(tab === l.key ? S.navItemActive : {}) }} onClick={() => setTab(l.key)}>
                 <div style={S.navItemInner}>
                   <div style={S.navItemTop}>
                     <span style={S.navIcon}>{l.icon}</span>
@@ -382,12 +380,12 @@ export default function AdminPanel() {
 
             <div style={{ ...S.navSection, marginTop: '12px' }}>PLATFORM MANAGEMENT</div>
             {TABS.map((t, i) => (
-              <button key={t.label} style={{ ...S.navItem, ...(tab === i ? S.navItemActive : {}) }} onClick={() => setTab(i)}>
+              <button key={t.label} style={{ ...S.navItem, ...(tab === t.label ? S.navItemActive : {}) }} onClick={() => setTab(t.label)}>
                 <div style={S.navItemInner}>
                   <div style={S.navItemTop}>
                     <span style={S.navIcon}>{t.icon}</span>
                     <span>{t.label}</span>
-                    {i === 0 && requests.length > 0 && (
+                    {t.label === 'Pending Requests' && requests.length > 0 && (
                       <span style={S.navBadge}>{requests.length}</span>
                     )}
                   </div>
@@ -485,8 +483,41 @@ export default function AdminPanel() {
           </div>
         )}
 
-        {/* ── Tab 0: Pending Requests ────────────────────── */}
-        {tab === 0 && (
+        {/* ── Dealer Dashboard Embedded Views ──────────────── */}
+        {tab === 'listings' && (
+          <section style={S.section}>
+            <div style={S.sectionHead}>
+              <div>
+                <h1 style={S.pageTitle}>Listings</h1>
+                <p style={S.pageSubtitle}>Manage your property portfolio</p>
+              </div>
+              <button style={S.createBtn} onClick={() => navigate('/dashboard')}>
+                Open Full Listings Dashboard →
+              </button>
+            </div>
+            <div style={{ backgroundColor: '#f8fafd', borderRadius: '12px', padding: '32px', textAlign: 'center', border: '1px dashed #c8a96e' }}>
+              <div style={{ marginBottom: '12px' }}>
+                <img src={plotraIcon} alt="Plotra" style={{ height: '52px', width: 'auto' }} />
+              </div>
+              <p style={{ margin: '0 0 16px', color: '#0c1b2e', fontWeight: '700', fontSize: '15px' }}>
+                Listings Dashboard
+              </p>
+              <p style={{ margin: '0 0 20px', color: '#64748b', fontSize: '13px' }}>
+                Add properties, manage photos, set boundaries, and copy sharing links.
+              </p>
+              <button style={{ ...S.createBtn, display: 'inline-flex' }} onClick={() => navigate('/dashboard')}>
+                Go to Listings Dashboard →
+              </button>
+            </div>
+          </section>
+        )}
+        {tab === 'leads' && <section style={S.section}><LeadsInbox bare /></section>}
+        {tab === 'ops' && <section style={{ padding: '36px 40px' }}><OpsPanel bare /></section>}
+        {tab === 'analytics' && <section style={S.section}><Analytics bare /></section>}
+        {tab === 'settings' && <section style={S.section}><Settings bare /></section>}
+
+        {/* ── Tab: Pending Requests ────────────────────────── */}
+        {tab === 'Pending Requests' && (
           <section style={S.section}>
             <div style={S.sectionHead}>
               <div>
@@ -584,8 +615,8 @@ export default function AdminPanel() {
           </section>
         )}
 
-        {/* ── Tab 1: All Tenants ─────────────────────────── */}
-        {tab === 1 && (
+        {/* ── Tab: All Tenants ───────────────────────────── */}
+        {tab === 'All Tenants' && (
           <section style={S.section}>
             <div style={S.sectionHead}>
               <div>
@@ -667,8 +698,8 @@ export default function AdminPanel() {
           </section>
         )}
 
-        {/* ── Tab 2: Create Tenant ───────────────────────── */}
-        {tab === 2 && (
+        {/* ── Tab: Create Tenant ─────────────────────────── */}
+        {tab === 'Create Tenant' && (
           <section style={S.section}>
             <div style={S.sectionHead}>
               <div>
@@ -713,8 +744,8 @@ export default function AdminPanel() {
           </section>
         )}
 
-        {/* ── Tab 3: Ad Placements (NEW — Phase 6) ───────── */}
-        {tab === 3 && (
+        {/* ── Tab: Ad Placements ─────────────────────────── */}
+        {tab === 'Ad Placements' && (
           <section style={S.section}>
             <div style={S.sectionHead}>
               <div>
@@ -834,8 +865,8 @@ export default function AdminPanel() {
           </section>
         )}
 
-        {/* ── Tab 4: Plans ────────────────────────────────── */}
-        {tab === 4 && (
+        {/* ── Tab: Plans ──────────────────────────────────── */}
+        {tab === 'Plans' && (
           <section style={S.section}>
             <div style={S.sectionHead}>
               <div>
@@ -1101,7 +1132,7 @@ const S = {
     width: '260px', flexShrink: 0,
     background: 'linear-gradient(180deg, #060d18 0%, #0b1929 100%)',
     display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-    padding: '28px 0',
+    padding: '28px 0', overflowY: 'auto',
   },
   sideTop: { display: 'flex', flexDirection: 'column', gap: '32px' },
   logoRow: { display: 'flex', alignItems: 'center', gap: '12px', padding: '0 24px' },
@@ -1197,8 +1228,8 @@ const S = {
   requestInfo: { display: 'flex', alignItems: 'flex-start', gap: '16px', flex: 1 },
   requestAvatar: {
     width: '44px', height: '44px', borderRadius: '12px', flexShrink: 0,
-    background: 'linear-gradient(135deg, #0c1b2e, #1a3558)',
-    color: '#c8a96e', fontSize: '18px', fontWeight: '700',
+    background: 'linear-gradient(135deg, #f06623, #d95215)',
+    color: '#fff', fontSize: '18px', fontWeight: '700',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
   },
   requestBiz: { fontSize: '15px', fontWeight: '700', color: '#0c1b2e', marginBottom: '4px' },
@@ -1269,10 +1300,10 @@ const S = {
     transition: 'border-color 0.15s', boxSizing: 'border-box', width: '100%',
   },
   createBtn: {
-    padding: '13px 28px', background: 'linear-gradient(135deg, #0c1b2e 0%, #1a3558 100%)',
+    padding: '13px 28px', background: 'linear-gradient(135deg, #f06623 0%, #d95215 100%)',
     color: '#fff', border: 'none', borderRadius: '11px', fontWeight: '700',
     fontSize: '14px', cursor: 'pointer', alignSelf: 'flex-start',
-    boxShadow: '0 4px 16px rgba(12,27,46,0.25)',
+    boxShadow: '0 4px 16px rgba(240,102,35,0.30)',
   },
 
 

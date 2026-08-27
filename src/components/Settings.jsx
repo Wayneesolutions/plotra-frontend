@@ -8,7 +8,7 @@ import ChangePassword from './ChangePassword.jsx';
 // entire pitch (both the dealer PDF and investor deck) is "list a property
 // by texting it in," but a real dealer had no way to connect their own
 // WhatsApp number without a developer calling the API for them directly.
-export default function Settings() {
+export default function Settings({ bare = false }) {
   const storedUser = JSON.parse(localStorage.getItem('pve_user') || 'null');
   const [phone, setPhone] = useState('');
   const [linkedPhone, setLinkedPhone] = useState(null);
@@ -113,6 +113,9 @@ export default function Settings() {
       const res = await apiClient.post('/api/v1/auth/update-phone', { phone: phone.trim() });
       setLinkedPhone(res.data.phone);
       setPhone('');
+      // Keep localStorage in sync so the dashboard header reflects the new number immediately
+      const saved = JSON.parse(localStorage.getItem('pve_user') || 'null');
+      if (saved) localStorage.setItem('pve_user', JSON.stringify({ ...saved, phone: res.data.phone }));
       setStatusMessage('✅ WhatsApp number connected. Text your listing details to your Plotra WhatsApp number and it will show up here as a draft once approved.');
     } catch (err) {
       setIsError(true);
@@ -122,9 +125,8 @@ export default function Settings() {
     }
   };
 
-  return (
-    <Layout>
-      <div style={styles.container}>
+  const inner = (
+    <div style={styles.container}>
         <h2 style={styles.pageTitle}>Settings</h2>
 
         <section style={styles.card}>
@@ -253,8 +255,9 @@ export default function Settings() {
 
         {showPasswordModal && <ChangePassword onClose={() => setShowPasswordModal(false)} />}
       </div>
-    </Layout>
   );
+
+  return bare ? inner : <Layout>{inner}</Layout>;
 }
 
 const styles = {
