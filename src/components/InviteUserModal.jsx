@@ -7,7 +7,7 @@ import apiClient from '../api/apiClient';
  * pattern as ChangePassword.jsx/BillingModal.jsx.
  */
 export default function InviteUserModal({ onClose }) {
-  const [form, setForm] = useState({ name: '', email: '' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '' });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [credential, setCredential] = useState(null);
@@ -19,7 +19,11 @@ export default function InviteUserModal({ onClose }) {
     setSubmitting(true);
     setError(null);
     try {
-      const res = await apiClient.post('/api/v1/dashboard/users/invite', form);
+      const res = await apiClient.post('/api/v1/dashboard/users/invite', {
+        name: form.name,
+        email: form.email,
+        phone: form.phone || undefined,
+      });
       setCredential({
         email: res.data.user.email,
         password: res.data.temporaryPassword,
@@ -74,6 +78,11 @@ export default function InviteUserModal({ onClose }) {
                 <span style={S.label}>Email</span>
                 <input style={S.input} type="email" required value={form.email} onChange={setField('email')} placeholder="agent@example.com" />
               </label>
+              <label style={S.field}>
+                <span style={S.label}>Phone (optional)</span>
+                <input style={S.input} type="tel" value={form.phone} onChange={setField('phone')} placeholder="e.g. 9876543210" />
+                <span style={S.fieldNote}>Add their WhatsApp number to let them create listings by texting Plotra directly.</span>
+              </label>
 
               <button type="submit" disabled={submitting} style={{ ...S.submitBtn, opacity: submitting ? 0.7 : 1 }}>
                 {submitting ? 'Sending invite…' : 'Send Invite'}
@@ -112,6 +121,7 @@ const S = {
   form: { display: 'flex', flexDirection: 'column', gap: '14px' },
   field: { display: 'flex', flexDirection: 'column', gap: '6px' },
   label: { fontSize: '11px', fontWeight: '700', color: '#374151', textTransform: 'uppercase', letterSpacing: '0.6px' },
+  fieldNote: { fontSize: '12px', color: '#94a3b8', lineHeight: '1.5' },
   input: {
     padding: '11px 13px', fontSize: '14px', border: '1.5px solid #e2e8f0', borderRadius: '9px',
     width: '100%', color: '#0c1b2e', backgroundColor: '#fafbfd', boxSizing: 'border-box',

@@ -38,6 +38,25 @@ export default function Settings({ bare = false }) {
   const [numberError, setNumberError] = useState(null);
   const [maxWhatsappNumbers, setMaxWhatsappNumbers] = useState(1);
 
+  // Team list — owner-only, wires GET /api/v1/dashboard/users. Lets the
+  // owner add/change a team member's phone after invite time (PATCH
+  // /api/v1/dashboard/users/:id) — previously the only way to set
+  // users.phone was at invite, so a mistyped or missing number was stuck.
+  const [teamUsers, setTeamUsers] = useState([]);
+  const [teamLoading, setTeamLoading] = useState(false);
+  const [teamError, setTeamError] = useState(null);
+  const [editingUserId, setEditingUserId] = useState(null);
+  const [editPhoneValue, setEditPhoneValue] = useState('');
+  const [editSubmitting, setEditSubmitting] = useState(false);
+
+  const loadTeamUsers = () => {
+    setTeamLoading(true);
+    apiClient.get('/api/v1/dashboard/users')
+      .then((res) => setTeamUsers(res.data.users || []))
+      .catch(() => {})
+      .finally(() => setTeamLoading(false));
+  };
+
   useEffect(() => {
     if (storedUser?.role !== 'owner') return;
     setNumbersLoading(true);
@@ -50,6 +69,36 @@ export default function Settings({ bare = false }) {
     }).catch(() => {})
       .finally(() => setNumbersLoading(false));
   }, [storedUser?.role]);
+
+  useEffect(() => {
+    if (storedUser?.role !== 'owner') return;
+    loadTeamUsers();
+  }, [storedUser?.role]);
+
+  const startEditPhone = (user) => {
+    setEditingUserId(user.id);
+    setEditPhoneValue(user.phone || '');
+  };
+
+  const cancelEditPhone = () => {
+    setEditingUserId(null);
+    setEditPhoneValue('');
+  };
+
+  const handleSavePhone = async (userId) => {
+    setEditSubmitting(true);
+    setTeamError(null);
+    try {
+      const res = await apiClient.patch(`/api/v1/dashboard/users/${userId}`, { phone: editPhoneValue.trim() || null });
+      setTeamUsers((prev) => prev.map((u) => (u.id === userId ? res.data.user : u)));
+      setEditingUserId(null);
+      setEditPhoneValue('');
+    } catch (err) {
+      setTeamError(err.response?.data?.error?.message || 'Failed to update phone number.');
+    } finally {
+      setEditSubmitting(false);
+    }
+  };
 
   const handleAddNumber = async (e) => {
     e.preventDefault();
@@ -94,6 +143,7 @@ export default function Settings({ bare = false }) {
       const res = await apiClient.post('/api/v1/dashboard/users/invite', inviteForm);
       setInviteResult(res.data);
       setInviteForm({ name: '', email: '', phone: '' });
+      loadTeamUsers();
     } catch (err) {
       setInviteError(err.response?.data?.error?.message || 'Failed to invite team member.');
     } finally {
@@ -189,11 +239,52 @@ export default function Settings({ bare = false }) {
             <form onSubmit={handleInviteSubmit} style={{ ...styles.form, flexDirection: 'column' }}>
               <input required placeholder="Name" value={inviteForm.name} onChange={(e) => setInviteForm({ ...inviteForm, name: e.target.value })} style={styles.input} />
               <input required type="email" placeholder="Email" value={inviteForm.email} onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })} style={styles.input} />
-              <input placeholder="Phone (optional)" value={inviteForm.phone} onChange={(e) => setInviteForm({ ...inviteForm, phone: e.target.value })} style={styles.input} />
+              <input type="tel" placeholder="Phone (optional)" value={inviteForm.phone} onChange={(e) => setInviteForm({ ...inviteForm, phone: e.target.value })} style={styles.input} />
+              <span style={styles.fieldNote}>Add their WhatsApp number to let them create listings by texting Plotra directly.</span>
               <button type="submit" disabled={inviteSubmitting} style={{ ...styles.submitBtn, alignSelf: 'flex-start' }}>
                 {inviteSubmitting ? 'Inviting…' : 'Invite'}
               </button>
             </form>
+
+            <div style={styles.teamListWrap}>
+              <h4 style={styles.teamListTitle}>Team Members</h4>
+              {teamError && <div style={styles.banner}>⚠️ {teamError}</div>}
+              {teamLoading ? (
+                <p style={styles.cardHelp}>Loading…</p>
+              ) : teamUsers.length === 0 ? (
+                <p style={styles.cardHelp}>No team members yet.</p>
+              ) : (
+                <div style={styles.numberList}>
+                  {teamUsers.map((u) => (
+                    <div key={u.id} style={styles.numberRow}>
+                      <div>
+                        <strong>{u.name}</strong>
+                        <span style={styles.numberLabel}> — {u.email}</span>
+                      </div>
+                      {editingUserId === u.id ? (
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <input
+                            type="tel"
+                            autoFocus
+                            value={editPhoneValue}
+                            onChange={(e) => setEditPhoneValue(e.target.value)}
+                            placeholder="e.g. 9876543210"
+                            style={styles.editPhoneInput}
+                          />
+                          <button onClick={() => handleSavePhone(u.id)} disabled={editSubmitting} style={styles.linkBtn}>Save</button>
+                          <button onClick={cancelEditPhone} style={{ ...styles.linkBtn, color: '#6b7280' }}>Cancel</button>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                          <span style={{ fontSize: '13px', color: u.phone ? '#111827' : '#9ca3af' }}>{u.phone || 'No phone set'}</span>
+                          <button onClick={() => startEditPhone(u)} style={styles.linkBtn}>Edit</button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </section>
         )}
 
@@ -270,6 +361,10 @@ const styles = {
   codeBadge: { backgroundColor: '#dcfce7', padding: '2px 6px', borderRadius: '4px', fontFamily: 'monospace' },
   banner: { padding: '10px', borderRadius: '6px', fontSize: '13px', marginBottom: '14px' },
   form: { display: 'flex', gap: '10px' },
+  fieldNote: { margin: '-4px 0 0', fontSize: '12px', color: '#9ca3af', lineHeight: '1.5' },
+  teamListWrap: { marginTop: '18px', paddingTop: '16px', borderTop: '1px solid #f1f5f9' },
+  teamListTitle: { margin: '0 0 10px', fontSize: '13px', fontWeight: '700', color: '#374151' },
+  editPhoneInput: { padding: '7px 9px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '13px', width: '150px' },
   numberList: { display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '4px' },
   numberRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 12px', backgroundColor: '#f9fafb', borderRadius: '6px', fontSize: '13px' },
   numberLabel: { color: '#6b7280' },
