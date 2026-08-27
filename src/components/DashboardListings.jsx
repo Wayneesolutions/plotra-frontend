@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/apiClient';
-import ChangePassword from './ChangePassword.jsx';
 import PlotBoundaryTracer from './PlotBoundaryTracer';
 import BuilderProfileManager from './BuilderProfileManager.jsx';
-// NEW — Phase 7
-import BillingModal from './BillingModal.jsx';
-import InviteUserModal from './InviteUserModal.jsx';
 import PropertyEditModal from './PropertyEditModal.jsx';
+import LeadsInbox from './LeadsInbox.jsx';
+import OpsPanel from './OpsPanel.jsx';
+import Analytics from './Analytics.jsx';
 
 export default function DashboardListings() {
   const navigate   = useNavigate();
@@ -30,10 +29,7 @@ export default function DashboardListings() {
     plot_area: '', property_type: 'Plot', description: '',
   });
   const [submitting, setSubmitting]       = useState(false);
-  const [showPwModal, setShowPwModal]     = useState(false);
-  const [showBillingModal, setShowBillingModal] = useState(false); // NEW — Phase 7
-  const [showInviteModal, setShowInviteModal] = useState(false); // NEW — gap #7
-  const [editListing, setEditListing] = useState(null); // NEW — gap: no Edit/Delete/Deactivate existed
+  const [editListing, setEditListing] = useState(null);
   const [copiedSlug, setCopiedSlug]       = useState(null);
 
   // Search/filter — "search by area or budget" (area lives in the address
@@ -54,30 +50,63 @@ export default function DashboardListings() {
   const [multiAgentEnabled, setMultiAgentEnabled] = useState(false);
   const [teamMembers, setTeamMembers] = useState([]);
 
+  // Header: billing plan + WhatsApp connection status
+  const [planInfo, setPlanInfo] = useState(null); // { plan, subscription_status }
+  const [connectedPhone, setConnectedPhone] = useState(storedUser?.phone || null);
+
+  // Plan-gated tab navigation
+  const [activeTab, setActiveTab] = useState('listings');
+
+  // Inline WhatsApp connect modal
+  const [showWaModal, setShowWaModal] = useState(false);
+  const [waPhoneInput, setWaPhoneInput] = useState('');
+  const [waSubmitting, setWaSubmitting] = useState(false);
+  const [waError, setWaError] = useState(null);
+
   // Photo management
-  const [photoModal, setPhotoModal]             = useState(null); // listing object
+  const [photoModal, setPhotoModal]             = useState(null);
   const [photoUrls, setPhotoUrls]               = useState([]);
   const [photoLoading, setPhotoLoading]         = useState(false);
   const [photoUploading, setPhotoUploading]     = useState(false);
-  const [photoDeleting, setPhotoDeleting]       = useState(null); // URL being deleted
+  const [photoDeleting, setPhotoDeleting]       = useState(null);
 
   useEffect(() => {
     fetchListings();
-    checkMultiAgentPlan();
+    loadHeaderInfo();
   }, []);
 
-  const checkMultiAgentPlan = async () => {
+  const loadHeaderInfo = async () => {
     try {
       const res = await apiClient.get('/api/v1/dashboard/billing/status');
-      const enabled = (res.data.billing?.max_whatsapp_numbers ?? 1) > 1;
+      const billing = res.data.billing;
+      setPlanInfo(billing);
+      const enabled = (billing?.max_whatsapp_numbers ?? 1) > 1;
       setMultiAgentEnabled(enabled);
       if (enabled) {
         const usersRes = await apiClient.get('/api/v1/dashboard/users');
         setTeamMembers((usersRes.data.users || []).filter((u) => u.phone));
       }
     } catch {
-      // Non-fatal — the assign-to-agent UI just won't show. Search/filter
-      // and everything else on this page works independently of this.
+      // Non-fatal
+    }
+  };
+
+  const handleConnectWa = async (e) => {
+    e.preventDefault();
+    if (!waPhoneInput.trim()) return;
+    setWaSubmitting(true);
+    setWaError(null);
+    try {
+      const res = await apiClient.post('/api/v1/auth/update-phone', { phone: waPhoneInput.trim() });
+      setConnectedPhone(res.data.phone);
+      const saved = JSON.parse(localStorage.getItem('pve_user') || 'null');
+      if (saved) localStorage.setItem('pve_user', JSON.stringify({ ...saved, phone: res.data.phone }));
+      setShowWaModal(false);
+      setWaPhoneInput('');
+    } catch (err) {
+      setWaError(err.response?.data?.error?.message || 'Failed to connect number. Check the format and try again.');
+    } finally {
+      setWaSubmitting(false);
     }
   };
 
@@ -207,22 +236,36 @@ export default function DashboardListings() {
   const totalViews  = listings.reduce((s, l) => s + (l.visit_count || 0), 0);
   const activeCount = listings.filter(l => l.status === 'active').length;
 
+  /* Plan gates */
+  const planKey      = (planInfo?.plan || 'starter').toLowerCase();
+  const isGrowthPlus = ['growth', 'unlimited'].includes(planKey);
+  const isUnlimited  = planKey === 'unlimited';
+  const PLAN_TABS    = [
+    { key: 'listings',  label: '🏠 Listings' },
+    ...(isGrowthPlus ? [{ key: 'leads', label: '💬 Leads' }, { key: 'ops', label: '🗂 Ops' }] : []),
+    ...(isUnlimited  ? [{ key: 'analytics', label: '📊 Analytics' }] : []),
+  ];
+
   /* Greeting */
   const hour     = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   /* ── Loading state ─────────────────────────────── */
   if (loading) return (
-    <div style={S.centerScreen}>
-      <div style={S.spinRing} />
-      <p style={S.centerTxt}>Loading your portfolio…</p>
+    <div style={S.root}>
+      <div style={S.centerScreen}>
+        <div style={S.spinRing} />
+        <p style={S.centerTxt}>Loading your portfolio…</p>
+      </div>
     </div>
   );
 
   if (error) return (
-    <div style={S.centerScreen}>
-      <span style={{ fontSize: '32px' }}>⚠️</span>
-      <p style={{ color: '#dc2626', fontSize: '15px', margin: 0 }}>{error}</p>
+    <div style={S.root}>
+      <div style={S.centerScreen}>
+        <span style={{ fontSize: '32px' }}>⚠️</span>
+        <p style={{ color: '#dc2626', fontSize: '15px', margin: 0 }}>{error}</p>
+      </div>
     </div>
   );
 
@@ -230,7 +273,7 @@ export default function DashboardListings() {
     <div style={S.root}>
 
       {/* ══ TOP NAV ══════════════════════════════════════════════ */}
-      <header style={S.nav}>
+      <header style={S.nav} role="banner">
         <div style={S.navLeft}>
           <div style={S.navLogo}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -239,66 +282,37 @@ export default function DashboardListings() {
           </div>
           <span style={S.navBrand}>Plotra</span>
           <div style={S.navDivider} />
-          <span style={S.navSection}>Listings</span>
-          {activeCount > 0 && (
-            <span style={S.navBadge}>{activeCount} active</span>
-          )}
+          <div style={S.navMeta}>
+            <span style={S.navBizName}>{storedUser?.businessName || storedUser?.name}</span>
+            {planInfo && (
+              <span style={{
+                ...S.planBadge,
+                ...(planInfo.subscription_status === 'active' ? S.planBadgeActive : S.planBadgeFree),
+              }}>
+                {planInfo.plan?.toUpperCase() || 'FREE'}
+              </span>
+            )}
+          </div>
         </div>
 
         <div style={S.navRight}>
-          {storedUser && (
-            <div style={S.userChip}>
-              <div style={S.avatar}>
-                {storedUser.name?.[0]?.toUpperCase() || 'D'}
-              </div>
-              <div style={S.userMeta}>
-                <span style={S.userName}>{storedUser.name}</span>
-                <span style={S.userBiz}>{storedUser.businessName}</span>
-              </div>
+          {/* WhatsApp connection status — core feature indicator */}
+          {connectedPhone ? (
+            <div style={S.waChip}>
+              <span style={S.waDot} />
+              <span style={S.waChipText}>WhatsApp: {connectedPhone}</span>
             </div>
-          )}
-          {storedUser?.role === 'owner' && (
+          ) : (
             <button
-              className="pve-topbar-btn"
-              onClick={() => setShowInviteModal(true)}
-              style={S.iconBtn}
-              title="Invite Team Member"
+              onClick={() => setShowWaModal(true)}
+              style={S.waConnectBtn}
+              title="Connect your WhatsApp number to receive listing intake via chat"
             >
-              👤
+              <span style={S.waBtnDot}>!</span>
+              Connect WhatsApp
             </button>
           )}
-          <button
-            className="pve-topbar-btn"
-            onClick={() => navigate('/dashboard/leads')}
-            style={S.iconBtn}
-            title="Leads Inbox"
-          >
-            💬
-          </button>
-          <button
-            className="pve-topbar-btn"
-            onClick={() => navigate('/dashboard/analytics')}
-            style={S.iconBtn}
-            title="Analytics"
-          >
-            📊
-          </button>
-          <button
-            className="pve-topbar-btn"
-            onClick={() => navigate('/dashboard/ops')}
-            style={S.iconBtn}
-            title="Ops Panel — leads, documents, calls, visits"
-          >
-            🗂
-          </button>
-          <button
-            className="pve-topbar-btn"
-            onClick={() => navigate('/dashboard/settings')}
-            style={S.iconBtn}
-            title="Settings — WhatsApp number, team"
-          >
-            ⚙️
-          </button>
+
           {storedUser?.role === 'super_admin' && (
             <button
               className="pve-topbar-btn"
@@ -311,22 +325,6 @@ export default function DashboardListings() {
           )}
           <button
             className="pve-topbar-btn"
-            onClick={() => setShowBillingModal(true)}
-            style={S.iconBtn}
-            title="Billing & Plan"
-          >
-            💳
-          </button>
-          <button
-            className="pve-topbar-btn"
-            onClick={() => setShowPwModal(true)}
-            style={S.iconBtn}
-            title="Change Password"
-          >
-            🔑
-          </button>
-          <button
-            className="pve-topbar-btn"
             onClick={handleLogout}
             style={S.logoutBtn}
           >
@@ -335,9 +333,21 @@ export default function DashboardListings() {
         </div>
       </header>
 
-      {showPwModal && <ChangePassword onClose={() => setShowPwModal(false)} />}
-      {showBillingModal && <BillingModal onClose={() => setShowBillingModal(false)} />}
-      {showInviteModal && <InviteUserModal onClose={() => setShowInviteModal(false)} />}
+      {/* ══ PLAN-GATED TAB BAR ═══════════════════════════════════ */}
+      {PLAN_TABS.length > 1 && (
+        <div style={S.tabBar}>
+          {PLAN_TABS.map(t => (
+            <button
+              key={t.key}
+              onClick={() => setActiveTab(t.key)}
+              style={{ ...S.tabBtn, ...(activeTab === t.key ? S.tabBtnActive : {}) }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {editListing && (
         <PropertyEditModal
           listing={editListing}
@@ -429,6 +439,7 @@ export default function DashboardListings() {
       )}
 
       {/* ══ PAGE BODY ════════════════════════════════════════════ */}
+      {activeTab === 'listings' && <div style={S.pageBody}>
       <div style={S.page}>
 
         {/* ── Welcome Strip ─────────────────────────────────────── */}
@@ -589,7 +600,7 @@ export default function DashboardListings() {
                     <div style={S.metaBlock}>
                       <span style={S.metaLbl}>Price</span>
                       <span className="pve-card-price" style={S.metaPrice}>
-                        ₹{parseFloat(item.price).toLocaleString('en-IN')}
+                        {item.price != null && !isNaN(Number(item.price)) ? `₹${Number(item.price).toLocaleString('en-IN')}` : '—'}
                       </span>
                     </div>
                     <div style={S.metaBlock}>
@@ -620,19 +631,29 @@ export default function DashboardListings() {
                     >
                       📷 Photos
                     </button>
-                    <button
-                      className="pve-action-btn pve-action-btn-blue"
-                      onClick={() => setTracer(item)}
-                      disabled={!isActive}
-                      style={{
-                        ...S.actionBtn,
-                        ...S.actionBtnBlue,
-                        opacity: isActive ? 1 : 0.35,
-                        cursor: isActive ? 'pointer' : 'not-allowed',
-                      }}
-                    >
-                      🗺 Trace
-                    </button>
+                    {isGrowthPlus ? (
+                      <button
+                        className="pve-action-btn pve-action-btn-blue"
+                        onClick={() => setTracer(item)}
+                        disabled={!isActive}
+                        style={{
+                          ...S.actionBtn,
+                          ...S.actionBtnBlue,
+                          opacity: isActive ? 1 : 0.35,
+                          cursor: isActive ? 'pointer' : 'not-allowed',
+                        }}
+                      >
+                        🗺 Trace
+                      </button>
+                    ) : (
+                      <button
+                        disabled
+                        title="Plot boundary tracing — upgrade to Growth plan"
+                        style={{ ...S.actionBtn, opacity: 0.35, cursor: 'not-allowed' }}
+                      >
+                        🔒 Trace
+                      </button>
+                    )}
                     <button
                       className="pve-action-btn"
                       onClick={() => setEditListing(item)}
@@ -676,7 +697,29 @@ export default function DashboardListings() {
             })}
           </div>
         )}
+        {/* ── Upgrade nudge for STARTER ─────────────────────────── */}
+        {!isGrowthPlus && (
+          <div style={S.upgradeCard}>
+            <div style={{ fontSize: '28px' }}>🚀</div>
+            <div style={{ flex: 1 }}>
+              <div style={S.upgradeTitle}>Unlock More with Growth</div>
+              <div style={S.upgradeSub}>Leads inbox, Ops panel, plot boundary tracing, and a dedicated WhatsApp number — available on Growth and above.</div>
+            </div>
+          </div>
+        )}
       </div>
+      </div>}
+
+      {/* ══ NON-LISTINGS TAB CONTENT ════════════════════════════ */}
+      {activeTab === 'leads' && isGrowthPlus && (
+        <div style={S.pageBody}><LeadsInbox bare /></div>
+      )}
+      {activeTab === 'ops' && isGrowthPlus && (
+        <div style={S.pageBody}><OpsPanel bare /></div>
+      )}
+      {activeTab === 'analytics' && isUnlimited && (
+        <div style={S.pageBody}><Analytics bare /></div>
+      )}
 
       {/* ══ MODAL: Create Listing ═══════════════════════════════ */}
       {showCreateModal && (
@@ -744,6 +787,52 @@ export default function DashboardListings() {
         </div>
       )}
 
+      {/* ══ MODAL: Connect WhatsApp ════════════════════════════ */}
+      {showWaModal && (
+        <div className="pve-modal-wrap" style={S.overlay}>
+          <div className="pve-modal" style={{ ...S.modal, maxWidth: '440px' }}>
+            <div style={S.modalStripe} />
+            <div style={S.modalHead}>
+              <div>
+                <p style={S.modalEye}>WhatsApp Setup</p>
+                <h3 style={S.modalTitle}>Connect Your Number</h3>
+              </div>
+              <button onClick={() => { setShowWaModal(false); setWaError(null); }} style={S.closeBtn}>✕</button>
+            </div>
+            <div style={{ padding: '0 24px 24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <p style={{ margin: 0, fontSize: '13px', color: '#64748b', lineHeight: '1.6' }}>
+                Once connected, any WhatsApp message from this number to your Plotra number
+                is treated as a listing you're creating — not a buyer inquiry.
+              </p>
+              {waError && (
+                <div style={{ backgroundColor: '#fef2f2', color: '#991b1b', padding: '10px 12px', borderRadius: '8px', fontSize: '13px' }}>
+                  ⚠️ {waError}
+                </div>
+              )}
+              <form onSubmit={handleConnectWa} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <input
+                  type="tel"
+                  value={waPhoneInput}
+                  onChange={(e) => setWaPhoneInput(e.target.value)}
+                  placeholder="e.g. 9876543210 or +91 98765 43210"
+                  style={{ ...S.fi, padding: '11px 14px', fontSize: '14px' }}
+                  required
+                  autoFocus
+                />
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                  <button type="button" onClick={() => { setShowWaModal(false); setWaError(null); }} style={S.cancelBtn}>
+                    Cancel
+                  </button>
+                  <button type="submit" disabled={waSubmitting} style={{ ...S.submitBtn, opacity: waSubmitting ? 0.7 : 1 }}>
+                    {waSubmitting ? 'Connecting…' : 'Connect Number'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ══ MODAL: Boundary Tracer ══════════════════════════════ */}
       {activeTracerListing && (
         <div className="pve-modal-wrap" style={S.overlay}>
@@ -790,12 +879,13 @@ function MField({ label, children }) {
    Styles
    ══════════════════════════════════════════════════ */
 const S = {
-  root: { minHeight: '100vh', backgroundColor: '#f2f5fb' },
+  root: { display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', backgroundColor: '#f2f5fb' },
+  pageBody: { flex: 1, overflowY: 'auto' },
 
   /* Loading */
   centerScreen: {
     display: 'flex', flexDirection: 'column', alignItems: 'center',
-    justifyContent: 'center', height: '100vh', gap: '16px', backgroundColor: '#f2f5fb',
+    justifyContent: 'center', flex: 1, gap: '16px',
   },
   spinRing: {
     width: '44px', height: '44px',
@@ -809,7 +899,7 @@ const S = {
     height: '62px',
     background: 'linear-gradient(90deg, #080f1c 0%, #0c1b2e 100%)',
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: '0 28px', position: 'sticky', top: 0, zIndex: 100,
+    padding: '0 28px', flexShrink: 0, zIndex: 100,
     boxShadow: '0 2px 20px rgba(0,0,0,0.32)',
   },
   navLeft: { display: 'flex', alignItems: 'center', gap: '12px' },
@@ -825,22 +915,45 @@ const S = {
   },
   navDivider: { width: '1px', height: '18px', backgroundColor: 'rgba(255,255,255,0.12)', margin: '0 2px' },
   navSection: { fontSize: '12px', color: 'rgba(255,255,255,0.38)', fontWeight: '500' },
-  navBadge: {
-    fontSize: '11px', fontWeight: '700', color: '#0c1b2e',
-    backgroundColor: '#c8a96e', padding: '3px 8px', borderRadius: '20px',
-    letterSpacing: '0.3px',
+  navRight: { display: 'flex', alignItems: 'center', gap: '12px' },
+
+  /* Brand + plan meta */
+  navMeta: { display: 'flex', alignItems: 'center', gap: '8px' },
+  navBizName: { fontSize: '13px', color: 'rgba(255,255,255,0.65)', fontWeight: '500' },
+  planBadge: {
+    fontSize: '9px', fontWeight: '800', letterSpacing: '1.2px', textTransform: 'uppercase',
+    padding: '3px 8px', borderRadius: '20px',
   },
-  navRight: { display: 'flex', alignItems: 'center', gap: '10px' },
-  userChip: { display: 'flex', alignItems: 'center', gap: '10px' },
-  avatar: {
-    width: '34px', height: '34px', borderRadius: '50%',
-    background: 'linear-gradient(135deg, #c8a96e 0%, #b08848 100%)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontSize: '14px', fontWeight: '800', color: '#0c1b2e', flexShrink: 0,
+  planBadgeActive: { backgroundColor: 'rgba(200,169,110,0.20)', color: '#c8a96e', border: '1px solid rgba(200,169,110,0.35)' },
+  planBadgeFree:   { backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.38)', border: '1px solid rgba(255,255,255,0.12)' },
+
+  /* WhatsApp status chip */
+  waChip: {
+    display: 'flex', alignItems: 'center', gap: '7px',
+    backgroundColor: 'rgba(22,163,74,0.15)', border: '1px solid rgba(22,163,74,0.30)',
+    padding: '6px 12px', borderRadius: '8px',
   },
-  userMeta: { display: 'flex', flexDirection: 'column', gap: '1px' },
-  userName: { fontSize: '13px', fontWeight: '600', color: '#fff', lineHeight: '1.2' },
-  userBiz:  { fontSize: '11px', color: 'rgba(255,255,255,0.42)', lineHeight: '1.2' },
+  waDot: {
+    width: '7px', height: '7px', borderRadius: '50%',
+    backgroundColor: '#22c55e', flexShrink: 0,
+    boxShadow: '0 0 6px rgba(34,197,94,0.6)',
+  },
+  waChipText: { fontSize: '12px', fontWeight: '600', color: '#4ade80' },
+
+  /* WhatsApp connect CTA */
+  waConnectBtn: {
+    display: 'flex', alignItems: 'center', gap: '7px',
+    backgroundColor: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.35)',
+    padding: '7px 14px', borderRadius: '8px',
+    color: '#fbbf24', fontSize: '12px', fontWeight: '700', cursor: 'pointer',
+    letterSpacing: '0.2px', whiteSpace: 'nowrap',
+  },
+  waBtnDot: {
+    width: '16px', height: '16px', borderRadius: '50%',
+    backgroundColor: '#f59e0b', color: '#0c1b2e',
+    fontSize: '10px', fontWeight: '900',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  },
   iconBtn: {
     width: '34px', height: '34px', borderRadius: '8px',
     background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.11)',
@@ -1076,4 +1189,34 @@ const S = {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     lineHeight: 1,
   },
+
+  /* Plan-gated tab bar */
+  tabBar: {
+    display: 'flex', gap: 0,
+    backgroundColor: '#0c1b2e',
+    padding: '0 20px',
+    borderBottom: '1px solid rgba(255,255,255,0.08)',
+    flexShrink: 0,
+  },
+  tabBtn: {
+    padding: '12px 18px',
+    background: 'none', border: 'none',
+    color: 'rgba(255,255,255,0.45)',
+    fontSize: '13px', fontWeight: '600', cursor: 'pointer',
+    borderBottom: '2px solid transparent',
+    letterSpacing: '0.2px',
+  },
+  tabBtnActive: {
+    color: '#c8a96e',
+    borderBottom: '2px solid #c8a96e',
+  },
+
+  /* Upgrade nudge card */
+  upgradeCard: {
+    display: 'flex', alignItems: 'center', gap: '16px',
+    backgroundColor: '#fffbf0', border: '1.5px solid #f5d589',
+    borderRadius: '12px', padding: '18px 22px', marginTop: '24px',
+  },
+  upgradeTitle: { fontSize: '14px', fontWeight: '800', color: '#92702f', marginBottom: '4px' },
+  upgradeSub:   { fontSize: '12px', color: '#a0845c', lineHeight: '1.5' },
 };

@@ -3,10 +3,6 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import DashboardListings from './components/DashboardListings.jsx';
 import PropertyView from './components/PropertyView.jsx';
 import PrivateRoute from './components/PrivateRoute.jsx';
-import Settings from './components/Settings.jsx';
-import LeadsInbox from './components/LeadsInbox.jsx';
-import OpsPanel from './components/OpsPanel.jsx';
-import Analytics from './components/Analytics.jsx';
 import Billing from './components/Billing.jsx';
 import AdminRoute from './components/AdminRoute.jsx';
 import AdminPanel from './components/AdminPanel.jsx';
@@ -47,43 +43,15 @@ export default function App() {
               </PrivateRoute>
             }
           />
-          <Route
-            path="/dashboard/leads"
-            element={
-              <PrivateRoute>
-                <LeadsInbox />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/dashboard/ops"
-            element={
-              <PrivateRoute>
-                <OpsPanel />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/dashboard/analytics"
-            element={
-              <PrivateRoute>
-                <Analytics />
-              </PrivateRoute>
-            }
-          />
+          <Route path="/dashboard/leads" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard/ops" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard/analytics" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard/settings" element={<Navigate to="/dashboard" replace />} />
           <Route
             path="/dashboard/billing"
             element={
               <PrivateRoute>
                 <Billing />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/dashboard/settings"
-            element={
-              <PrivateRoute>
-                <Settings />
               </PrivateRoute>
             }
           />
