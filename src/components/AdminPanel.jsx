@@ -10,6 +10,7 @@ import plotraIcon from '../assets/plotra-icon.png';
 
 const TABS = [
   { label: 'Pending Requests', icon: '📋', desc: 'Approve or reject new dealer signups' },
+  { label: 'Agent Signups',    icon: '🤝', desc: 'WhatsApp agent signup requests' },
   { label: 'All Tenants',      icon: '🏢', desc: 'View and manage all active accounts' },
   { label: 'Create Tenant',    icon: '➕', desc: 'Manually onboard a new dealer account' },
   { label: 'Ad Placements',    icon: '📢', desc: 'Manage ads shown across listing pages' },
@@ -58,6 +59,12 @@ export default function AdminPanel() {
   const [showCreatePlan, setShowCreatePlan] = useState(false);
   const [createPlanForm, setCreatePlanForm] = useState({ key: '', label: '', price_inr: '', listing_limit: '' });
   const [createPlanLoading, setCreatePlanLoading] = useState(false);
+
+  // Agent signups (WhatsApp "join as agent" requests)
+  const [agentSignups, setAgentSignups] = useState([]);
+  const [agentSignupsLoading, setAgentSignupsLoading] = useState(false);
+  const [agentSignupActionLoading, setAgentSignupActionLoading] = useState(null);
+  const [agentSignupCredential, setAgentSignupCredential] = useState(null);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -126,12 +133,56 @@ export default function AdminPanel() {
     }
   }, []);
 
+  const fetchAgentSignups = useCallback(async () => {
+    setAgentSignupsLoading(true);
+    try {
+      const res = await apiClient.get('/api/v1/admin/agent-signups');
+      setAgentSignups(res.data.signups || []);
+    } catch {
+      showToast('Failed to load agent signups.', 'error');
+    } finally {
+      setAgentSignupsLoading(false);
+    }
+  }, []);
+
+  const handleApproveAgentSignup = async (id) => {
+    setAgentSignupActionLoading(id);
+    try {
+      const res = await apiClient.post(`/api/v1/admin/agent-signups/${id}/approve`);
+      setAgentSignups((prev) => prev.filter((s) => s.id !== id));
+      setAgentSignupCredential({
+        name: res.data.user.name,
+        email: res.data.user.email,
+        password: res.data.temporaryPassword,
+      });
+    } catch (err) {
+      showToast(err.response?.data?.error?.message || 'Failed to approve signup.', 'error');
+    } finally {
+      setAgentSignupActionLoading(null);
+    }
+  };
+
+  const handleRejectAgentSignup = async (id) => {
+    if (!window.confirm('Reject this agent signup request?')) return;
+    setAgentSignupActionLoading(id);
+    try {
+      await apiClient.post(`/api/v1/admin/agent-signups/${id}/reject`);
+      setAgentSignups((prev) => prev.filter((s) => s.id !== id));
+      showToast('Signup rejected — applicant notified via WhatsApp.');
+    } catch (err) {
+      showToast(err.response?.data?.error?.message || 'Failed to reject signup.', 'error');
+    } finally {
+      setAgentSignupActionLoading(null);
+    }
+  };
+
   useEffect(() => {
     if (tab === 'Pending Requests') fetchRequests();
+    if (tab === 'Agent Signups') fetchAgentSignups();
     if (tab === 'All Tenants') { fetchTenants(); fetchPlans(); }
     if (tab === 'Ad Placements') fetchAds();
     if (tab === 'Plans') fetchPlans();
-  }, [tab, fetchRequests, fetchTenants, fetchAds, fetchPlans]);
+  }, [tab, fetchRequests, fetchAgentSignups, fetchTenants, fetchAds, fetchPlans]);
 
   const handleChangeTenantPlan = async (tenantId, newPlan) => {
     setActionLoading(tenantId);
@@ -388,6 +439,9 @@ export default function AdminPanel() {
                     {t.label === 'Pending Requests' && requests.length > 0 && (
                       <span style={S.navBadge}>{requests.length}</span>
                     )}
+                    {t.label === 'Agent Signups' && agentSignups.length > 0 && (
+                      <span style={S.navBadge}>{agentSignups.length}</span>
+                    )}
                   </div>
                   <div style={S.navDesc}>{t.desc}</div>
                 </div>
@@ -443,6 +497,35 @@ export default function AdminPanel() {
                 </div>
                 <p style={S.modalNote}>This password will not be shown again. Copy it now.</p>
                 <button style={S.modalClose} onClick={() => setCredential(null)}>Done</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Agent Signup Approval Credential Modal */}
+        {agentSignupCredential && (
+          <div style={S.modalOverlay}>
+            <div style={S.modal}>
+              <div style={S.modalStripe} />
+              <div style={S.modalBody}>
+                <div style={S.modalIcon}>✅</div>
+                <h3 style={S.modalTitle}>Agent Approved</h3>
+                <p style={S.modalSub}>
+                  <strong>{agentSignupCredential.name}</strong> has been approved. A WhatsApp notification with these credentials has been sent to them automatically.
+                </p>
+                <div style={S.credBox}>
+                  <div style={S.credRow}>
+                    <span style={S.credLabel}>Email</span>
+                    <span style={S.credValue}>{agentSignupCredential.email}</span>
+                  </div>
+                  <div style={S.credDivider} />
+                  <div style={S.credRow}>
+                    <span style={S.credLabel}>Temp Password</span>
+                    <span style={{ ...S.credValue, ...S.credPassword }}>{agentSignupCredential.password}</span>
+                  </div>
+                </div>
+                <p style={S.modalNote}>WhatsApp notification already sent. Save this as backup.</p>
+                <button style={S.modalClose} onClick={() => setAgentSignupCredential(null)}>Done</button>
               </div>
             </div>
           </div>
@@ -515,6 +598,69 @@ export default function AdminPanel() {
         {tab === 'ops' && <section style={{ padding: '36px 40px' }}><OpsPanel bare /></section>}
         {tab === 'analytics' && <section style={S.section}><Analytics bare /></section>}
         {tab === 'settings' && <section style={S.section}><Settings bare /></section>}
+
+        {/* ── Tab: Agent Signups ──────────────────────────── */}
+        {tab === 'Agent Signups' && (
+          <section style={S.section}>
+            <div style={S.sectionHead}>
+              <div>
+                <h1 style={S.pageTitle}>Agent Signup Requests</h1>
+                <p style={S.pageSubtitle}>People who texted "join as agent" on WhatsApp — approve to make them live</p>
+              </div>
+              <button style={S.refreshBtn} onClick={fetchAgentSignups}>Refresh</button>
+            </div>
+
+            {agentSignupsLoading ? (
+              <div style={S.empty}>Loading…</div>
+            ) : agentSignups.length === 0 ? (
+              <div style={S.emptyCard}>
+                <div style={S.emptyIcon}>✓</div>
+                <p style={S.emptyText}>No pending agent signup requests</p>
+              </div>
+            ) : (
+              <div style={S.cardList}>
+                {agentSignups.map((s) => (
+                  <div key={s.id} style={S.requestCard}>
+                    <div style={S.requestInfo}>
+                      <div style={{ ...S.requestAvatar, background: 'linear-gradient(135deg, #0c1b2e 0%, #1a3558 100%)' }}>
+                        {s.name?.[0]?.toUpperCase() || '?'}
+                      </div>
+                      <div>
+                        <div style={S.requestBiz}>
+                          {s.name}
+                          <span style={{ ...S.waBadge, background: '#e8f5e9', color: '#2e7d32' }}>🤝 WhatsApp Signup</span>
+                        </div>
+                        <div style={S.requestMeta}>
+                          📱 {s.phone} &nbsp;·&nbsp; 📍 {s.address}
+                          {s.tenant_name && <>&nbsp;·&nbsp; 🏢 {s.tenant_name}</>}
+                        </div>
+                        <div style={{ ...S.requestMeta, marginTop: '2px' }}>
+                          Requested {new Date(s.created_at).toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={S.requestActions}>
+                      <button
+                        style={{ ...S.approveBtn, opacity: agentSignupActionLoading === s.id ? 0.6 : 1 }}
+                        disabled={agentSignupActionLoading === s.id}
+                        onClick={() => handleApproveAgentSignup(s.id)}
+                      >
+                        {agentSignupActionLoading === s.id ? '…' : '✓ Approve'}
+                      </button>
+                      <button
+                        style={{ ...S.rejectBtn, opacity: agentSignupActionLoading === s.id ? 0.6 : 1 }}
+                        disabled={agentSignupActionLoading === s.id}
+                        onClick={() => handleRejectAgentSignup(s.id)}
+                      >
+                        ✕ Reject
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
 
         {/* ── Tab: Pending Requests ────────────────────────── */}
         {tab === 'Pending Requests' && (
