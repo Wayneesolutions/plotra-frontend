@@ -7,6 +7,7 @@ import PropertyEditModal from './PropertyEditModal.jsx';
 import LeadsInbox from './LeadsInbox.jsx';
 import OpsPanel from './OpsPanel.jsx';
 import Analytics from './Analytics.jsx';
+import Settings from './Settings.jsx';
 import plotraIcon from '../assets/plotra-icon.png';
 
 export default function DashboardListings() {
@@ -245,6 +246,7 @@ export default function DashboardListings() {
     { key: 'listings',  label: '🏠 Listings' },
     ...(isGrowthPlus ? [{ key: 'leads', label: '💬 Leads' }, { key: 'ops', label: '🗂 Ops' }] : []),
     ...(isUnlimited  ? [{ key: 'analytics', label: '📊 Analytics' }] : []),
+    { key: 'settings', label: '⚙️ Settings' },
   ];
 
   /* Greeting */
@@ -716,6 +718,9 @@ export default function DashboardListings() {
       )}
       {activeTab === 'analytics' && isUnlimited && (
         <div style={S.pageBody}><div style={S.page}><Analytics bare /></div></div>
+      )}
+      {activeTab === 'settings' && (
+        <div style={S.pageBody}><div style={S.page}><Settings bare /></div></div>
       )}
 
       {/* ══ MODAL: Create Listing ═══════════════════════════════ */}
