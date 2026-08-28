@@ -38,6 +38,25 @@ export default function Settings({ bare = false }) {
   const [numberError, setNumberError] = useState(null);
   const [maxWhatsappNumbers, setMaxWhatsappNumbers] = useState(1);
 
+  // Team list — owner-only, wires GET /api/v1/dashboard/users. Lets the
+  // owner add/change a team member's phone after invite time (PATCH
+  // /api/v1/dashboard/users/:id) — previously the only way to set
+  // users.phone was at invite, so a mistyped or missing number was stuck.
+  const [teamUsers, setTeamUsers] = useState([]);
+  const [teamLoading, setTeamLoading] = useState(false);
+  const [teamError, setTeamError] = useState(null);
+  const [editingUserId, setEditingUserId] = useState(null);
+  const [editPhoneValue, setEditPhoneValue] = useState('');
+  const [editSubmitting, setEditSubmitting] = useState(false);
+
+  const loadTeamUsers = () => {
+    setTeamLoading(true);
+    apiClient.get('/api/v1/dashboard/users')
+      .then((res) => setTeamUsers(res.data.users || []))
+      .catch(() => {})
+      .finally(() => setTeamLoading(false));
+  };
+
   useEffect(() => {
     if (storedUser?.role !== 'owner') return;
     setNumbersLoading(true);
@@ -50,6 +69,123 @@ export default function Settings({ bare = false }) {
     }).catch(() => {})
       .finally(() => setNumbersLoading(false));
   }, [storedUser?.role]);
+
+  useEffect(() => {
+    if (storedUser?.role !== 'owner') return;
+    loadTeamUsers();
+  }, [storedUser?.role]);
+
+  // Pending agent signups — owner-only, wires GET/POST
+  // /api/v1/dashboard/agent-signups. These are prospective agents who
+  // texted "join as agent" on WhatsApp and finished the conversational
+  // name/address collection (agentSignupController.js/agentSignupWorker.js)
+  // — approving creates their users row and makes their phone immediately
+  // live for the existing WhatsApp listing-intake flow.
+  const [agentSignups, setAgentSignups] = useState([]);
+  const [signupsLoading, setSignupsLoading] = useState(false);
+  const [signupError, setSignupError] = useState(null);
+  const [signupActionLoading, setSignupActionLoading] = useState(null);
+  const [signupCredential, setSignupCredential] = useState(null);
+
+  const loadAgentSignups = () => {
+    setSignupsLoading(true);
+    apiClient.get('/api/v1/dashboard/agent-signups')
+      .then((res) => setAgentSignups(res.data.signups || []))
+      .catch(() => {})
+      .finally(() => setSignupsLoading(false));
+  };
+
+  useEffect(() => {
+    if (storedUser?.role !== 'owner') return;
+    loadAgentSignups();
+  }, [storedUser?.role]);
+
+  const handleApproveSignup = async (id) => {
+    setSignupActionLoading(id);
+    setSignupError(null);
+    try {
+      const res = await apiClient.post(`/api/v1/dashboard/agent-signups/${id}/approve`);
+      setAgentSignups((prev) => prev.filter((s) => s.id !== id));
+      setSignupCredential({ name: res.data.user.name, email: res.data.user.email, password: res.data.temporaryPassword });
+      loadTeamUsers(); // the newly-approved agent now also shows up in Team Members
+    } catch (err) {
+      setSignupError(err.response?.data?.error?.message || 'Failed to approve this request.');
+    } finally {
+      setSignupActionLoading(null);
+    }
+  };
+
+  const handleRejectSignup = async (id) => {
+    if (!window.confirm('Reject this agent signup request?')) return;
+    setSignupActionLoading(id);
+    setSignupError(null);
+    try {
+      await apiClient.post(`/api/v1/dashboard/agent-signups/${id}/reject`);
+      setAgentSignups((prev) => prev.filter((s) => s.id !== id));
+    } catch (err) {
+      setSignupError(err.response?.data?.error?.message || 'Failed to reject this request.');
+    } finally {
+      setSignupActionLoading(null);
+    }
+  };
+
+  // Web chat activation code — owner-only, wires GET/POST
+  // /api/v1/dashboard/web-chat-code(/regenerate). This is the code the
+  // owner hands to whoever embeds the public web chat widget
+  // (ChatWidget.jsx, at /widget) on their own site — entering it there
+  // activates the widget for this tenant.
+  const [webChatCode, setWebChatCode] = useState(null);
+  const [webChatCodeLoading, setWebChatCodeLoading] = useState(false);
+  const [webChatCodeError, setWebChatCodeError] = useState(null);
+  const [regeneratingCode, setRegeneratingCode] = useState(false);
+
+  useEffect(() => {
+    if (storedUser?.role !== 'owner') return;
+    setWebChatCodeLoading(true);
+    apiClient.get('/api/v1/dashboard/web-chat-code')
+      .then((res) => setWebChatCode(res.data.code))
+      .catch(() => setWebChatCodeError('Failed to load your web chat code.'))
+      .finally(() => setWebChatCodeLoading(false));
+  }, [storedUser?.role]);
+
+  const handleRegenerateCode = async () => {
+    if (!window.confirm('Regenerate your web chat code? The old code will stop working immediately.')) return;
+    setRegeneratingCode(true);
+    setWebChatCodeError(null);
+    try {
+      const res = await apiClient.post('/api/v1/dashboard/web-chat-code/regenerate');
+      setWebChatCode(res.data.code);
+    } catch (err) {
+      setWebChatCodeError(err.response?.data?.error?.message || 'Failed to regenerate the code.');
+    } finally {
+      setRegeneratingCode(false);
+    }
+  };
+
+  const startEditPhone = (user) => {
+    setEditingUserId(user.id);
+    setEditPhoneValue(user.phone || '');
+  };
+
+  const cancelEditPhone = () => {
+    setEditingUserId(null);
+    setEditPhoneValue('');
+  };
+
+  const handleSavePhone = async (userId) => {
+    setEditSubmitting(true);
+    setTeamError(null);
+    try {
+      const res = await apiClient.patch(`/api/v1/dashboard/users/${userId}`, { phone: editPhoneValue.trim() || null });
+      setTeamUsers((prev) => prev.map((u) => (u.id === userId ? res.data.user : u)));
+      setEditingUserId(null);
+      setEditPhoneValue('');
+    } catch (err) {
+      setTeamError(err.response?.data?.error?.message || 'Failed to update phone number.');
+    } finally {
+      setEditSubmitting(false);
+    }
+  };
 
   const handleAddNumber = async (e) => {
     e.preventDefault();
@@ -94,6 +230,7 @@ export default function Settings({ bare = false }) {
       const res = await apiClient.post('/api/v1/dashboard/users/invite', inviteForm);
       setInviteResult(res.data);
       setInviteForm({ name: '', email: '', phone: '' });
+      loadTeamUsers();
     } catch (err) {
       setInviteError(err.response?.data?.error?.message || 'Failed to invite team member.');
     } finally {
@@ -164,6 +301,31 @@ export default function Settings({ bare = false }) {
           </form>
         </section>
 
+        {storedUser?.role === 'owner' && (
+          <section style={styles.card}>
+            <h3 style={styles.cardTitle}>Web Chat Widget</h3>
+            <p style={styles.cardHelp}>
+              Embed Plotra's chat widget on your own website so you (or your team) can add listings
+              by chatting, the same way you can over WhatsApp. Enter this code into the widget once
+              to activate it for your account.
+            </p>
+
+            {webChatCodeError && <div style={styles.banner}>⚠️ {webChatCodeError}</div>}
+
+            {webChatCodeLoading ? (
+              <p style={styles.cardHelp}>Loading…</p>
+            ) : webChatCode ? (
+              <div style={styles.currentPhoneBox}>
+                Your activation code: <code style={styles.codeBadge}>{webChatCode}</code>
+              </div>
+            ) : null}
+
+            <button onClick={handleRegenerateCode} disabled={regeneratingCode} style={styles.secondaryBtn}>
+              {regeneratingCode ? 'Regenerating…' : 'Regenerate Code'}
+            </button>
+          </section>
+        )}
+
         <section style={styles.card}>
           <h3 style={styles.cardTitle}>Password</h3>
           <p style={styles.cardHelp}>Change the password you use to log in to this dashboard.</p>
@@ -189,11 +351,105 @@ export default function Settings({ bare = false }) {
             <form onSubmit={handleInviteSubmit} style={{ ...styles.form, flexDirection: 'column' }}>
               <input required placeholder="Name" value={inviteForm.name} onChange={(e) => setInviteForm({ ...inviteForm, name: e.target.value })} style={styles.input} />
               <input required type="email" placeholder="Email" value={inviteForm.email} onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })} style={styles.input} />
-              <input placeholder="Phone (optional)" value={inviteForm.phone} onChange={(e) => setInviteForm({ ...inviteForm, phone: e.target.value })} style={styles.input} />
+              <input type="tel" placeholder="Phone (optional)" value={inviteForm.phone} onChange={(e) => setInviteForm({ ...inviteForm, phone: e.target.value })} style={styles.input} />
+              <span style={styles.fieldNote}>Add their WhatsApp number to let them create listings by texting Plotra directly.</span>
               <button type="submit" disabled={inviteSubmitting} style={{ ...styles.submitBtn, alignSelf: 'flex-start' }}>
                 {inviteSubmitting ? 'Inviting…' : 'Invite'}
               </button>
             </form>
+
+            <div style={styles.teamListWrap}>
+              <h4 style={styles.teamListTitle}>Team Members</h4>
+              {teamError && <div style={styles.banner}>⚠️ {teamError}</div>}
+              {teamLoading ? (
+                <p style={styles.cardHelp}>Loading…</p>
+              ) : teamUsers.length === 0 ? (
+                <p style={styles.cardHelp}>No team members yet.</p>
+              ) : (
+                <div style={styles.numberList}>
+                  {teamUsers.map((u) => (
+                    <div key={u.id} style={styles.numberRow}>
+                      <div>
+                        <strong>{u.name}</strong>
+                        <span style={styles.numberLabel}> — {u.email}</span>
+                      </div>
+                      {editingUserId === u.id ? (
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <input
+                            type="tel"
+                            autoFocus
+                            value={editPhoneValue}
+                            onChange={(e) => setEditPhoneValue(e.target.value)}
+                            placeholder="e.g. 9876543210"
+                            style={styles.editPhoneInput}
+                          />
+                          <button onClick={() => handleSavePhone(u.id)} disabled={editSubmitting} style={styles.linkBtn}>Save</button>
+                          <button onClick={cancelEditPhone} style={{ ...styles.linkBtn, color: '#6b7280' }}>Cancel</button>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                          <span style={{ fontSize: '13px', color: u.phone ? '#111827' : '#9ca3af' }}>{u.phone || 'No phone set'}</span>
+                          <button onClick={() => startEditPhone(u)} style={styles.linkBtn}>Edit</button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {storedUser?.role === 'owner' && (
+          <section style={styles.card}>
+            <h3 style={styles.cardTitle}>Pending Agent Signups</h3>
+            <p style={styles.cardHelp}>
+              Prospective agents who texted "join as agent" on WhatsApp and finished providing
+              their details. Approving creates their login and makes their number immediately
+              live for listing intake — no separate activation step.
+            </p>
+
+            {signupCredential && (
+              <div style={styles.currentPhoneBox}>
+                ✅ Approved <strong>{signupCredential.name}</strong>. Dashboard login (optional):{' '}
+                {signupCredential.email} / <code style={styles.codeBadge}>{signupCredential.password}</code>
+              </div>
+            )}
+            {signupError && <div style={styles.banner}>⚠️ {signupError}</div>}
+
+            {signupsLoading ? (
+              <p style={styles.cardHelp}>Loading…</p>
+            ) : agentSignups.length === 0 ? (
+              <p style={styles.cardHelp}>No pending signups.</p>
+            ) : (
+              <div style={styles.numberList}>
+                {agentSignups.map((s) => (
+                  <div key={s.id} style={styles.numberRow}>
+                    <div>
+                      <strong>{s.name}</strong>
+                      <span style={styles.numberLabel}> — {s.phone}</span>
+                      <div style={styles.signupAddress}>{s.address}</div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        onClick={() => handleApproveSignup(s.id)}
+                        disabled={signupActionLoading === s.id}
+                        style={{ ...styles.linkBtn, color: '#16a34a', opacity: signupActionLoading === s.id ? 0.6 : 1 }}
+                      >
+                        {signupActionLoading === s.id ? '…' : 'Approve'}
+                      </button>
+                      <button
+                        onClick={() => handleRejectSignup(s.id)}
+                        disabled={signupActionLoading === s.id}
+                        style={{ ...styles.linkBtn, color: '#dc2626', opacity: signupActionLoading === s.id ? 0.6 : 1 }}
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
         )}
 
@@ -270,9 +526,14 @@ const styles = {
   codeBadge: { backgroundColor: '#dcfce7', padding: '2px 6px', borderRadius: '4px', fontFamily: 'monospace' },
   banner: { padding: '10px', borderRadius: '6px', fontSize: '13px', marginBottom: '14px' },
   form: { display: 'flex', gap: '10px' },
+  fieldNote: { margin: '-4px 0 0', fontSize: '12px', color: '#9ca3af', lineHeight: '1.5' },
+  teamListWrap: { marginTop: '18px', paddingTop: '16px', borderTop: '1px solid #f1f5f9' },
+  teamListTitle: { margin: '0 0 10px', fontSize: '13px', fontWeight: '700', color: '#374151' },
+  editPhoneInput: { padding: '7px 9px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '13px', width: '150px' },
   numberList: { display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '4px' },
   numberRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 12px', backgroundColor: '#f9fafb', borderRadius: '6px', fontSize: '13px' },
   numberLabel: { color: '#6b7280' },
+  signupAddress: { fontSize: '12px', color: '#94a3b8', marginTop: '2px' },
   defaultTag: { marginLeft: '8px', fontSize: '10px', fontWeight: '700', color: '#166534', backgroundColor: '#dcfce7', padding: '2px 7px', borderRadius: '10px', textTransform: 'uppercase' },
   linkBtn: { border: 'none', background: 'none', color: '#2563eb', fontSize: '12.5px', fontWeight: '600', cursor: 'pointer', padding: 0 },
   input: { flex: 1, padding: '10px 12px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '14px' },

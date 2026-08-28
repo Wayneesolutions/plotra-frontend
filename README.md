@@ -56,7 +56,20 @@ src/
     PlotBoundaryTracer.jsx  # Google Maps polygon draw plot boundary tool
     ChangePassword.jsx
     PrivateRoute.jsx        # redirects to /login if not authenticated
+    ChatWidget.jsx          # public web chat widget, gated by a per-tenant activation code
+  pages/
+    ChatWidgetPage.jsx      # full-page host for ChatWidget.jsx, mounted at /widget
 ```
+
+## Web chat widget (`/widget`)
+
+`/widget` is a public, no-login route hosting `ChatWidget.jsx` — a tenant
+(or whoever manages their site) embeds it via `<iframe src=".../widget">`
+on their own external website. On first use it prompts for the tenant's
+activation code (issued in the dashboard under Settings → Web Chat
+Widget), then lets them add listings by chatting, the same conversational
+flow as the WhatsApp agent-intake feature. See `HANDOVER.md` for the full
+backend contract this talks to.
 
 ## Dev login
 
