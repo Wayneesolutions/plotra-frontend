@@ -201,12 +201,10 @@ export default function PropertyView() {
   const canAdjustLocation = listing.status !== 'active';
   const hasSatellite  = !!(media?.satellite_image_url || (listing.lat != null && listing.lng != null));
   const hasStreetview = !!(media?.streetview_image_url || (listing.lat != null && listing.lng != null));
-  // Satellite is the pin-correction tool — it should only be visible while
-  // a dealer can still drag the pin (canAdjustLocation, i.e. status !==
-  // 'active'), same as the HERO comment above already says. showSatellite
-  // was missing that gate entirely (always `hasSatellite`), so satellite
-  // kept showing alongside street view even after approval, when only
-  // street view was meant to carry forward.
+  // Satellite is the pin-correction tool — only shown pre-approval while
+  // the agent can still drag the pin to fix a geocode that's slightly off.
+  // Once confirmed and live, satellite drops away; street view carries
+  // forward on its own for buyers.
   const showSatellite  = canAdjustLocation && hasSatellite;
   const showStreetview = hasStreetview;
   const bothImages     = showSatellite && showStreetview;
