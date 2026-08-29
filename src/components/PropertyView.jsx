@@ -201,10 +201,11 @@ export default function PropertyView() {
   const canAdjustLocation = listing.status !== 'active';
   const hasSatellite  = !!(media?.satellite_image_url || (listing.lat != null && listing.lng != null));
   const hasStreetview = !!(media?.streetview_image_url || (listing.lat != null && listing.lng != null));
-  // Satellite map shows on all listings with coordinates — draggable only
-  // pre-approval so the agent can correct a geocode that's slightly off.
-  // Post-approval the map remains (read-only) so buyers can see location.
-  const showSatellite  = hasSatellite;
+  // Satellite is the pin-correction tool — only shown pre-approval while
+  // the agent can still drag the pin to fix a geocode that's slightly off.
+  // Once confirmed and live, satellite drops away; street view carries
+  // forward on its own for buyers.
+  const showSatellite  = canAdjustLocation && hasSatellite;
   const showStreetview = hasStreetview;
   const bothImages     = showSatellite && showStreetview;
   const showHeroSection = canAdjustLocation || showStreetview;
