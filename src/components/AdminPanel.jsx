@@ -66,6 +66,16 @@ export default function AdminPanel() {
   const [agentSignupActionLoading, setAgentSignupActionLoading] = useState(null);
   const [agentSignupCredential, setAgentSignupCredential] = useState(null);
 
+  // Platform-wide "All Listings" tab — GET /api/v1/admin/listings, every
+  // tenant's listings, not just the logged-in admin's own. This used to be
+  // a plain redirect to /dashboard (the same single-tenant view every
+  // owner/agent sees); see adminController.js's listAllListings.
+  const [platformListings, setPlatformListings] = useState([]);
+  const [platformListingsLoading, setPlatformListingsLoading] = useState(false);
+  const [platformListingsPage, setPlatformListingsPage] = useState({ page: 1, totalPages: 1, total: 0 });
+  const [platformListingsFilters, setPlatformListingsFilters] = useState({ q: '', status: '', property_type: '' });
+  const [platformListingsFilterInputs, setPlatformListingsFilterInputs] = useState({ q: '', status: '', property_type: '' });
+
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 4000);
@@ -106,6 +116,37 @@ export default function AdminPanel() {
       setLoading(false);
     }
   }, []);
+
+  const fetchPlatformListings = useCallback(async (page = 1, filters = platformListingsFilters) => {
+    setPlatformListingsLoading(true);
+    try {
+      const params = { page, limit: 50 };
+      if (filters.q) params.q = filters.q;
+      if (filters.status) params.status = filters.status;
+      if (filters.property_type) params.property_type = filters.property_type;
+      const res = await apiClient.get('/api/v1/admin/listings', { params });
+      setPlatformListings(res.data.listings || []);
+      setPlatformListingsPage(res.data.pagination || { page: 1, totalPages: 1, total: 0 });
+    } catch {
+      showToast('Failed to load listings.', 'error');
+    } finally {
+      setPlatformListingsLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const applyPlatformListingsFilters = (e) => {
+    e?.preventDefault();
+    setPlatformListingsFilters(platformListingsFilterInputs);
+    fetchPlatformListings(1, platformListingsFilterInputs);
+  };
+
+  const clearPlatformListingsFilters = () => {
+    const empty = { q: '', status: '', property_type: '' };
+    setPlatformListingsFilterInputs(empty);
+    setPlatformListingsFilters(empty);
+    fetchPlatformListings(1, empty);
+  };
 
   // NEW — Phase 6
   const fetchAds = useCallback(async () => {
@@ -182,7 +223,9 @@ export default function AdminPanel() {
     if (tab === 'All Tenants') { fetchTenants(); fetchPlans(); }
     if (tab === 'Ad Placements') fetchAds();
     if (tab === 'Plans') fetchPlans();
-  }, [tab, fetchRequests, fetchAgentSignups, fetchTenants, fetchAds, fetchPlans]);
+    if (tab === 'listings') fetchPlatformListings(1, platformListingsFilters);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, fetchRequests, fetchAgentSignups, fetchTenants, fetchAds, fetchPlans, fetchPlatformListings]);
 
   const handleChangeTenantPlan = async (tenantId, newPlan) => {
     setActionLoading(tenantId);
@@ -571,27 +614,114 @@ export default function AdminPanel() {
           <section style={S.section}>
             <div style={S.sectionHead}>
               <div>
-                <h1 style={S.pageTitle}>Listings</h1>
-                <p style={S.pageSubtitle}>Manage your property portfolio</p>
+                <h1 style={S.pageTitle}>All Listings</h1>
+                <p style={S.pageSubtitle}>
+                  Every property listing across every dealer on the platform ({platformListingsPage.total} total)
+                </p>
               </div>
-              <button style={S.createBtn} onClick={() => navigate('/dashboard')}>
-                Open Full Listings Dashboard →
+              <button style={S.refreshBtn} onClick={() => fetchPlatformListings(platformListingsPage.page, platformListingsFilters)}>
+                Refresh
               </button>
             </div>
-            <div style={{ backgroundColor: '#f8fafd', borderRadius: '12px', padding: '32px', textAlign: 'center', border: '1px dashed #c8a96e' }}>
-              <div style={{ marginBottom: '12px' }}>
-                <img src={plotraIcon} alt="Plotra" style={{ height: '52px', width: 'auto' }} />
+
+            <form onSubmit={applyPlatformListingsFilters} style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+              <input
+                style={{ ...S.formInput, flex: 1, minWidth: '200px' }}
+                type="text"
+                placeholder="Search by title or address…"
+                value={platformListingsFilterInputs.q}
+                onChange={(e) => setPlatformListingsFilterInputs((p) => ({ ...p, q: e.target.value }))}
+              />
+              <select
+                style={S.formInput}
+                value={platformListingsFilterInputs.status}
+                onChange={(e) => setPlatformListingsFilterInputs((p) => ({ ...p, status: e.target.value }))}
+              >
+                <option value="">Any status</option>
+                <option value="active">Active</option>
+                <option value="awaiting_approval">Awaiting approval</option>
+                <option value="pending">Pending</option>
+                <option value="inactive">Inactive</option>
+              </select>
+              <select
+                style={S.formInput}
+                value={platformListingsFilterInputs.property_type}
+                onChange={(e) => setPlatformListingsFilterInputs((p) => ({ ...p, property_type: e.target.value }))}
+              >
+                <option value="">Any type</option>
+                <option value="Plot">Plot</option>
+                <option value="Flat">Flat</option>
+                <option value="Villa">Villa</option>
+                <option value="Commercial">Commercial</option>
+              </select>
+              <button type="submit" style={S.refreshBtn}>Search</button>
+              <button type="button" style={S.refreshBtn} onClick={clearPlatformListingsFilters}>Clear</button>
+            </form>
+
+            {platformListingsLoading ? (
+              <div style={S.empty}>Loading…</div>
+            ) : platformListings.length === 0 ? (
+              <div style={S.emptyCard}>
+                <div style={S.emptyIcon}>🏠</div>
+                <p style={S.emptyText}>No listings match these filters</p>
               </div>
-              <p style={{ margin: '0 0 16px', color: '#0c1b2e', fontWeight: '700', fontSize: '15px' }}>
-                Listings Dashboard
-              </p>
-              <p style={{ margin: '0 0 20px', color: '#64748b', fontSize: '13px' }}>
-                Add properties, manage photos, set boundaries, and copy sharing links.
-              </p>
-              <button style={{ ...S.createBtn, display: 'inline-flex' }} onClick={() => navigate('/dashboard')}>
-                Go to Listings Dashboard →
-              </button>
-            </div>
+            ) : (
+              <>
+                <div style={S.tableWrap}>
+                  <table style={S.table}>
+                    <thead>
+                      <tr>
+                        {['Title', 'Dealer', 'Type', 'Price', 'Status', 'Assigned Agent', 'Created'].map((h) => (
+                          <th key={h} style={S.th}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {platformListings.map((l) => (
+                        <tr key={l.id} style={S.tr}>
+                          <td style={S.td}>
+                            <a href={`/p/${l.public_slug}`} target="_blank" rel="noreferrer" style={{ color: '#0c1b2e', fontWeight: '600', textDecoration: 'none' }}>
+                              {l.title || l.raw_address || 'Untitled listing'}
+                            </a>
+                          </td>
+                          <td style={S.td}>{l.tenant_business_name}</td>
+                          <td style={S.td}>{l.property_type}</td>
+                          <td style={S.td}>{l.price != null ? `₹${Number(l.price).toLocaleString('en-IN')}` : '—'}</td>
+                          <td style={S.td}>
+                            <span style={{ ...S.statusBadge, ...(l.status === 'active' ? S.statusActive : S.statusInactive) }}>
+                              {l.status}
+                            </span>
+                          </td>
+                          <td style={S.td}>{l.assigned_agent_name || '—'}</td>
+                          <td style={S.td}>{new Date(l.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {platformListingsPage.totalPages > 1 && (
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '16px' }}>
+                    <button
+                      style={S.refreshBtn}
+                      disabled={platformListingsPage.page <= 1}
+                      onClick={() => fetchPlatformListings(platformListingsPage.page - 1, platformListingsFilters)}
+                    >
+                      ← Prev
+                    </button>
+                    <span style={{ alignSelf: 'center', fontSize: '13px', color: '#64748b' }}>
+                      Page {platformListingsPage.page} of {platformListingsPage.totalPages}
+                    </span>
+                    <button
+                      style={S.refreshBtn}
+                      disabled={platformListingsPage.page >= platformListingsPage.totalPages}
+                      onClick={() => fetchPlatformListings(platformListingsPage.page + 1, platformListingsFilters)}
+                    >
+                      Next →
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
           </section>
         )}
         {tab === 'leads' && <section style={S.section}><LeadsInbox bare /></section>}

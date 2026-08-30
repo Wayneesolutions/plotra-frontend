@@ -82,7 +82,12 @@ export default function DashboardListings() {
       const res = await apiClient.get('/api/v1/dashboard/billing/status');
       const billing = res.data.billing;
       setPlanInfo(billing);
-      const enabled = (billing?.max_whatsapp_numbers ?? 1) > 1;
+      // plans.multi_agent_whatsapp is the actual Growth/Unlimited tier flag
+      // billing/status returns (see migration 20260821_04) — this used to
+      // check billing?.max_whatsapp_numbers, a field the backend never
+      // returned, so this whole per-listing assignment UI never showed for
+      // any tenant on any plan.
+      const enabled = !!billing?.multi_agent_whatsapp;
       setMultiAgentEnabled(enabled);
       if (enabled) {
         const usersRes = await apiClient.get('/api/v1/dashboard/users');
