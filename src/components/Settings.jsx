@@ -453,7 +453,7 @@ export default function Settings({ bare = false }) {
           </section>
         )}
 
-        {storedUser?.role === 'owner' && maxWhatsappNumbers > 1 && (
+        {storedUser?.role === 'owner' && maxWhatsappNumbers >= 1 && (
           <section style={styles.card}>
             <h3 style={styles.cardTitle}>Buyer-Facing WhatsApp Numbers</h3>
             <p style={styles.cardHelp}>
