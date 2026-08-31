@@ -35,6 +35,7 @@ function InteractiveSatellite({ lat, lng, fallbackUrl, draggable = false, onPosi
     const coords = toValidCoords(lat, lng);
     if (!coords) { setFailed(true); return; }
     let cancelled = false;
+    let activeMarker = null;
 
     loadGoogleMaps()
       .then((maps) => {
@@ -62,6 +63,7 @@ function InteractiveSatellite({ lat, lng, fallbackUrl, draggable = false, onPosi
           draggable,
           title: draggable ? 'Drag to correct the exact plot location' : 'Approximate plot location',
         });
+        activeMarker = marker;
 
         if (draggable && onPositionChange) {
           marker.addListener('dragend', () => {
@@ -72,7 +74,18 @@ function InteractiveSatellite({ lat, lng, fallbackUrl, draggable = false, onPosi
       })
       .catch(() => { if (!cancelled) setFailed(true); });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      // Remove the marker from the map before the effect re-runs (e.g. after
+      // a successful pin save updates lat/lng). Without this, each re-render
+      // leaves a stale draggable marker at the old position — the second
+      // correction attempt drags the wrong (old) marker, making it appear
+      // to have no effect.
+      if (activeMarker) {
+        activeMarker.setMap(null);
+        activeMarker = null;
+      }
+    };
   }, [lat, lng, draggable]);
 
   if (failed) {
