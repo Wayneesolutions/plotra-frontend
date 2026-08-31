@@ -58,7 +58,7 @@ export default function Settings({ bare = false }) {
   };
 
   useEffect(() => {
-    if (storedUser?.role !== 'owner') return;
+    if (storedUser?.role !== 'owner' && storedUser?.role !== 'super_admin') return;
     setNumbersLoading(true);
     Promise.all([
       apiClient.get('/api/v1/dashboard/whatsapp-numbers'),
@@ -453,7 +453,7 @@ export default function Settings({ bare = false }) {
           </section>
         )}
 
-        {storedUser?.role === 'owner' && maxWhatsappNumbers >= 1 && (
+        {(storedUser?.role === 'owner' || storedUser?.role === 'super_admin') && maxWhatsappNumbers >= 1 && (
           <section style={styles.card}>
             <h3 style={styles.cardTitle}>Buyer-Facing WhatsApp Numbers</h3>
             <p style={styles.cardHelp}>
