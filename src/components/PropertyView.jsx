@@ -727,8 +727,13 @@ const S = {
     alignItems: 'center', justifyContent: 'center', width: '100%',
   },
 
-  /* Manual pin-drag correction banner, overlaid on the satellite slot */
-  locationEditArea: { position: 'absolute', bottom: '12px', left: '12px', right: '12px', zIndex: 1 },
+  /* Manual pin-drag correction banner, overlaid on the satellite slot.
+     zIndex above PropertyMapMedia.jsx's expandedWrapStyle (2000) — that
+     component's own fullscreen overlay is a sibling of this one (not a
+     parent), so without a higher z-index here, expanding the map to full
+     screen for precise pin placement would visually bury this Save/
+     Cancel banner underneath it. */
+  locationEditArea: { position: 'absolute', bottom: '12px', left: '12px', right: '12px', zIndex: 2100 },
   locationHintMsg: { backgroundColor: 'rgba(17, 24, 39, 0.8)', color: '#e5e7eb', fontSize: '12px', padding: '6px 10px', borderRadius: '6px', display: 'inline-block' },
   locationSavedMsg: { backgroundColor: 'rgba(22, 101, 52, 0.9)', color: '#fff', fontSize: '12px', padding: '6px 10px', borderRadius: '6px', display: 'inline-block' },
   locationErrorMsg: { backgroundColor: 'rgba(153, 27, 27, 0.9)', color: '#fff', fontSize: '12px', padding: '6px 10px', borderRadius: '6px', marginTop: '6px', display: 'inline-block' },
