@@ -157,13 +157,23 @@
   html {
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
-    overflow-x: clip;
   }
 
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
+  }
+
+  /* Horizontal-overflow clipping lives on #root, not html/body: iOS Safari
+     has a long-standing WebKit bug where position:fixed descendants stop
+     tracking the true viewport (and become untappable/mispositioned) once
+     <body> itself has overflow-x other than visible — exactly the "fake
+     fullscreen" overlay PropertyMapMedia.jsx uses for its map expand
+     button, which is why that button was dead specifically on iPhone/iPad.
+     #root isn't the page's native scrolling element, so it clips the same
+     decorative overflow without tripping that bug. */
+  #root {
     overflow-x: clip;
   }
 
