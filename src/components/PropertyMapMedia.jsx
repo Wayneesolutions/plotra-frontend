@@ -44,9 +44,20 @@ const collapsedWrapStyle = {
   width: '100%', height: '100%', position: 'relative', isolation: 'isolate', zIndex: 2,
 };
 const expandBtnStyle = {
-  position: 'absolute', top: '10px', right: '10px', zIndex: 5,
-  width: '36px', height: '36px', borderRadius: '8px', border: 'none',
-  background: 'rgba(17,24,39,0.75)', color: '#fff', fontSize: '17px', lineHeight: 1,
+  position: 'absolute', top: '10px', right: '10px',
+  // zIndex must exceed Google Maps' float pane (~400000000 on mobile WebKit) —
+  // isolation:isolate on the wrap is supposed to contain those z-indices but
+  // iOS Safari WebKit does not honour it reliably for Maps injected layers.
+  // transform:translateZ(0) forces the button onto its own GPU compositing
+  // layer, which sits above the Maps canvas regardless of stacking context.
+  zIndex: 9999999,
+  transform: 'translateZ(0)', WebkitTransform: 'translateZ(0)',
+  width: '36px', height: '36px', borderRadius: '8px',
+  // WebkitAppearance:none strips iOS Safari's default button chrome (it can
+  // make a button render smaller or with a system background, hiding ours).
+  WebkitAppearance: 'none', appearance: 'none',
+  border: '1.5px solid rgba(255,255,255,0.35)',
+  background: 'rgba(17,24,39,0.85)', color: '#fff', fontSize: '17px', lineHeight: 1,
   cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
 };
 
