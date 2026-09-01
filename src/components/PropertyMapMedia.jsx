@@ -41,7 +41,7 @@ const expandedWrapStyle = {
   isolation: 'isolate',
 };
 const collapsedWrapStyle = {
-  width: '100%', height: '100%', position: 'relative', isolation: 'isolate',
+  width: '100%', height: '100%', position: 'relative', isolation: 'isolate', zIndex: 2,
 };
 const expandBtnStyle = {
   position: 'absolute', top: '10px', right: '10px', zIndex: 5,
