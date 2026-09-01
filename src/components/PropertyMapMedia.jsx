@@ -140,6 +140,10 @@ function InteractiveSatellite({ lat, lng, fallbackUrl, draggable = false, onPosi
           // there).
           fullscreenControl: false,
           mapTypeControl: false,
+          // 'greedy' so one finger always pans — 'auto' (the unset
+          // default) resolved inconsistently on iOS after the
+          // fullscreenControl change and required two fingers there.
+          gestureHandling: 'greedy',
         });
         mapRef.current = map;
         // Marks the exact point the address geocoded to — without this,
@@ -230,6 +234,7 @@ function InteractiveStreetView({ lat, lng, fallbackUrl }) {
             // this native control entirely, replaced with the custom
             // expand button below.
             fullscreenControl: false,
+            gestureHandling: 'greedy',
           });
           mapRef.current = panorama;
         });
