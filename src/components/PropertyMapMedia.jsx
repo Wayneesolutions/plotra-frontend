@@ -27,8 +27,21 @@ function toValidCoords(lat, lng) {
 // devices. This is a plain CSS "fake fullscreen" (position: fixed, full
 // viewport) instead — works identically on every platform since it
 // doesn't touch the actual Fullscreen API at all.
+// `isolation: 'isolate'` on both wrap styles below is deliberate: Google
+// Maps injects its own internal panes (tile layer, overlay, float pane for
+// controls, etc.) as descendants of the map div, and its float pane in
+// particular ships with a z-index in the hundreds of thousands. Without an
+// isolated stacking context here, that pane's z-index is compared against
+// our expand/collapse button's in whatever ancestor stacking context is
+// nearest — which the button loses — so the (invisible) pane can sit on
+// top of the button and silently eat its taps. Isolating containment here
+// guarantees the button (zIndex 5 below) always wins inside its own wrap.
 const expandedWrapStyle = {
   position: 'fixed', inset: 0, width: '100vw', height: '100vh', zIndex: 2000, background: '#000',
+  isolation: 'isolate',
+};
+const collapsedWrapStyle = {
+  width: '100%', height: '100%', position: 'relative', isolation: 'isolate',
 };
 const expandBtnStyle = {
   position: 'absolute', top: '10px', right: '10px', zIndex: 5,
@@ -157,7 +170,7 @@ function InteractiveSatellite({ lat, lng, fallbackUrl, draggable = false, onPosi
     return <img src={fallbackUrl} alt="Satellite Grid Layout" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />;
   }
   return (
-    <div style={expanded ? expandedWrapStyle : { width: '100%', height: '100%', position: 'relative' }}>
+    <div style={expanded ? expandedWrapStyle : collapsedWrapStyle}>
       <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
       <button
         type="button"
@@ -220,7 +233,7 @@ function InteractiveStreetView({ lat, lng, fallbackUrl }) {
     return <img src={fallbackUrl} alt="Street Frontage Elevation" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />;
   }
   return (
-    <div style={expanded ? expandedWrapStyle : { width: '100%', height: '100%', position: 'relative' }}>
+    <div style={expanded ? expandedWrapStyle : collapsedWrapStyle}>
       <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
       <button
         type="button"
