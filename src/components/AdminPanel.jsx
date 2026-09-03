@@ -13,6 +13,7 @@ const TABS = [
   { label: 'Pending Requests', icon: '📋', desc: 'Approve or reject new dealer signups' },
   { label: 'Agent Signups',    icon: '🤝', desc: 'WhatsApp agent signup requests' },
   { label: 'Geo Review',       icon: '📍', desc: 'Correct WhatsApp listing pins before the agent sees them' },
+  { label: 'Marketplace Leads', icon: '🔎', desc: 'Leads delivered per dealer via the shared-number property search' },
   { label: 'All Tenants',      icon: '🏢', desc: 'View and manage all active accounts' },
   { label: 'Create Tenant',    icon: '➕', desc: 'Manually onboard a new dealer account' },
   { label: 'Ad Placements',    icon: '📢', desc: 'Manage ads shown across listing pages' },
@@ -88,6 +89,13 @@ export default function AdminPanel() {
   const [geoReviewActionLoading, setGeoReviewActionLoading] = useState(null);
   const [geoReviewExpandedId, setGeoReviewExpandedId] = useState(null);
   const [geoReviewDraggedPosition, setGeoReviewDraggedPosition] = useState(null);
+
+  // "Marketplace Leads" tab — read-only view of marketplace_lead_deliveries
+  // (see adminMarketplaceLeadsController.js). Phase 1 tracking only, no
+  // billing action lives here — this is visibility, not a billing UI.
+  const [marketplaceLeadsData, setMarketplaceLeadsData] = useState(null);
+  const [marketplaceLeadsLoading, setMarketplaceLeadsLoading] = useState(false);
+  const [marketplaceLeadsDays, setMarketplaceLeadsDays] = useState(30);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -268,16 +276,30 @@ export default function AdminPanel() {
     }
   };
 
+  const fetchMarketplaceLeads = useCallback(async (days = marketplaceLeadsDays) => {
+    setMarketplaceLeadsLoading(true);
+    try {
+      const res = await apiClient.get(`/api/v1/admin/marketplace-leads?days=${days}`);
+      setMarketplaceLeadsData(res.data);
+    } catch {
+      showToast('Failed to load marketplace leads.', 'error');
+    } finally {
+      setMarketplaceLeadsLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     if (tab === 'Pending Requests') fetchRequests();
     if (tab === 'Agent Signups') fetchAgentSignups();
     if (tab === 'Geo Review') fetchGeoReviewQueue();
+    if (tab === 'Marketplace Leads') fetchMarketplaceLeads();
     if (tab === 'All Tenants') { fetchTenants(); fetchPlans(); }
     if (tab === 'Ad Placements') fetchAds();
     if (tab === 'Plans') fetchPlans();
     if (tab === 'listings') fetchPlatformListings(1, platformListingsFilters);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, fetchRequests, fetchAgentSignups, fetchGeoReviewQueue, fetchTenants, fetchAds, fetchPlans, fetchPlatformListings]);
+  }, [tab, fetchRequests, fetchAgentSignups, fetchGeoReviewQueue, fetchMarketplaceLeads, fetchTenants, fetchAds, fetchPlans, fetchPlatformListings]);
 
   const handleChangeTenantPlan = async (tenantId, newPlan) => {
     setActionLoading(tenantId);
@@ -929,6 +951,81 @@ export default function AdminPanel() {
                   );
                 })}
               </div>
+            )}
+          </section>
+        )}
+
+        {/* ── Tab: Marketplace Leads ───────────────────────── */}
+        {tab === 'Marketplace Leads' && (
+          <section style={S.section}>
+            <div style={S.sectionHead}>
+              <div>
+                <h1 style={S.pageTitle}>Marketplace Leads</h1>
+                <p style={S.pageSubtitle}>Listing links delivered to buyers via the shared-number property search — tracking only, no billing yet</p>
+              </div>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <select
+                  value={marketplaceLeadsDays}
+                  onChange={(e) => { const d = Number(e.target.value); setMarketplaceLeadsDays(d); fetchMarketplaceLeads(d); }}
+                  style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #e5e7eb', fontSize: '13px' }}
+                >
+                  <option value={7}>Last 7 days</option>
+                  <option value={30}>Last 30 days</option>
+                  <option value={90}>Last 90 days</option>
+                </select>
+                <button style={S.refreshBtn} onClick={() => fetchMarketplaceLeads()}>Refresh</button>
+              </div>
+            </div>
+
+            {marketplaceLeadsLoading ? (
+              <div style={S.empty}>Loading…</div>
+            ) : !marketplaceLeadsData || marketplaceLeadsData.totalLeads === 0 ? (
+              <div style={S.emptyCard}>
+                <div style={S.emptyIcon}>🔎</div>
+                <p style={S.emptyText}>No marketplace leads delivered in this period</p>
+              </div>
+            ) : (
+              <>
+                <p style={{ ...S.requestMeta, marginBottom: '14px', fontSize: '14px' }}>
+                  <strong>{marketplaceLeadsData.totalLeads}</strong> listing link{marketplaceLeadsData.totalLeads === 1 ? '' : 's'} delivered across <strong>{marketplaceLeadsData.perTenant.length}</strong> dealer{marketplaceLeadsData.perTenant.length === 1 ? '' : 's'} in the last {marketplaceLeadsData.days} days.
+                </p>
+
+                <div style={{ marginBottom: '24px', borderRadius: '10px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                    <thead>
+                      <tr style={{ background: '#f9fafb', textAlign: 'left' }}>
+                        <th style={{ padding: '10px 14px' }}>Dealer</th>
+                        <th style={{ padding: '10px 14px', textAlign: 'right' }}>Leads delivered</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {marketplaceLeadsData.perTenant.map((row) => (
+                        <tr key={row.tenant_id} style={{ borderTop: '1px solid #f1f5f9' }}>
+                          <td style={{ padding: '10px 14px' }}>{row.tenant_business_name}</td>
+                          <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600 }}>{row.lead_count}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <h2 style={{ fontSize: '15px', fontWeight: 600, marginBottom: '10px' }}>Recent deliveries</h2>
+                <div style={S.cardList}>
+                  {marketplaceLeadsData.recent.map((r) => (
+                    <div key={r.id} style={{ ...S.requestCard, padding: '12px 16px' }}>
+                      <div style={S.requestBiz}>{r.listing_title}</div>
+                      <div style={S.requestMeta}>
+                        🏢 {r.tenant_business_name} &nbsp;·&nbsp; 📱 {r.buyer_phone} &nbsp;·&nbsp; {new Date(r.delivered_at).toLocaleString()}
+                      </div>
+                      {r.matched_query && (
+                        <div style={{ ...S.requestMeta, marginTop: '2px', fontStyle: 'italic' }}>
+                          "buyer asked: {r.matched_query}"
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </section>
         )}

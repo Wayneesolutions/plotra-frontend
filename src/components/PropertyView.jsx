@@ -319,7 +319,7 @@ export default function PropertyView() {
             </span>
           </div>
           <h1 style={S.propTitle}>{listing.title}</h1>
-          <p style={S.propAddr}>📍 {listing.formatted_address || listing.raw_address}</p>
+          <p style={S.propAddr}>📍 {listing.general_area || listing.formatted_address || listing.raw_address}</p>
         </div>
 
         {/* WhatsApp CTA */}
