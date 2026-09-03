@@ -6,11 +6,13 @@ import LeadsInbox from './LeadsInbox.jsx';
 import Analytics from './Analytics.jsx';
 import Settings from './Settings.jsx';
 import OpsPanel from './OpsPanel.jsx';
+import { InteractiveSatellite } from './PropertyMapMedia.jsx';
 import plotraIcon from '../assets/plotra-icon.png';
 
 const TABS = [
   { label: 'Pending Requests', icon: '📋', desc: 'Approve or reject new dealer signups' },
   { label: 'Agent Signups',    icon: '🤝', desc: 'WhatsApp agent signup requests' },
+  { label: 'Geo Review',       icon: '📍', desc: 'Correct WhatsApp listing pins before the agent sees them' },
   { label: 'All Tenants',      icon: '🏢', desc: 'View and manage all active accounts' },
   { label: 'Create Tenant',    icon: '➕', desc: 'Manually onboard a new dealer account' },
   { label: 'Ad Placements',    icon: '📢', desc: 'Manage ads shown across listing pages' },
@@ -75,6 +77,17 @@ export default function AdminPanel() {
   const [platformListingsPage, setPlatformListingsPage] = useState({ page: 1, totalPages: 1, total: 0 });
   const [platformListingsFilters, setPlatformListingsFilters] = useState({ q: '', status: '', property_type: '' });
   const [platformListingsFilterInputs, setPlatformListingsFilterInputs] = useState({ q: '', status: '', property_type: '' });
+
+  // "Geo Review" tab — WhatsApp listings parked at status='pending_geo_review'
+  // (see geoEnrichmentWorker.js + adminGeoReviewController.js). Only one row's
+  // map is ever mounted at a time (geoReviewExpandedId) — a Google Maps
+  // instance per row for a queue of dozens would be wasteful, and the admin
+  // is only ever correcting one pin at a time anyway.
+  const [geoReviewQueue, setGeoReviewQueue] = useState([]);
+  const [geoReviewLoading, setGeoReviewLoading] = useState(false);
+  const [geoReviewActionLoading, setGeoReviewActionLoading] = useState(null);
+  const [geoReviewExpandedId, setGeoReviewExpandedId] = useState(null);
+  const [geoReviewDraggedPosition, setGeoReviewDraggedPosition] = useState(null);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -217,15 +230,54 @@ export default function AdminPanel() {
     }
   };
 
+  const fetchGeoReviewQueue = useCallback(async () => {
+    setGeoReviewLoading(true);
+    try {
+      const res = await apiClient.get('/api/v1/admin/listings/geo-review');
+      setGeoReviewQueue(res.data.listings || []);
+    } catch {
+      showToast('Failed to load geo-review queue.', 'error');
+    } finally {
+      setGeoReviewLoading(false);
+    }
+  }, []);
+
+  const toggleGeoReviewExpanded = (id) => {
+    setGeoReviewExpandedId((prev) => (prev === id ? null : id));
+    setGeoReviewDraggedPosition(null);
+  };
+
+  // corrected is undefined when the admin approves without touching the
+  // pin (it was already right) — adminGeoReviewController.js treats a
+  // request with no lat/lng as "confirmed as-is", not "no change needed
+  // so skip it", since the status still has to flip and the preview still
+  // has to go out either way.
+  const handleApproveGeoReview = async (id, corrected) => {
+    setGeoReviewActionLoading(id);
+    try {
+      const body = corrected ? { lat: corrected.lat, lng: corrected.lng } : {};
+      await apiClient.patch(`/api/v1/admin/listings/${id}/geo-review`, body);
+      setGeoReviewQueue((prev) => prev.filter((l) => l.id !== id));
+      setGeoReviewExpandedId(null);
+      setGeoReviewDraggedPosition(null);
+      showToast('Approved — preview link sent to the agent.');
+    } catch (err) {
+      showToast(err.response?.data?.error?.message || 'Failed to approve listing.', 'error');
+    } finally {
+      setGeoReviewActionLoading(null);
+    }
+  };
+
   useEffect(() => {
     if (tab === 'Pending Requests') fetchRequests();
     if (tab === 'Agent Signups') fetchAgentSignups();
+    if (tab === 'Geo Review') fetchGeoReviewQueue();
     if (tab === 'All Tenants') { fetchTenants(); fetchPlans(); }
     if (tab === 'Ad Placements') fetchAds();
     if (tab === 'Plans') fetchPlans();
     if (tab === 'listings') fetchPlatformListings(1, platformListingsFilters);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, fetchRequests, fetchAgentSignups, fetchTenants, fetchAds, fetchPlans, fetchPlatformListings]);
+  }, [tab, fetchRequests, fetchAgentSignups, fetchGeoReviewQueue, fetchTenants, fetchAds, fetchPlans, fetchPlatformListings]);
 
   const handleChangeTenantPlan = async (tenantId, newPlan) => {
     setActionLoading(tenantId);
@@ -787,6 +839,95 @@ export default function AdminPanel() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* ── Tab: Geo Review ──────────────────────────────── */}
+        {tab === 'Geo Review' && (
+          <section style={S.section}>
+            <div style={S.sectionHead}>
+              <div>
+                <h1 style={S.pageTitle}>Geo Review</h1>
+                <p style={S.pageSubtitle}>WhatsApp listings waiting on a pin check before the agent gets their preview link</p>
+              </div>
+              <button style={S.refreshBtn} onClick={fetchGeoReviewQueue}>Refresh</button>
+            </div>
+
+            {geoReviewLoading ? (
+              <div style={S.empty}>Loading…</div>
+            ) : geoReviewQueue.length === 0 ? (
+              <div style={S.emptyCard}>
+                <div style={S.emptyIcon}>✓</div>
+                <p style={S.emptyText}>Nothing waiting on geo review right now</p>
+              </div>
+            ) : (
+              <div style={S.cardList}>
+                {geoReviewQueue.map((l) => {
+                  const isExpanded = geoReviewExpandedId === l.id;
+                  const isActing = geoReviewActionLoading === l.id;
+                  return (
+                    <div key={l.id} style={S.requestCard}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
+                        <div style={S.requestInfo}>
+                          <div style={{ ...S.requestAvatar, background: 'linear-gradient(135deg, #7c2d12 0%, #c2410c 100%)' }}>
+                            📍
+                          </div>
+                          <div>
+                            <div style={S.requestBiz}>
+                              {l.title || 'Untitled listing'}
+                              {l.location_low_confidence && (
+                                <span style={{ ...S.waBadge, background: '#fef3c7', color: '#92400e' }}>⚠️ Low confidence</span>
+                              )}
+                            </div>
+                            <div style={S.requestMeta}>
+                              📝 typed: "{l.raw_address}"
+                            </div>
+                            {l.formatted_address && (
+                              <div style={{ ...S.requestMeta, marginTop: '2px' }}>
+                                📍 geocoded to: {l.formatted_address}
+                              </div>
+                            )}
+                            <div style={{ ...S.requestMeta, marginTop: '2px' }}>
+                              🏢 {l.tenant_business_name}
+                              {l.agent_name && <>&nbsp;·&nbsp; 🤝 {l.agent_name} ({l.agent_phone})</>}
+                              &nbsp;·&nbsp; {new Date(l.created_at).toLocaleString()}
+                            </div>
+                          </div>
+                        </div>
+                        <div style={S.requestActions}>
+                          <button style={S.refreshBtn} onClick={() => toggleGeoReviewExpanded(l.id)}>
+                            {isExpanded ? 'Hide map' : 'Review pin'}
+                          </button>
+                          <button
+                            style={{ ...S.approveBtn, opacity: isActing ? 0.6 : 1 }}
+                            disabled={isActing}
+                            onClick={() => handleApproveGeoReview(l.id, isExpanded ? geoReviewDraggedPosition : undefined)}
+                          >
+                            {isActing ? '…' : (isExpanded && geoReviewDraggedPosition ? '✓ Save & Approve' : '✓ Approve')}
+                          </button>
+                        </div>
+                      </div>
+
+                      {isExpanded && (
+                        <div style={{ marginTop: '14px' }}>
+                          <div style={{ height: '340px', borderRadius: '10px', overflow: 'hidden', border: '1px solid #e5e7eb' }}>
+                            <InteractiveSatellite
+                              lat={geoReviewDraggedPosition?.lat ?? l.lat}
+                              lng={geoReviewDraggedPosition?.lng ?? l.lng}
+                              draggable
+                              onPositionChange={(coords) => setGeoReviewDraggedPosition(coords)}
+                            />
+                          </div>
+                          <p style={{ ...S.requestMeta, marginTop: '8px' }}>
+                            Drag the pin to match "{l.raw_address}", then Save &amp; Approve — or just Approve if the pin already looks right.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </section>
