@@ -48,7 +48,7 @@ export default function OpsPanel({ bare = false }) {
         <div style={S.brand}>
           <span style={S.brandMark}>◆</span>
           <div>
-            <div style={S.brandName}>Plotra</div>
+            <div style={S.brandName}>Plotraa</div>
             <div style={S.brandSub}>OPS PANEL</div>
           </div>
         </div>

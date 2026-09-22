@@ -5,12 +5,12 @@ const steps = [
   {
     n: "01",
     title: "Send the Property",
-    body: "Text plot size, location and price to your Plotra WhatsApp number — the way you already message your buyers.",
+    body: "Text plot size, location and price to your Plotraa WhatsApp number — the way you already message your buyers.",
     src: media.streetView,
   },
   {
     n: "02",
-    title: "Plotra Understands It",
+    title: "Plotraa Understands It",
     body: "AI extracts location, price, plot size and property type, then pulls satellite imagery for the parcel.",
     src: media.satellitePlot,
   },
@@ -23,7 +23,7 @@ const steps = [
   {
     n: "04",
     title: "Share With Buyers",
-    body: "Forward one link. Every open, enquiry and callback request lands in your Plotra lead inbox.",
+    body: "Forward one link. Every open, enquiry and callback request lands in your Plotraa lead inbox.",
     src: media.plotAerial,
   },
 ];

@@ -72,7 +72,7 @@ function Hero() {
 
           <Reveal delay={420}>
             <p className="mt-6 max-w-lg text-base leading-relaxed text-ink-foreground/75 sm:text-lg">
-              Plotra turns a simple WhatsApp message into a professional, shareable property listing
+              Plotraa turns a simple WhatsApp message into a professional, shareable property listing
               — with satellite imagery, plot boundary and a live page buyers can open instantly.
             </p>
           </Reveal>
@@ -90,7 +90,7 @@ function Hero() {
                 href="#how-it-works"
                 className="group inline-flex items-center gap-2 text-sm font-semibold text-ink-foreground/80 transition-colors hover:text-ink-foreground"
               >
-                See how Plotra works
+                See how Plotraa works
                 <span className="transition-transform duration-500 group-hover:translate-y-1">
                   ↓
                 </span>
@@ -212,7 +212,7 @@ function SatelliteStory() {
             Buyers trust what they can see from above.
           </h2>
           <p className="mt-5 max-w-md text-base leading-relaxed text-muted-foreground">
-            Every Plotra listing pairs satellite imagery with a traced plot boundary and real
+            Every Plotraa listing pairs satellite imagery with a traced plot boundary and real
             photography — so a buyer three cities away understands the parcel before they call.
           </p>
           <ul className="mt-8 space-y-3">
@@ -343,7 +343,7 @@ function FinalCta() {
           </Reveal>
           <Reveal delay={160}>
             <p className="mt-6 max-w-xl text-base text-ink-foreground/70">
-              Plotra is invite-only while we onboard dealers city by city. Tell us about your
+              Plotraa is invite-only while we onboard dealers city by city. Tell us about your
               business and we'll set you up.
             </p>
           </Reveal>

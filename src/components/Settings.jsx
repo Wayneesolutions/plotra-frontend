@@ -252,7 +252,7 @@ export default function Settings({ bare = false }) {
       // Keep localStorage in sync so the dashboard header reflects the new number immediately
       const saved = JSON.parse(localStorage.getItem('pve_user') || 'null');
       if (saved) localStorage.setItem('pve_user', JSON.stringify({ ...saved, phone: res.data.phone }));
-      setStatusMessage('✅ WhatsApp number connected. Text your listing details to your Plotra WhatsApp number and it will show up here as a draft once approved.');
+      setStatusMessage('✅ WhatsApp number connected. Text your listing details to your Plotraa WhatsApp number and it will show up here as a draft once approved.');
     } catch (err) {
       setIsError(true);
       setStatusMessage(`⚠️ ${err.response?.data?.error?.message || 'Something went wrong.'}`);
@@ -269,7 +269,7 @@ export default function Settings({ bare = false }) {
           <h3 style={styles.cardTitle}>Connect Your WhatsApp Number</h3>
           <p style={styles.cardHelp}>
             This is the number you'll text listings to. Once connected, any WhatsApp message from this
-            number to your Plotra number is recognized as a listing you're creating — not a buyer inquiry.
+            number to your Plotraa number is recognized as a listing you're creating — not a buyer inquiry.
           </p>
 
           {linkedPhone && (
@@ -304,7 +304,7 @@ export default function Settings({ bare = false }) {
           <section style={styles.card}>
             <h3 style={styles.cardTitle}>Web Chat Widget</h3>
             <p style={styles.cardHelp}>
-              Embed Plotra's chat widget on your own website so you (or your team) can add listings
+              Embed Plotraa's chat widget on your own website so you (or your team) can add listings
               by chatting, the same way you can over WhatsApp. Enter this code into the widget once
               to activate it for your account.
             </p>
@@ -351,7 +351,7 @@ export default function Settings({ bare = false }) {
               <input required placeholder="Name" value={inviteForm.name} onChange={(e) => setInviteForm({ ...inviteForm, name: e.target.value })} style={styles.input} />
               <input required type="email" placeholder="Email" value={inviteForm.email} onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })} style={styles.input} />
               <input type="tel" placeholder="Phone (optional)" value={inviteForm.phone} onChange={(e) => setInviteForm({ ...inviteForm, phone: e.target.value })} style={styles.input} />
-              <span style={styles.fieldNote}>Add their WhatsApp number to let them create listings by texting Plotra directly.</span>
+              <span style={styles.fieldNote}>Add their WhatsApp number to let them create listings by texting Plotraa directly.</span>
               <button type="submit" disabled={inviteSubmitting} style={{ ...styles.submitBtn, alignSelf: 'flex-start' }}>
                 {inviteSubmitting ? 'Inviting…' : 'Invite'}
               </button>

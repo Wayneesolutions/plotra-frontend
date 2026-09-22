@@ -25,7 +25,7 @@ export default function LegalPage() {
           <Reveal>
             <p className="label-eyebrow text-primary">Legal</p>
             <h1 className="text-balance-tight mt-4 max-w-2xl font-display text-4xl font-bold text-ink sm:text-6xl">
-              Plotra legal information
+              Plotraa legal information
             </h1>
             <p className="mt-5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
               Operated by Wayne E Solutions, Ludhiana, Punjab, India. This page is a draft for legal

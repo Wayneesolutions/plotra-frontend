@@ -6,7 +6,7 @@ import { Reveal } from "@/lib/motion";
 
 const reels = [
   { category: "Listing", caption: "Listing goes live in 40 seconds", src: media.satellitePlot },
-  { category: "WhatsApp", caption: "Dealer texts, Plotra replies", src: media.houseExterior },
+  { category: "WhatsApp", caption: "Dealer texts, Plotraa replies", src: media.houseExterior },
   { category: "AI", caption: "AI answers a buyer in Punjabi", src: media.streetView },
   {
     category: "Walkthrough",

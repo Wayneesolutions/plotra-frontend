@@ -13,7 +13,7 @@ export function ShowcaseSection() {
             </h2>
           </div>
           <p className="max-w-xs text-sm text-ink-foreground/60">
-            Drag sideways. Each reel is a real moment from a Plotra dealer's week.
+            Drag sideways. Each reel is a real moment from a Plotraa dealer's week.
           </p>
         </Reveal>
       </div>
