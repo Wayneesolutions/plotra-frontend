@@ -17,6 +17,21 @@ function toValidCoords(lat, lng) {
   return { lat: nLat, lng: nLng };
 }
 
+// Initial great-circle bearing (degrees, 0-360, 0=north) from point 1 to
+// point 2 — same formula as the backend's locationResolutionService.js
+// (calculateBearing), duplicated here rather than shared since this is the
+// only frontend caller and pulling in a shared util for one function isn't
+// worth it. Used below to point the Street View camera at the property.
+function calculateBearing(lat1, lng1, lat2, lng2) {
+  const toRad = (d) => (d * Math.PI) / 180;
+  const toDeg = (r) => (r * 180) / Math.PI;
+  const dLng = toRad(lng2 - lng1);
+  const y = Math.sin(dLng) * Math.cos(toRad(lat2));
+  const x = Math.cos(toRad(lat1)) * Math.sin(toRad(lat2))
+    - Math.sin(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.cos(dLng);
+  return (toDeg(Math.atan2(y, x)) + 360) % 360;
+}
+
 // iOS Safari doesn't support the browser Fullscreen API for arbitrary
 // elements (only <video> can go fullscreen there) — Google Maps detects
 // this and silently omits its fullscreenControl button entirely on
@@ -238,9 +253,23 @@ function InteractiveStreetView({ lat, lng, fallbackUrl }) {
           if (cancelled) return;
           if (status !== 'OK') { setFailed(true); return; }
           const lockedPosition = data.location.latLng;
+          // Bug fix: this hardcoded heading:0 meant the camera faced
+          // whatever direction Google's Street View car happened to be
+          // driving when it captured this panorama — frequently across or
+          // into the plot rather than at it, since the panorama's own
+          // position (a point on the nearest road) is rarely the same as
+          // the property's lat/lng. Point the camera FROM the actual
+          // panorama position TO the property instead — the same fix
+          // already applied server-side (locationResolutionService.js) for
+          // the static fallback image, which this component never actually
+          // renders in the normal case, so buyers were still seeing the
+          // wrong angle on the interactive view even after that fix landed.
+          const initialHeading = calculateBearing(
+            lockedPosition.lat(), lockedPosition.lng(), coords.lat, coords.lng
+          );
           const panorama = new maps.StreetViewPanorama(containerRef.current, {
             position: lockedPosition,
-            pov: { heading: 0, pitch: 0 },
+            pov: { heading: initialHeading, pitch: 0 },
             zoom: 1,
             addressControl: false,
             // See InteractiveSatellite above — iOS Safari silently omits
