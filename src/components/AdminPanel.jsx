@@ -6,6 +6,7 @@ import LeadsInbox from './LeadsInbox.jsx';
 import Analytics from './Analytics.jsx';
 import Settings from './Settings.jsx';
 import OpsPanel from './OpsPanel.jsx';
+import AdminPayments from './AdminPayments.jsx';
 import { InteractiveSatellite } from './PropertyMapMedia.jsx';
 import plotraIcon from '../assets/plotra-icon.png';
 
@@ -18,6 +19,7 @@ const TABS = [
   { label: 'Create Tenant',    icon: '➕', desc: 'Manually onboard a new dealer account' },
   { label: 'Ad Placements',    icon: '📢', desc: 'Manage ads shown across listing pages' },
   { label: 'Plans',            icon: '💳', desc: 'Edit pricing tiers and feature limits' },
+  { label: 'Payments',         icon: '🧾', desc: 'Agent package receipts & subscription status' },
 ];
 const AD_POSITIONS = ['calculator_result', 'listing_sidebar', 'listing_footer'];
 
@@ -1591,6 +1593,17 @@ export default function AdminPanel() {
             </div>
           </div>
         )}
+
+        {/* ── Tab: Payments ─────────────────────────────────
+            Self-contained component (own fetching, own local style
+            tokens matching this file's — see AdminPayments.jsx's
+            docstring) — same split-into-its-own-file pattern as
+            OpsPanel.jsx/LeadsInbox.jsx/Analytics.jsx/Settings.jsx above,
+            just for a PLATFORM MANAGEMENT tab instead of a dealer-
+            dashboard one. showToast passed down so notifications use
+            the one toast instance at this component's root, same as
+            every other tab. */}
+        {tab === 'Payments' && <AdminPayments showToast={showToast} />}
 
         {/* ── Delete Plan Confirmation Modal ───────────────── */}
         {deleteConfirm && (
