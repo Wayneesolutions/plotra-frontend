@@ -81,7 +81,7 @@ export default function InviteUserModal({ onClose }) {
               <label style={S.field}>
                 <span style={S.label}>Phone (optional)</span>
                 <input style={S.input} type="tel" value={form.phone} onChange={setField('phone')} placeholder="e.g. 9876543210" />
-                <span style={S.fieldNote}>Add their WhatsApp number to let them create listings by texting Plotra directly.</span>
+                <span style={S.fieldNote}>Add their WhatsApp number to let them create listings by texting Plotraa directly.</span>
               </label>
 
               <button type="submit" disabled={submitting} style={{ ...S.submitBtn, opacity: submitting ? 0.7 : 1 }}>

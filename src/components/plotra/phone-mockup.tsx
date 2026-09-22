@@ -47,7 +47,7 @@ export function PhoneMockup({ className }: { className?: string }) {
               PL
             </span>
             <div className="leading-tight">
-              <p className="text-xs font-semibold text-ink-foreground">Plotra Listing Bot</p>
+              <p className="text-xs font-semibold text-ink-foreground">Plotraa Listing Bot</p>
               <p className="text-[10px] text-accent">online</p>
             </div>
           </div>

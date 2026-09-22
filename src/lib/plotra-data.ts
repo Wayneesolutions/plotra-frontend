@@ -118,7 +118,7 @@ export const listings: Listing[] = [
     viewsThisWeek: 12,
     image: satellitePlot,
     satellite: satellitePlot,
-    description: "Sold in 19 days after listing through Plotra.",
+    description: "Sold in 19 days after listing through Plotraa.",
     dealer: "Sandhu Property Consultants",
     boundary: true,
   },

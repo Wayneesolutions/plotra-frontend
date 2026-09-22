@@ -24,12 +24,12 @@ export default function TeamPage() {
       <section className="bg-lavender px-5 pb-14 pt-32 sm:px-8 sm:pt-40">
         <div className="mx-auto max-w-7xl">
           <Reveal>
-            <p className="label-eyebrow text-primary">The people behind Plotra</p>
+            <p className="label-eyebrow text-primary">The people behind Plotraa</p>
             <h1 className="text-balance-tight mt-4 max-w-2xl font-display text-4xl font-bold text-ink sm:text-6xl">
               Meet the team.
             </h1>
             <p className="mt-5 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Plotra is built by Wayne E Solutions — a small team based in Ludhiana, Punjab,
+              Plotraa is built by Wayne E Solutions — a small team based in Ludhiana, Punjab,
               building the WhatsApp-native CRM Punjab's property dealers actually use.
             </p>
           </Reveal>
@@ -58,7 +58,7 @@ export default function TeamPage() {
                 Want to talk to us directly?
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-primary-foreground/85">
-                We're happy to walk you through Plotra, plan by plan.
+                We're happy to walk you through Plotraa, plan by plan.
               </p>
               <Button asChild variant="ink" size="lg" className="mt-7">
                 <Link to="/pricing">

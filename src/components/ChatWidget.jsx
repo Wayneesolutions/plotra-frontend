@@ -95,7 +95,7 @@ export default function ChatWidget() {
       } else {
         setMessages((prev) => [...prev, {
           role: 'assistant',
-          text: err.response?.data?.error?.message || "Couldn't reach Plotra's assistant. Please try again.",
+          text: err.response?.data?.error?.message || "Couldn't reach Plotraa's assistant. Please try again.",
           isError: true,
         }]);
       }
@@ -139,12 +139,12 @@ export default function ChatWidget() {
     return (
       <div style={S.panel}>
         <div style={S.header}>
-          <div style={S.headerTitle}>Plotra Assistant</div>
+          <div style={S.headerTitle}>Plotraa Assistant</div>
           <div style={S.headerSubtitle}>Add listings by chatting — just like WhatsApp</div>
         </div>
         <form onSubmit={handleActivate} style={S.activateForm}>
           <p style={S.activateHint}>
-            Enter your Plotra activation code to connect this widget to your account. You'll find
+            Enter your Plotraa activation code to connect this widget to your account. You'll find
             it under Settings → Web Chat Widget in your dashboard.
           </p>
           {activateError && <div style={S.errorBox}>{activateError}</div>}
@@ -169,7 +169,7 @@ export default function ChatWidget() {
     <div style={S.panel}>
       <div style={S.header}>
         <div>
-          <div style={S.headerTitle}>Plotra Assistant</div>
+          <div style={S.headerTitle}>Plotraa Assistant</div>
           <div style={S.headerSubtitle}>Connected to {tenantName}</div>
         </div>
         <button onClick={disconnect} style={S.disconnectBtn} title="Disconnect this widget">✕</button>

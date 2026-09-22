@@ -32,7 +32,7 @@ export default function Layout({ children }) {
     <div style={styles.root}>
       <nav style={styles.nav}>
         <div style={styles.navInner}>
-          <div style={styles.brand}>Plotra</div>
+          <div style={styles.brand}>Plotraa</div>
           <div style={styles.navLinks}>
             {NAV_ITEMS.filter((item) => !role || item.roles.includes(role)).map((item) => (
               <NavLink

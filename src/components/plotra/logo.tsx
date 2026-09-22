@@ -22,7 +22,7 @@ export function PlotraLogo({
         aria-hidden
         className="h-10 w-auto shrink-0 object-contain sm:h-11"
       />
-      Plotra
+      Plotraa
     </span>
   );
 }

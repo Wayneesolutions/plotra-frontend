@@ -82,6 +82,18 @@ export default function DashboardListings() {
       const res = await apiClient.get('/api/v1/dashboard/billing/status');
       const billing = res.data.billing;
       setPlanInfo(billing);
+      // Bug fix: connectedPhone previously only ever came from the
+      // localStorage-cached user object captured at login, which never
+      // refreshed for the rest of the session — a number connected any
+      // other way (another device, an admin action) kept showing the
+      // stale "Connect WhatsApp" prompt on this one indefinitely. Refresh
+      // from the live value this same request now returns, and keep the
+      // cache in sync so other places reading storedUser.phone see it too.
+      setConnectedPhone(res.data.currentUserPhone || null);
+      const cachedUser = JSON.parse(localStorage.getItem('pve_user') || 'null');
+      if (cachedUser && cachedUser.phone !== res.data.currentUserPhone) {
+        localStorage.setItem('pve_user', JSON.stringify({ ...cachedUser, phone: res.data.currentUserPhone || null }));
+      }
       // plans.multi_agent_whatsapp is the actual Growth/Unlimited tier flag
       // billing/status returns (see migration 20260821_04) — this used to
       // check billing?.max_whatsapp_numbers, a field the backend never
@@ -283,8 +295,8 @@ export default function DashboardListings() {
       {/* ══ TOP NAV ══════════════════════════════════════════════ */}
       <header style={S.nav} role="banner">
         <div style={S.navLeft}>
-          <img src={plotraIcon} alt="Plotra" style={{ height: '32px', width: 'auto', flexShrink: 0 }} />
-          <span style={S.navBrand}>Plotra</span>
+          <img src={plotraIcon} alt="Plotraa" style={{ height: '32px', width: 'auto', flexShrink: 0 }} />
+          <span style={S.navBrand}>Plotraa</span>
           <div style={S.navDivider} />
           <div style={S.navMeta}>
             <span style={S.navBizName}>{storedUser?.businessName || storedUser?.name}</span>
@@ -808,7 +820,7 @@ export default function DashboardListings() {
             </div>
             <div style={{ padding: '0 24px 24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <p style={{ margin: 0, fontSize: '13px', color: '#64748b', lineHeight: '1.6' }}>
-                Once connected, any WhatsApp message from this number to your Plotra number
+                Once connected, any WhatsApp message from this number to your Plotraa number
                 is treated as a listing you're creating — not a buyer inquiry.
               </p>
               {waError && (

@@ -71,7 +71,7 @@ export function SiteFooter() {
         </div>
 
         <div className="mt-14 flex flex-col gap-4 border-t border-white/10 pt-6 text-xs text-ink-foreground/50 sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} Plotra Technologies. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Plotraa Technologies. All rights reserved.</p>
           <div className="flex items-center gap-6">
             <Link
               to="/legal?section=privacy-policy"

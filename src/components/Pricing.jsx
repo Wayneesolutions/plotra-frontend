@@ -20,7 +20,7 @@ export default function Pricing() {
   return (
     <div style={styles.wrapper}>
       <header style={styles.header}>
-        <h1 style={styles.title}>Plotra Pricing</h1>
+        <h1 style={styles.title}>Plotraa Pricing</h1>
         <p style={styles.subtitle}>List a property by sending a WhatsApp message. Choose a plan based on how many active listings you run at once.</p>
       </header>
 

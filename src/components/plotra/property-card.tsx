@@ -40,7 +40,7 @@ export function PropertyCard({
                 </p>
               </div>
               <span className="mt-3 flex translate-y-3 items-center gap-1.5 text-xs font-semibold text-ink-foreground opacity-0 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/card:translate-y-0 group-hover/card:opacity-100">
-                View on Plotra <ArrowUpRight className="size-3.5" />
+                View on Plotraa <ArrowUpRight className="size-3.5" />
               </span>
             </div>
           </>

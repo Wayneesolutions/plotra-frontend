@@ -521,9 +521,9 @@ export default function AdminPanel() {
       <aside style={S.sidebar}>
         <div style={S.sideTop}>
           <div style={S.logoRow}>
-            <img src={plotraIcon} alt="Plotra" style={{ height: '40px', width: 'auto', flexShrink: 0 }} />
+            <img src={plotraIcon} alt="Plotraa" style={{ height: '40px', width: 'auto', flexShrink: 0 }} />
             <div>
-              <div style={S.logoName}>Plotra</div>
+              <div style={S.logoName}>Plotraa</div>
               <div style={S.logoBadge}>Super Admin</div>
             </div>
           </div>

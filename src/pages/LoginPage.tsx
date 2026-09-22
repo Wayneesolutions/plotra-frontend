@@ -16,7 +16,7 @@ export default function LoginPage() {
       subtitle="Sign in to manage your listings, leads and team."
       footer={
         <p className="text-xs">
-          Plotra accounts are invite and admin-approval only.{" "}
+          Plotraa accounts are invite and admin-approval only.{" "}
           <Link to="/request-access" className="font-semibold text-primary">
             Request access
           </Link>
@@ -39,7 +39,7 @@ export default function LoginPage() {
             navigate(user.role === "super_admin" ? "/admin" : "/dashboard");
           } catch (err) {
             const message =
-              err instanceof ApiError ? err.message : "Could not reach Plotra. Try again.";
+              err instanceof ApiError ? err.message : "Could not reach Plotraa. Try again.";
             setError(message);
           } finally {
             setLoading(false);

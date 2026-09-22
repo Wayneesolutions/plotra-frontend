@@ -218,8 +218,8 @@ export default function PropertyView() {
       <header style={S.siteNav}>
         <div style={S.navInner}>
           <div style={S.navLogo}>
-            <img src={plotraIcon} alt="Plotra" style={{ height: '30px', width: 'auto', flexShrink: 0 }} />
-            <span style={S.navBrand}>Plotra</span>
+            <img src={plotraIcon} alt="Plotraa" style={{ height: '30px', width: 'auto', flexShrink: 0 }} />
+            <span style={S.navBrand}>Plotraa</span>
           </div>
           <span style={S.navLabel}>Property Listing</span>
         </div>
@@ -456,7 +456,7 @@ export default function PropertyView() {
                 {builderProfile.builderProfile.overall_rating != null && (
                   <div style={S.devStatCard}>
                     <span style={S.devStatLbl}>
-                      {builderProfile.builderProfile.rating_is_ai_assessment ? "Plotra's Assessment" : 'Rating'}
+                      {builderProfile.builderProfile.rating_is_ai_assessment ? "Plotraa's Assessment" : 'Rating'}
                     </span>
                     <span style={S.devStatVal}>★ {Number(builderProfile.builderProfile.overall_rating).toFixed(1)}<span style={S.devStatMax}>/10</span></span>
                     {builderProfile.builderProfile.rating_is_ai_assessment ? (
@@ -618,8 +618,8 @@ export default function PropertyView() {
       {/* ══ FOOTER ══════════════════════════════════════════════ */}
       <footer style={S.footer}>
         <div style={S.footerLogoRow}>
-          <img src={plotraIcon} alt="Plotra" style={{ height: '26px', width: 'auto', flexShrink: 0 }} />
-          <span style={S.footerBrand}>Plotra</span>
+          <img src={plotraIcon} alt="Plotraa" style={{ height: '26px', width: 'auto', flexShrink: 0 }} />
+          <span style={S.footerBrand}>Plotraa</span>
         </div>
         <p style={S.footerTxt}>Real Estate Visual Explorer · Dealer Powered Listing</p>
       </footer>
