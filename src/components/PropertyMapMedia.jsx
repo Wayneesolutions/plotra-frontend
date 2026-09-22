@@ -205,6 +205,18 @@ function InteractiveSatellite({ lat, lng, fallbackUrl, draggable = false, onPosi
 // Punjab addresses genuinely have no Street View car coverage, in which
 // case this falls back to the static image (or hides the card entirely if
 // there's no static fallback either) rather than showing a broken/empty pano.
+//
+// PR 3 (locked-center): a buyer can freely rotate/tilt/zoom the view —
+// dragging inside a panorama only ever changes look direction (pov), it
+// never relocates you — but Street View's own navigation (the forward/back
+// arrows on the road, and click-to-walk on the ground) DOES relocate you to
+// a different pano, potentially away from this property. That's the actual
+// equivalent of "dragging the pin away" for Street View, so linksControl
+// and clickToGo are both disabled below, and position_changed is watched
+// as a backstop in case some other interaction still moves it (e.g. a
+// future Maps SDK change, or a control we haven't accounted for) — same
+// snap-back intent as the Map dragend->panTo pattern, translated to
+// Street View's position/pov model instead of a Map's center.
 function InteractiveStreetView({ lat, lng, fallbackUrl }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
@@ -225,8 +237,9 @@ function InteractiveStreetView({ lat, lng, fallbackUrl }) {
         svService.getPanorama({ location: coords, radius: 75 }, (data, status) => {
           if (cancelled) return;
           if (status !== 'OK') { setFailed(true); return; }
+          const lockedPosition = data.location.latLng;
           const panorama = new maps.StreetViewPanorama(containerRef.current, {
-            position: data.location.latLng,
+            position: lockedPosition,
             pov: { heading: 0, pitch: 0 },
             zoom: 1,
             addressControl: false,
@@ -235,8 +248,25 @@ function InteractiveStreetView({ lat, lng, fallbackUrl }) {
             // expand button below.
             fullscreenControl: false,
             gestureHandling: 'greedy',
+            // Locks the panorama to this exact property — no navigation
+            // arrows to walk down the street, no click-to-move on the
+            // ground. Look-around (drag to rotate, scroll to zoom) stays
+            // fully interactive; only relocating away from the pin is blocked.
+            linksControl: false,
+            clickToGo: false,
           });
           mapRef.current = panorama;
+
+          let resetting = false;
+          panorama.addListener('position_changed', () => {
+            if (resetting) return; // avoid feedback loop from our own setPosition call below
+            const current = panorama.getPosition();
+            if (current && !current.equals(lockedPosition)) {
+              resetting = true;
+              panorama.setPosition(lockedPosition);
+              resetting = false;
+            }
+          });
         });
       })
       .catch(() => { if (!cancelled) setFailed(true); });
