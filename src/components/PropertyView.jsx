@@ -274,7 +274,11 @@ export default function PropertyView() {
         )}
         {showStreetview && (
           <div style={{ ...S.heroSlot, flex: bothImages ? 1 : 'unset', height: bothImages ? '280px' : '260px' }}>
-            <InteractiveStreetView lat={listing.lat} lng={listing.lng} fallbackUrl={media?.streetview_image_url} />
+            {/* Task 1: locked only once approved/live (canAdjustLocation
+                false) — same lifecycle as InteractiveSatellite's
+                `draggable` above. Pre-approval, the dealer/agent can still
+                freely navigate Street View to verify the spot. */}
+            <InteractiveStreetView lat={listing.lat} lng={listing.lng} fallbackUrl={media?.streetview_image_url} locked={!canAdjustLocation} />
             <div style={S.heroBadge}>📸 Street View</div>
           </div>
         )}
