@@ -93,11 +93,14 @@ export default function CityDetail({ cityId, showToast, onBack }) {
       setCity((c) => ({ ...c, ...(res.data.city || res.data), status: 'live' }));
       showToast('City is now Live.');
     } catch (err) {
-      const e2 = err.response?.data?.error;
-      if (e2?.code === 'BELOW_VERIFICATION_GATE') {
-        setGoLiveBlock({ verified_pct: e2.verified_pct, required_pct: e2.required_pct });
+      // verified_pct/required_pct come back on the response body itself,
+      // not nested under `error` (see POST /cities/:id/go-live) — reading
+      // them off `.error` silently produced "NaN% verified" in the banner.
+      const responseBody = err.response?.data;
+      if (responseBody?.error?.code === 'BELOW_VERIFICATION_GATE') {
+        setGoLiveBlock({ verified_pct: responseBody.verified_pct, required_pct: responseBody.required_pct });
       } else {
-        showToast(e2?.message || 'Failed to go live.', 'error');
+        showToast(responseBody?.error?.message || 'Failed to go live.', 'error');
       }
     } finally {
       setGoLiveLoading(false);
@@ -112,13 +115,15 @@ export default function CityDetail({ cityId, showToast, onBack }) {
       setCity((c) => ({ ...c, status: 'disabled' }));
       showToast('City disabled.');
     } catch (err) {
-      const e2 = err.response?.data?.error;
-      if (e2?.code === 'ACTIVE_LISTINGS_EXIST') {
-        if (window.confirm(`${e2.count ?? 'Some'} active listing(s) are in this city. Disable anyway?`)) {
+      // `count` is a top-level field on the response body (see POST
+      // /cities/:id/disable's 409), not nested under `error`.
+      const responseBody = err.response?.data;
+      if (responseBody?.error?.code === 'ACTIVE_LISTINGS_EXIST') {
+        if (window.confirm(`${responseBody.count ?? 'Some'} active listing(s) are in this city. Disable anyway?`)) {
           return handleDisable(true);
         }
       } else {
-        showToast(e2?.message || 'Failed to disable city.', 'error');
+        showToast(responseBody?.error?.message || 'Failed to disable city.', 'error');
       }
     } finally {
       setDisableLoading(false);
