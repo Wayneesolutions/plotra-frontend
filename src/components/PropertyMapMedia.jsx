@@ -232,7 +232,16 @@ function InteractiveSatellite({ lat, lng, fallbackUrl, draggable = false, onPosi
 // future Maps SDK change, or a control we haven't accounted for) — same
 // snap-back intent as the Map dragend->panTo pattern, translated to
 // Street View's position/pov model instead of a Map's center.
-function InteractiveStreetView({ lat, lng, fallbackUrl }) {
+//
+// Task 1 fix: this lock is meant to apply post-approval only — same
+// lifecycle as InteractiveSatellite's `draggable` (pre-approval: free to
+// move around and verify the spot; post-approval: locked to protect the
+// confirmed listing) — but it was originally wired unconditionally, so a
+// dealer/agent still verifying a listing pre-approval was already locked
+// out of navigating Street View too. `locked` defaults to true so nothing
+// else calling this component without passing it changes behavior; see
+// PropertyView.jsx for how it's actually gated on approval status.
+function InteractiveStreetView({ lat, lng, fallbackUrl, locked = true }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const mapsApiRef = useRef(null);
@@ -280,28 +289,31 @@ function InteractiveStreetView({ lat, lng, fallbackUrl }) {
             // Locks the panorama to this exact property — no navigation
             // arrows to walk down the street, no click-to-move on the
             // ground. Look-around (drag to rotate, scroll to zoom) stays
-            // fully interactive; only relocating away from the pin is blocked.
-            linksControl: false,
-            clickToGo: false,
+            // fully interactive; only relocating away from the pin is
+            // blocked, and only once `locked` (post-approval, see above).
+            linksControl: !locked,
+            clickToGo: !locked,
           });
           mapRef.current = panorama;
 
-          let resetting = false;
-          panorama.addListener('position_changed', () => {
-            if (resetting) return; // avoid feedback loop from our own setPosition call below
-            const current = panorama.getPosition();
-            if (current && !current.equals(lockedPosition)) {
-              resetting = true;
-              panorama.setPosition(lockedPosition);
-              resetting = false;
-            }
-          });
+          if (locked) {
+            let resetting = false;
+            panorama.addListener('position_changed', () => {
+              if (resetting) return; // avoid feedback loop from our own setPosition call below
+              const current = panorama.getPosition();
+              if (current && !current.equals(lockedPosition)) {
+                resetting = true;
+                panorama.setPosition(lockedPosition);
+                resetting = false;
+              }
+            });
+          }
         });
       })
       .catch(() => { if (!cancelled) setFailed(true); });
 
     return () => { cancelled = true; };
-  }, [lat, lng]);
+  }, [lat, lng, locked]);
 
   if (failed) {
     if (!fallbackUrl) return null;
