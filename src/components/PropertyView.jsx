@@ -7,6 +7,18 @@ import { InteractiveSatellite, InteractiveStreetView } from './PropertyMapMedia.
 import AdSlot from './AdSlot.jsx';
 import plotraIcon from '../assets/plotra-icon.png';
 
+// Returns a locality-level area string without exposing the specific house/plot
+// number. Mirrors the backend's extractGeneralArea text heuristic so listings
+// where general_area wasn't saved still show a safe, trimmed location label.
+function getDisplayArea(listing) {
+  if (listing.general_area) return listing.general_area;
+  const addr = listing.formatted_address || listing.raw_address;
+  if (!addr) return null;
+  const parts = addr.split(',').map((s) => s.trim()).filter(Boolean);
+  if (parts.length > 2) return parts.slice(1, 4).join(', ');
+  return parts[parts.length - 1] || null;
+}
+
 // Display order + labels for builder_profile_claims.category — keeps the
 // developer section reading as distinct topics (delivery record, who runs
 // the company, financial standing, legal/criminal matters) rather than one
@@ -323,7 +335,7 @@ export default function PropertyView() {
             </span>
           </div>
           <h1 style={S.propTitle}>{listing.title}</h1>
-          <p style={S.propAddr}>📍 {listing.general_area || listing.formatted_address || listing.raw_address}</p>
+          <p style={S.propAddr}>📍 {getDisplayArea(listing)}</p>
         </div>
 
         {/* WhatsApp CTA */}
