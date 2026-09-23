@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import apiClient from '../api/apiClient';
 import TenantDetailModal from './TenantDetailModal.jsx';
 import LeadsInbox from './LeadsInbox.jsx';
@@ -29,7 +29,11 @@ export default function AdminPanel() {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('pve_user') || '{}');
 
-  const [tab, setTab]           = useState('listings');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const tab = searchParams.get('tab') || 'listings';
+  const setTab = (t) => setSearchParams({ tab: t }, { replace: true });
   const [requests, setRequests] = useState([]);
   // WhatsApp signups (Part 3) that are approved but still waiting on a
   // human to confirm payment — see fetchRequests.
@@ -520,18 +524,31 @@ export default function AdminPanel() {
     <div style={S.root}>
 
       {/* ══ Sidebar ══════════════════════════════════════════ */}
-      <aside style={S.sidebar}>
+      <aside style={{ ...S.sidebar, width: sidebarCollapsed ? '72px' : '260px', transition: 'width 0.25s cubic-bezier(0.4,0,0.2,1)' }}>
         <div style={S.sideTop}>
-          <div style={S.logoRow}>
-            <img src={plotraIcon} alt="Plotraa" style={{ height: '40px', width: 'auto', flexShrink: 0 }} />
-            <div>
-              <div style={S.logoName}>Plotraa</div>
-              <div style={S.logoBadge}>Super Admin</div>
+          <div style={{ ...S.logoRow, justifyContent: sidebarCollapsed ? 'center' : 'space-between', padding: sidebarCollapsed ? '0 16px' : '0 20px 0 24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden' }}>
+              <img src={plotraIcon} alt="Plotraa" style={{ height: '38px', width: 'auto', flexShrink: 0 }} />
+              {!sidebarCollapsed && (
+                <div>
+                  <div style={S.logoName}>Plotraa</div>
+                  <div style={S.logoBadge}>Super Admin</div>
+                </div>
+              )}
             </div>
+            <button
+              style={S.collapseBtn}
+              onClick={() => setSidebarCollapsed((c) => !c)}
+              title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {sidebarCollapsed ? '›' : '‹'}
+            </button>
           </div>
 
-          <nav style={S.nav}>
-            <div style={S.navSection}>DEALER DASHBOARD</div>
+          <nav style={{ ...S.nav, padding: sidebarCollapsed ? '0 8px' : '0 12px' }}>
+            {!sidebarCollapsed
+              ? <div style={S.navSection}>DEALER DASHBOARD</div>
+              : <div style={S.navSectionDivider} />}
             {[
               { label: 'Listings',  icon: '🏠', key: 'listings',  desc: 'All property listings' },
               { label: 'Leads',     icon: '💬', key: 'leads',     desc: 'Buyer inquiries & contacts' },
@@ -539,47 +556,75 @@ export default function AdminPanel() {
               { label: 'Analytics', icon: '📊', key: 'analytics', desc: 'Views, traffic, performance' },
               { label: 'Settings',  icon: '⚙️', key: 'settings',  desc: 'WhatsApp number, team, password' },
             ].map((l) => (
-              <button key={l.key} style={{ ...S.navItem, ...(tab === l.key ? S.navItemActive : {}) }} onClick={() => setTab(l.key)}>
-                <div style={S.navItemInner}>
+              <button
+                key={l.key}
+                style={{ ...S.navItem, ...(tab === l.key ? S.navItemActive : {}), justifyContent: sidebarCollapsed ? 'center' : undefined, padding: sidebarCollapsed ? '12px 0' : '10px 14px' }}
+                onClick={() => setTab(l.key)}
+                title={sidebarCollapsed ? l.label : undefined}
+              >
+                <div style={{ ...S.navItemInner, alignItems: sidebarCollapsed ? 'center' : undefined }}>
                   <div style={S.navItemTop}>
-                    <span style={S.navIcon}>{l.icon}</span>
-                    <span>{l.label}</span>
+                    <span style={{ ...S.navIcon, fontSize: sidebarCollapsed ? '18px' : '15px' }}>{l.icon}</span>
+                    {!sidebarCollapsed && <span>{l.label}</span>}
                   </div>
-                  <div style={S.navDesc}>{l.desc}</div>
+                  {!sidebarCollapsed && <div style={S.navDesc}>{l.desc}</div>}
                 </div>
               </button>
             ))}
 
-            <div style={{ ...S.navSection, marginTop: '12px' }}>PLATFORM MANAGEMENT</div>
-            {TABS.map((t, i) => (
-              <button key={t.label} style={{ ...S.navItem, ...(tab === t.label ? S.navItemActive : {}) }} onClick={() => setTab(t.label)}>
-                <div style={S.navItemInner}>
+            {!sidebarCollapsed
+              ? <div style={{ ...S.navSection, marginTop: '12px' }}>PLATFORM MANAGEMENT</div>
+              : <div style={{ ...S.navSectionDivider, marginTop: '8px' }} />}
+            {TABS.map((t) => (
+              <button
+                key={t.label}
+                style={{ ...S.navItem, ...(tab === t.label ? S.navItemActive : {}), justifyContent: sidebarCollapsed ? 'center' : undefined, padding: sidebarCollapsed ? '12px 0' : '10px 14px', position: 'relative' }}
+                onClick={() => setTab(t.label)}
+                title={sidebarCollapsed ? t.label : undefined}
+              >
+                <div style={{ ...S.navItemInner, alignItems: sidebarCollapsed ? 'center' : undefined }}>
                   <div style={S.navItemTop}>
-                    <span style={S.navIcon}>{t.icon}</span>
-                    <span>{t.label}</span>
-                    {t.label === 'Pending Requests' && requests.length > 0 && (
+                    <span style={{ ...S.navIcon, fontSize: sidebarCollapsed ? '18px' : '15px' }}>{t.icon}</span>
+                    {!sidebarCollapsed && <span>{t.label}</span>}
+                    {!sidebarCollapsed && t.label === 'Pending Requests' && requests.length > 0 && (
                       <span style={S.navBadge}>{requests.length}</span>
                     )}
-                    {t.label === 'Agent Signups' && agentSignups.length > 0 && (
+                    {!sidebarCollapsed && t.label === 'Agent Signups' && agentSignups.length > 0 && (
                       <span style={S.navBadge}>{agentSignups.length}</span>
                     )}
+                    {sidebarCollapsed && ((t.label === 'Pending Requests' && requests.length > 0) || (t.label === 'Agent Signups' && agentSignups.length > 0)) && (
+                      <span style={S.navBadgeDot} />
+                    )}
                   </div>
-                  <div style={S.navDesc}>{t.desc}</div>
+                  {!sidebarCollapsed && <div style={S.navDesc}>{t.desc}</div>}
                 </div>
               </button>
             ))}
           </nav>
         </div>
 
-        <div style={S.sideBottom}>
-          <div style={S.userInfo}>
-            <div style={S.userAvatar}>{user.name?.[0] || 'A'}</div>
-            <div>
-              <div style={S.userName}>{user.name || 'Admin'}</div>
-              <div style={S.userEmail}>{user.email || ''}</div>
+        <div style={{ ...S.sideBottom, padding: sidebarCollapsed ? '16px 8px 0' : '16px 16px 0' }}>
+          {sidebarCollapsed ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+              <div style={{ ...S.userAvatar, cursor: 'default' }} title={user.name || 'Admin'}>
+                {user.name?.[0] || 'A'}
+              </div>
+              <button style={{ ...S.logoutBtn, padding: '8px', fontSize: '15px', lineHeight: 1, textAlign: 'center' }} onClick={logout} title="Sign out">
+                ⎋
+              </button>
             </div>
-          </div>
-          <button style={S.logoutBtn} onClick={logout}>Sign Out</button>
+          ) : (
+            <>
+              <div style={S.userInfo}>
+                <div style={S.userAvatar}>{user.name?.[0] || 'A'}</div>
+                <div style={{ overflow: 'hidden' }}>
+                  <div style={S.userName}>{user.name || 'Admin'}</div>
+                  <div style={S.userEmail}>{user.email || ''}</div>
+                </div>
+              </div>
+              <button style={S.logoutBtn} onClick={logout}>Sign Out</button>
+            </>
+          )}
         </div>
       </aside>
 
@@ -1665,11 +1710,13 @@ const S = {
   // Sidebar
   sidebar: {
     width: '260px', flexShrink: 0,
-    background: 'linear-gradient(180deg, #060d18 0%, #0b1929 100%)',
+    background: 'linear-gradient(180deg, #060e1a 0%, #0c1e35 55%, #091525 100%)',
     display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-    padding: '28px 0', overflowY: 'auto',
+    padding: '28px 0', overflowY: 'auto', overflowX: 'hidden',
+    boxShadow: '4px 0 32px rgba(0,0,0,0.55)',
+    borderRight: '1px solid rgba(255,255,255,0.04)',
   },
-  sideTop: { display: 'flex', flexDirection: 'column', gap: '32px' },
+  sideTop: { display: 'flex', flexDirection: 'column', gap: '28px' },
   logoRow: { display: 'flex', alignItems: 'center', gap: '12px', padding: '0 24px' },
   logoBox: {
     width: '38px', height: '38px', borderRadius: '10px', backgroundColor: '#c8a96e', flexShrink: 0,
@@ -1677,48 +1724,75 @@ const S = {
     boxShadow: '0 4px 12px rgba(200,169,110,0.35)',
   },
   logoName: { fontSize: '14px', fontWeight: '800', color: '#ffffff', letterSpacing: '0.5px' },
-  logoBadge: { fontSize: '10px', fontWeight: '600', color: '#c8a96e', textTransform: 'uppercase', letterSpacing: '1px' },
-  nav: { display: 'flex', flexDirection: 'column', gap: '4px', padding: '0 12px' },
+  logoBadge: {
+    fontSize: '9px', fontWeight: '700', color: '#0c1b2e', textTransform: 'uppercase', letterSpacing: '0.8px',
+    background: 'linear-gradient(90deg, #d4a84b, #e8c97a)', borderRadius: '4px', padding: '2px 6px', display: 'inline-block',
+  },
+  collapseBtn: {
+    width: '28px', height: '28px', borderRadius: '8px', flexShrink: 0,
+    border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.06)',
+    color: 'rgba(255,255,255,0.5)', fontSize: '20px', cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
+    transition: 'background 0.15s, color 0.15s',
+  },
+  nav: { display: 'flex', flexDirection: 'column', gap: '2px', padding: '0 12px' },
   navSection: {
-    fontSize: '10px', fontWeight: '700', color: 'rgba(255,255,255,0.25)',
-    letterSpacing: '1.2px', textTransform: 'uppercase', padding: '8px 14px 4px',
+    fontSize: '9.5px', fontWeight: '700', color: 'rgba(255,255,255,0.22)',
+    letterSpacing: '1.4px', textTransform: 'uppercase', padding: '10px 14px 6px',
+  },
+  navSectionDivider: {
+    height: '1px', background: 'rgba(255,255,255,0.07)', margin: '6px 8px 10px',
   },
   navItem: {
     display: 'flex', alignItems: 'flex-start', gap: '10px',
     padding: '10px 14px', borderRadius: '10px', border: 'none',
-    background: 'transparent', color: 'rgba(255,255,255,0.55)',
+    background: 'transparent', color: 'rgba(255,255,255,0.5)',
     fontSize: '13px', fontWeight: '500', cursor: 'pointer', textAlign: 'left', width: '100%',
-    transition: 'background 0.15s, color 0.15s',
+    transition: 'background 0.15s, color 0.15s, box-shadow 0.15s',
   },
-  navItemActive: { background: 'rgba(200,169,110,0.15)', color: '#c8a96e' },
+  navItemActive: {
+    background: 'rgba(200,169,110,0.13)',
+    color: '#e0c278',
+    boxShadow: 'inset 3px 0 0 #c8a96e',
+  },
   navItemInner: { display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 },
   navItemTop: { display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' },
-  navDesc: { fontSize: '11px', color: 'rgba(255,255,255,0.35)', fontWeight: '400', paddingLeft: '23px' },
+  navDesc: { fontSize: '11px', color: 'rgba(255,255,255,0.3)', fontWeight: '400', paddingLeft: '23px' },
   navIcon: { fontSize: '15px', flexShrink: 0 },
   navBadge: {
-    marginLeft: 'auto', backgroundColor: '#c8a96e', color: '#0c1b2e',
+    marginLeft: 'auto', background: 'linear-gradient(135deg, #d4a84b, #c8a96e)', color: '#0c1b2e',
     fontSize: '10px', fontWeight: '800', borderRadius: '999px',
     padding: '2px 7px', minWidth: '18px', textAlign: 'center',
+    boxShadow: '0 2px 8px rgba(200,169,110,0.4)',
+  },
+  navBadgeDot: {
+    width: '8px', height: '8px', borderRadius: '50%',
+    background: '#c8a96e', marginLeft: '4px', flexShrink: 0,
+    boxShadow: '0 0 6px rgba(200,169,110,0.6)',
   },
   backBtn: {
     display: 'block', width: '100%', padding: '9px 14px', borderRadius: '8px',
     border: '1px solid rgba(255,255,255,0.1)', background: 'transparent',
     color: 'rgba(255,255,255,0.45)', fontSize: '12px', cursor: 'pointer', textAlign: 'left',
   },
-  sideBottom: { padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '12px' },
+  sideBottom: {
+    padding: '16px 16px 0', display: 'flex', flexDirection: 'column', gap: '12px',
+    borderTop: '1px solid rgba(255,255,255,0.06)',
+  },
   userInfo: { display: 'flex', alignItems: 'center', gap: '10px' },
   userAvatar: {
     width: '34px', height: '34px', borderRadius: '50%', flexShrink: 0,
-    background: 'rgba(200,169,110,0.20)', border: '1px solid rgba(200,169,110,0.35)',
+    background: 'linear-gradient(135deg, rgba(200,169,110,0.25), rgba(200,169,110,0.12))',
+    border: '1.5px solid rgba(200,169,110,0.4)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     color: '#c8a96e', fontSize: '14px', fontWeight: '700',
   },
-  userName: { fontSize: '13px', fontWeight: '600', color: '#fff' },
-  userEmail: { fontSize: '11px', color: 'rgba(255,255,255,0.4)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '150px' },
+  userName: { fontSize: '13px', fontWeight: '600', color: '#f1f5f9' },
+  userEmail: { fontSize: '11px', color: 'rgba(255,255,255,0.35)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '150px' },
   logoutBtn: {
-    padding: '9px', width: '100%', border: '1px solid rgba(255,255,255,0.10)',
-    borderRadius: '9px', background: 'transparent', color: 'rgba(255,255,255,0.45)',
-    fontSize: '12px', cursor: 'pointer', fontWeight: '500',
+    padding: '9px', width: '100%', border: '1px solid rgba(255,255,255,0.09)',
+    borderRadius: '9px', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.4)',
+    fontSize: '12px', cursor: 'pointer', fontWeight: '500', transition: 'background 0.15s',
   },
 
   // Main

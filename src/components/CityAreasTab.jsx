@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import apiClient from '../api/apiClient';
 import { AreaRadiusPickerMap, AreaCirclesMap } from './AreaMapCircles.jsx';
 
 const KIND_OPTIONS = ['area', 'sector', 'road', 'town', 'industrial'];
+const PAGE_SIZE = 20;
 const STATUS_FILTER_OPTIONS = [
   { value: '', label: 'All' },
   { value: 'needs_review', label: 'Needs review' },
@@ -59,6 +60,12 @@ export default function CityAreasTab({
   const [aliasInput, setAliasInput] = useState('');
   const [aliasError, setAliasError] = useState(null);
 
+  const [areaPage, setAreaPage] = useState(1);
+
+  const [mapFullscreen, setMapFullscreen] = useState(false);
+  const tableScrollRef  = useRef(null);
+  const topScrollRef    = useRef(null);
+
   const [mergeTarget, setMergeTarget] = useState(null); // area being merged away
   const [mergeInto, setMergeInto] = useState('');
   const [mergeLoading, setMergeLoading] = useState(false);
@@ -81,7 +88,7 @@ export default function CityAreasTab({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cityId, q, statusFilter, kindFilter]);
 
-  useEffect(() => { fetchAreas(); }, [fetchAreas]);
+  useEffect(() => { fetchAreas(); setAreaPage(1); }, [fetchAreas]);
 
   // Import tab's "view Areas needing review" handoff.
   useEffect(() => {
@@ -267,8 +274,9 @@ export default function CityAreasTab({
         <button style={S.createBtn} onClick={() => openAddDrawer()}>+ Add area</button>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: stacked ? 'column' : 'row', gap: '16px' }}>
-        <div style={{ flex: stacked ? 'none' : '0 0 55%', minWidth: 0 }}>
+      {/* when drawer is open on desktop the 480px fixed panel sits over the map column — hide the map and let the table expand */}
+      <div style={{ display: 'flex', flexDirection: stacked ? 'column' : 'row', gap: '16px', alignItems: 'flex-start' }}>
+        <div style={{ flex: stacked ? 'none' : (drawerOpen && !stacked ? '1' : '0 0 55%'), minWidth: 0 }}>
           {loading ? (
             <div style={S.empty}>Loading…</div>
           ) : areas.length === 0 ? (
@@ -276,40 +284,104 @@ export default function CityAreasTab({
               <div style={S.emptyIcon}>📍</div>
               <p style={S.emptyText}>No areas yet. Import a CSV or add one.</p>
             </div>
-          ) : (
-            <div style={S.tableWrap}>
-              <table style={S.table}>
-                <thead>
-                  <tr>{['Name', 'Kind', 'Parent', 'PIN', 'Spellings', 'Listings', 'Status'].map((h) => <th key={h} style={S.th}>{h}</th>)}</tr>
-                </thead>
-                <tbody>
-                  {areas.map((a) => {
-                    const badge = STATUS_BADGE[a.status] || STATUS_BADGE.disabled;
-                    const isSelected = String(a.id) === String(selectedAreaId);
-                    return (
-                      <tr
-                        key={a.id}
-                        style={{ ...S.tr, cursor: 'pointer', background: isSelected ? '#fff7ed' : 'transparent' }}
-                        onClick={() => openEditDrawer(a)}
-                      >
-                        <td style={S.td}><div style={S.tenantName}>{a.name}</div></td>
-                        <td style={S.td}>{a.kind}</td>
-                        <td style={S.td}>{a.parent_name || '—'}</td>
-                        <td style={S.td}>{a.pincode || '—'}</td>
-                        <td style={S.td}>{(a.aliases || []).length}</td>
-                        <td style={S.td}>{a.listing_count ?? 0}</td>
-                        <td style={S.td}><span style={{ ...S.statusBadge, background: badge.background, color: badge.color }}>{badge.label}</span></td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
+          ) : (() => {
+            const totalPages = Math.ceil(areas.length / PAGE_SIZE);
+            const pageAreas = areas.slice((areaPage - 1) * PAGE_SIZE, areaPage * PAGE_SIZE);
+            return (
+              <>
+                <div
+                  ref={topScrollRef}
+                  style={S.topScrollBar}
+                  onScroll={(e) => { if (tableScrollRef.current) tableScrollRef.current.scrollLeft = e.target.scrollLeft; }}
+                >
+                  <div style={{ minWidth: '600px', height: '1px' }} />
+                </div>
+                <div
+                  ref={tableScrollRef}
+                  style={S.tableWrap}
+                  onScroll={(e) => { if (topScrollRef.current) topScrollRef.current.scrollLeft = e.target.scrollLeft; }}
+                >
+                  <table style={S.table}>
+                    <thead>
+                      <tr>{['Name', 'Kind', 'Parent', 'PIN', 'Spellings', 'Listings', 'Status'].map((h) => <th key={h} style={S.th}>{h}</th>)}</tr>
+                    </thead>
+                    <tbody>
+                      {pageAreas.map((a) => {
+                        const badge = STATUS_BADGE[a.status] || STATUS_BADGE.disabled;
+                        const isSelected = String(a.id) === String(selectedAreaId);
+                        return (
+                          <tr
+                            key={a.id}
+                            style={{ ...S.tr, cursor: 'pointer', background: isSelected ? '#fff7ed' : 'transparent' }}
+                            onClick={() => openEditDrawer(a)}
+                          >
+                            <td style={S.td}><div style={S.tenantName}>{a.name}</div></td>
+                            <td style={S.td}>{a.kind}</td>
+                            <td style={S.td}>{a.parent_name || '—'}</td>
+                            <td style={S.td}>{a.pincode || '—'}</td>
+                            <td style={S.td}>{(a.aliases || []).length}</td>
+                            <td style={S.td}>{a.listing_count ?? 0}</td>
+                            <td style={S.td}><span style={{ ...S.statusBadge, background: badge.background, color: badge.color }}>{badge.label}</span></td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                {totalPages > 1 && (
+                  <div style={S.pagination}>
+                    <span style={S.pageInfo}>{areas.length} areas · page {areaPage} of {totalPages}</span>
+                    <div style={S.pageButtons}>
+                      <button style={{ ...S.pageBtn, opacity: areaPage === 1 ? 0.35 : 1 }} disabled={areaPage === 1} onClick={() => setAreaPage(1)}>«</button>
+                      <button style={{ ...S.pageBtn, opacity: areaPage === 1 ? 0.35 : 1 }} disabled={areaPage === 1} onClick={() => setAreaPage((p) => p - 1)}>‹</button>
+                      {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                        const pg = totalPages <= 7 ? i + 1 : areaPage <= 4 ? i + 1 : areaPage + i - 3;
+                        if (pg < 1 || pg > totalPages) return null;
+                        return (
+                          <button key={pg} style={{ ...S.pageBtn, ...(pg === areaPage ? S.pageBtnActive : {}) }} onClick={() => setAreaPage(pg)}>{pg}</button>
+                        );
+                      })}
+                      <button style={{ ...S.pageBtn, opacity: areaPage === totalPages ? 0.35 : 1 }} disabled={areaPage === totalPages} onClick={() => setAreaPage((p) => p + 1)}>›</button>
+                      <button style={{ ...S.pageBtn, opacity: areaPage === totalPages ? 0.35 : 1 }} disabled={areaPage === totalPages} onClick={() => setAreaPage(totalPages)}>»</button>
+                    </div>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
 
-        <div style={{ flex: stacked ? 'none' : '0 0 45%', minWidth: 0, height: stacked ? '320px' : 'auto' }}>
-          <div style={S.mapBox}>
+        {(!drawerOpen || stacked) && (
+        <div style={{ flex: stacked ? 'none' : '0 0 45%', minWidth: 0, height: stacked ? '400px' : 'calc(100vh - 220px)', maxHeight: stacked ? '400px' : '720px', position: stacked ? undefined : 'sticky', top: stacked ? undefined : '0' }}>
+          <div style={{ ...S.mapBox, position: 'relative' }}>
+            <AreaCirclesMap
+              centerLat={city?.center_lat} centerLng={city?.center_lng}
+              areas={areas} selectedId={selectedAreaId}
+              onSelectArea={(id) => setSelectedAreaId(id)}
+            />
+            <button style={S.mapExpandBtn} onClick={() => setMapFullscreen(true)} title="View fullscreen">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+                <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        )}
+      </div>
+
+      {/* Fullscreen map overlay */}
+      {mapFullscreen && (
+        <div style={S.mapOverlay}>
+          <div style={S.mapOverlayHeader}>
+            <span style={S.mapOverlayTitle}>{city?.name || 'City'} — Areas Map</span>
+            <button style={S.mapCloseBtn} onClick={() => setMapFullscreen(false)} title="Close">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+          <div style={{ flex: 1, minHeight: 0 }}>
             <AreaCirclesMap
               centerLat={city?.center_lat} centerLng={city?.center_lng}
               areas={areas} selectedId={selectedAreaId}
@@ -317,7 +389,7 @@ export default function CityAreasTab({
             />
           </div>
         </div>
-      </div>
+      )}
 
       {/* Area edit/add drawer — right side panel on desktop, full modal on mobile */}
       {drawerOpen && (
@@ -482,15 +554,46 @@ const S = {
   emptyIcon: { fontSize: '32px', marginBottom: '12px' },
   emptyText: { fontSize: '14px', color: '#64748b', margin: 0 },
 
-  tableWrap: { background: '#fff', borderRadius: '16px', border: '1px solid #e2e8f0', overflow: 'hidden' },
-  table: { width: '100%', borderCollapse: 'collapse' },
+  topScrollBar: { overflowX: 'auto', overflowY: 'hidden', height: '14px', borderRadius: '12px 12px 0 0', border: '1px solid #e2e8f0', borderBottom: 'none', background: '#fafbfd' },
+  tableWrap: { background: '#fff', borderRadius: '0 0 16px 16px', border: '1px solid #e2e8f0', overflowX: 'auto' },
+  table: { width: '100%', borderCollapse: 'collapse', minWidth: '600px' },
   th: { padding: '12px 16px', textAlign: 'left', fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.7px', borderBottom: '1px solid #f1f5f9', backgroundColor: '#fafbfd' },
   tr: { borderBottom: '1px solid #f1f5f9' },
   td: { padding: '13px 16px', fontSize: '13px', color: '#334155' },
   tenantName: { fontWeight: '600', color: '#0c1b2e' },
   statusBadge: { padding: '3px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '700' },
 
-  mapBox: { width: '100%', height: '100%', minHeight: '320px', borderRadius: '16px', overflow: 'hidden', border: '1px solid #e2e8f0' },
+  mapBox: { width: '100%', height: '100%', borderRadius: '16px', overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' },
+  mapExpandBtn: {
+    position: 'absolute', top: '12px', right: '12px',
+    width: '36px', height: '36px', borderRadius: '10px',
+    background: 'rgba(255,255,255,0.92)', border: '1px solid rgba(0,0,0,0.1)',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.15)', color: '#374151',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    cursor: 'pointer', zIndex: 10,
+  },
+  mapOverlay: {
+    position: 'fixed', inset: 0, zIndex: 2000,
+    background: '#fff', display: 'flex', flexDirection: 'column',
+  },
+  mapOverlayHeader: {
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    padding: '14px 20px', borderBottom: '1px solid #e2e8f0',
+    background: '#fff', flexShrink: 0,
+  },
+  mapOverlayTitle: { fontSize: '15px', fontWeight: '700', color: '#0c1b2e' },
+  mapCloseBtn: {
+    width: '36px', height: '36px', borderRadius: '10px',
+    border: '1.5px solid #e2e8f0', background: '#f8fafc', color: '#374151',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    cursor: 'pointer',
+  },
+
+  pagination: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 4px 0', flexWrap: 'wrap', gap: '8px' },
+  pageInfo: { fontSize: '12px', color: '#94a3b8', fontWeight: '500' },
+  pageButtons: { display: 'flex', gap: '4px', alignItems: 'center' },
+  pageBtn: { width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1.5px solid #e2e8f0', borderRadius: '8px', background: '#fff', color: '#374151', fontSize: '13px', fontWeight: '600', cursor: 'pointer' },
+  pageBtnActive: { background: '#0c1b2e', borderColor: '#0c1b2e', color: '#fff' },
 
   formError: { display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#fff5f5', color: '#c53030', padding: '12px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: '500', marginBottom: '4px', border: '1px solid #fed7d7' },
   formErrorIcon: { width: '20px', height: '20px', borderRadius: '50%', backgroundColor: '#fed7d7', color: '#c53030', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '800', flexShrink: 0 },
@@ -513,11 +616,11 @@ const S = {
   },
   drawerOverlayModal: { position: 'fixed', inset: 0, backgroundColor: 'rgba(12,27,46,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' },
   drawerModal: { width: '100%', maxWidth: '520px', maxHeight: '90vh', background: '#fff', borderRadius: '18px', boxShadow: '0 24px 64px rgba(12,27,46,0.25)', display: 'flex', flexDirection: 'column' },
-  drawerHead: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 22px', borderBottom: '1px solid #f1f5f9', flexShrink: 0 },
+  drawerHead: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 22px', borderBottom: '1px solid #f1f5f9', flexShrink: 0 },
   drawerTitle: { fontSize: '17px', fontWeight: '800', color: '#0c1b2e', margin: 0 },
   closeBtn: { width: '30px', height: '30px', borderRadius: '8px', background: '#f1f5f9', border: 'none', cursor: 'pointer', fontSize: '13px', color: '#64748b' },
-  drawerBody: { padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', flex: 1 },
-  drawerMapBox: { width: '100%', height: '220px', borderRadius: '10px', overflow: 'hidden', border: '1px solid #e2e8f0' },
+  drawerBody: { padding: '16px 22px', display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', flex: 1, minHeight: 0 },
+  drawerMapBox: { width: '100%', height: '180px', borderRadius: '10px', overflow: 'hidden', border: '1px solid #e2e8f0', flexShrink: 0 },
   drawerFooter: { display: 'flex', gap: '10px', padding: '16px 22px', borderTop: '1px solid #f1f5f9', flexShrink: 0 },
 
   modalOverlay: { position: 'fixed', inset: 0, backgroundColor: 'rgba(12,27,46,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(2px)', padding: '20px' },
