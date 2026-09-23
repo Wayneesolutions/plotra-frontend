@@ -216,7 +216,7 @@ export default function CityDetail({ cityId, showToast, onBack }) {
         <CityImportTab
           cityId={cityId}
           showToast={showToast}
-          onViewAreasNeedingReview={() => goToAreasFiltered('pending_review')}
+          onViewAreasNeedingReview={() => goToAreasFiltered('needs_review')}
         />
       )}
       {tab === 'test' && <CityTestTab cityId={cityId} city={city} />}
