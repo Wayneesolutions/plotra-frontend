@@ -72,7 +72,7 @@ export default function CityAreasTab({
       if (statusFilter) params.status = statusFilter;
       if (kindFilter) params.kind = kindFilter;
       const res = await apiClient.get(`/api/v1/admin/cities/${cityId}/localities`, { params });
-      setAreas(res.data.localities || res.data.rows || []);
+      setAreas(Array.isArray(res.data) ? res.data : (res.data.localities || res.data.rows || []));
     } catch {
       showToast('Failed to load areas.', 'error');
     } finally {
