@@ -11,12 +11,15 @@ import plotraIcon from '../assets/plotra-icon.png';
 // number. Mirrors the backend's extractGeneralArea text heuristic so listings
 // where general_area wasn't saved still show a safe, trimmed location label.
 function getDisplayArea(listing) {
-  if (listing.general_area) return listing.general_area;
-  const addr = listing.formatted_address || listing.raw_address;
-  if (!addr) return null;
-  const parts = addr.split(',').map((s) => s.trim()).filter(Boolean);
-  if (parts.length > 2) return parts.slice(1, 4).join(', ');
-  return parts[parts.length - 1] || null;
+  const source = listing.general_area || listing.formatted_address || listing.raw_address;
+  if (!source) return null;
+  // Always cap at 2 parts (area + city) — skip house/plot numbers and state/postal suffix.
+  // "Rajguru Nagar Ext, New Sunder Nagar, Ludhiana, Punjab 141001, India" → "New Sunder Nagar, Ludhiana"
+  const parts = source.split(',').map((s) => s.trim()).filter(
+    (s) => s && !/^\d/.test(s) && !/india/i.test(s) && !/punjab/i.test(s) && !/\d{6}/.test(s)
+  );
+  if (parts.length >= 2) return parts.slice(-2).join(', ');
+  return parts[0] || null;
 }
 
 // Display order + labels for builder_profile_claims.category — keeps the
