@@ -7,6 +7,7 @@ import Analytics from './Analytics.jsx';
 import Settings from './Settings.jsx';
 import OpsPanel from './OpsPanel.jsx';
 import AdminPayments from './AdminPayments.jsx';
+import Cities from './Cities.jsx';
 import { InteractiveSatellite } from './PropertyMapMedia.jsx';
 import plotraIcon from '../assets/plotra-icon.png';
 
@@ -20,6 +21,7 @@ const TABS = [
   { label: 'Ad Placements',    icon: '📢', desc: 'Manage ads shown across listing pages' },
   { label: 'Plans',            icon: '💳', desc: 'Edit pricing tiers and feature limits' },
   { label: 'Payments',         icon: '🧾', desc: 'Agent package receipts & subscription status' },
+  { label: 'Cities & Areas',   icon: '🏙️', desc: 'Multi-city locality master, unmatched queue, CSV import' },
 ];
 const AD_POSITIONS = ['calculator_result', 'listing_sidebar', 'listing_footer'];
 
@@ -1604,6 +1606,12 @@ export default function AdminPanel() {
             the one toast instance at this component's root, same as
             every other tab. */}
         {tab === 'Payments' && <AdminPayments showToast={showToast} />}
+
+        {/* ── Tab: Cities & Areas ───────────────────────────
+            Self-contained like AdminPayments.jsx above — own fetching,
+            own local `S` tokens, list↔detail navigation handled inside
+            Cities.jsx via local useState (no new routes). */}
+        {tab === 'Cities & Areas' && <Cities showToast={showToast} />}
 
         {/* ── Delete Plan Confirmation Modal ───────────────── */}
         {deleteConfirm && (
