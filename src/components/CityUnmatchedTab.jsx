@@ -19,7 +19,12 @@ export default function CityUnmatchedTab({ cityId, showToast, onCountChange, onN
     setLoading(true);
     try {
       const res = await apiClient.get(`/api/v1/admin/cities/${cityId}/unmatched`, { params: { status: 'pending' } });
-      const list = res.data.unmatched || res.data.rows || [];
+      const list = (Array.isArray(res.data) ? res.data : (res.data.unmatched || res.data.rows || [])).map((r) => ({
+        ...r,
+        // backend returns locality_unmatched rows as-is: raw_text + suggested_confidence
+        dealer_text: r.dealer_text ?? r.raw_text,
+        confidence: r.confidence ?? (r.suggested_confidence != null ? Number(r.suggested_confidence) : null),
+      }));
       setRows(list);
       onCountChange?.(list.length);
     } catch {
@@ -35,7 +40,7 @@ export default function CityUnmatchedTab({ cityId, showToast, onCountChange, onN
   const fetchAssignAreas = useCallback(async () => {
     try {
       const res = await apiClient.get(`/api/v1/admin/cities/${cityId}/localities`, { params: { status: 'active' } });
-      setAssignAreas(res.data.localities || res.data.rows || []);
+      setAssignAreas(Array.isArray(res.data) ? res.data : (res.data.localities || res.data.rows || []));
     } catch { /* non-fatal — select just stays empty */ }
   }, [cityId]);
 
@@ -52,7 +57,7 @@ export default function CityUnmatchedTab({ cityId, showToast, onCountChange, onN
     setAssignLoading(true);
     try {
       const payload = { locality_id: assignLocalityId };
-      if (saveAsAlias && aliasText.trim()) payload.alias_text = aliasText.trim();
+      if (saveAsAlias && aliasText.trim()) payload.alias_phrase = aliasText.trim();
       await apiClient.post(`/api/v1/admin/unmatched/${assignTarget.id}/resolve`, payload);
       setRows((prev) => {
         const next = prev.filter((r) => r.id !== assignTarget.id);

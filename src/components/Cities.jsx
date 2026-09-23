@@ -35,7 +35,7 @@ export default function Cities({ showToast }) {
     setLoading(true);
     try {
       const res = await apiClient.get('/api/v1/admin/cities', { params: status ? { status } : {} });
-      setCities(res.data.cities || []);
+      setCities(Array.isArray(res.data) ? res.data : (res.data.cities || []));
     } catch {
       showToast('Failed to load cities.', 'error');
     } finally {

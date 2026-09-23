@@ -62,7 +62,7 @@ export default function CityTestTab({ cityId, city }) {
       if (res.data.localityId) {
         try {
           const areasRes = await apiClient.get(`/api/v1/admin/cities/${cityId}/localities`);
-          const list = areasRes.data.localities || areasRes.data.rows || [];
+          const list = Array.isArray(areasRes.data) ? areasRes.data : (areasRes.data.localities || areasRes.data.rows || []);
           const match = list.find((a) => String(a.id) === String(res.data.localityId));
           if (match) setMatchedAreaGeo(match);
         } catch { /* map just won't draw the area circle — result text still shows */ }

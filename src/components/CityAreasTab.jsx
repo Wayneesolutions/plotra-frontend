@@ -5,13 +5,13 @@ import { AreaRadiusPickerMap, AreaCirclesMap } from './AreaMapCircles.jsx';
 const KIND_OPTIONS = ['area', 'sector', 'road', 'town', 'industrial'];
 const STATUS_FILTER_OPTIONS = [
   { value: '', label: 'All' },
-  { value: 'pending_review', label: 'Needs review' },
+  { value: 'needs_review', label: 'Needs review' },
   { value: 'active', label: 'Verified' },
   { value: 'disabled', label: 'Disabled' },
 ];
 const STATUS_BADGE = {
   active: { background: '#f0fdf4', color: '#15803d', label: 'Verified' },
-  pending_review: { background: '#fef3c7', color: '#92400e', label: 'Needs review' },
+  needs_review: { background: '#fef3c7', color: '#92400e', label: 'Needs review' },
   disabled: { background: '#fff5f5', color: '#dc2626', label: 'Disabled' },
 };
 
@@ -72,7 +72,7 @@ export default function CityAreasTab({
       if (statusFilter) params.status = statusFilter;
       if (kindFilter) params.kind = kindFilter;
       const res = await apiClient.get(`/api/v1/admin/cities/${cityId}/localities`, { params });
-      setAreas(res.data.localities || res.data.rows || []);
+      setAreas(Array.isArray(res.data) ? res.data : (res.data.localities || res.data.rows || []));
     } catch {
       showToast('Failed to load areas.', 'error');
     } finally {
