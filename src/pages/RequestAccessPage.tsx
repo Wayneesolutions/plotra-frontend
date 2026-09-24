@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,13 +7,27 @@ import { SiteNav } from "@/components/plotra/site-nav";
 import { SiteFooter } from "@/components/plotra/site-footer";
 import { media } from "@/lib/plotra-data";
 import { Reveal, useParallax } from "@/lib/motion";
-import { ApiError, submitAccessRequest } from "@/lib/plotra-api";
+import { ApiError, listPublicCities, submitAccessRequest, type PublicCity } from "@/lib/plotra-api";
 
 export default function RequestAccessPage() {
   const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const bgRef = useParallax<HTMLImageElement>(0.1);
+  // Cities the dealer works in — first one picked is their main city.
+  const [cities, setCities] = useState<PublicCity[]>([]);
+  const [cityIds, setCityIds] = useState<number[]>([]);
+
+  useEffect(() => {
+    listPublicCities()
+      .then((r) => setCities(r.cities || []))
+      .catch(() => setCities([]));
+  }, []);
+
+  const toggleCity = (id: number) => {
+    setError("");
+    setCityIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
 
   return (
     <>
@@ -66,6 +80,10 @@ export default function RequestAccessPage() {
                 onSubmit={async (e) => {
                   e.preventDefault();
                   const form = new FormData(e.currentTarget);
+                  if (cities.length && !cityIds.length) {
+                    setError("Select at least one city you work in.");
+                    return;
+                  }
                   setSubmitting(true);
                   setError("");
                   try {
@@ -75,6 +93,7 @@ export default function RequestAccessPage() {
                       email: String(form.get("email") ?? ""),
                       phone: String(form.get("phone") ?? ""),
                       message: String(form.get("message") ?? "") || undefined,
+                      cityIds: cityIds.length ? cityIds : undefined,
                     });
                     setSent(true);
                   } catch (err) {
@@ -114,12 +133,44 @@ export default function RequestAccessPage() {
                   required
                   placeholder="+91 98140 00000"
                 />
+                {cities.length > 0 ? (
+                  <div>
+                    <span className="label-eyebrow text-muted-foreground">
+                      Cities you work in
+                    </span>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {cities.map((c) => {
+                        const on = cityIds.includes(c.id);
+                        return (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => toggleCity(c.id)}
+                            aria-pressed={on}
+                            className={`rounded-full border px-4 py-2 text-sm transition-all duration-300 ${
+                              on
+                                ? "border-primary bg-primary/10 font-semibold text-foreground"
+                                : "border-border bg-card text-muted-foreground hover:border-primary/60"
+                            }`}
+                          >
+                            {c.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {cityIds.length > 1 ? (
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        Main city: {cities.find((c) => c.id === cityIds[0])?.name}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
                 <label className="block">
                   <span className="label-eyebrow text-muted-foreground">Message (optional)</span>
                   <textarea
                     name="message"
                     rows={3}
-                    placeholder="Cities you work in, roughly how many listings you handle…"
+                    placeholder="Roughly how many listings you handle, anything else we should know…"
                     className="mt-2 w-full rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground outline-none transition-all duration-500 focus:border-primary focus:shadow-[var(--shadow-glow)]"
                   />
                 </label>
