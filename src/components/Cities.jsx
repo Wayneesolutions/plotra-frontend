@@ -18,7 +18,16 @@ const STATUS_BADGE = {
   disabled: { background: '#fff5f5', color: '#dc2626', label: 'Disabled' },
 };
 
-const emptyAddForm = { name: '', state: '', center_lat: null, center_lng: null, bounds_radius_km: 25 };
+const emptyAddForm = { name: '', state: '', code: '', center_lat: null, center_lng: null, bounds_radius_km: 25 };
+
+// Same rule as the backend's suggestCityCode: Ludhiana -> LDH, Amritsar -> AMR.
+function suggestCode(name) {
+  const letters = String(name || '').toUpperCase().replace(/[^A-Z]/g, '');
+  if (!letters) return '';
+  const rest = letters.slice(1).split('');
+  const picked = [letters[0], ...rest.filter((ch) => !'AEIOU'.includes(ch)), ...rest.filter((ch) => 'AEIOU'.includes(ch))];
+  return picked.join('').slice(0, 3).padEnd(3, 'X');
+}
 
 export default function Cities({ showToast }) {
   const [cities, setCities] = useState([]);
@@ -67,6 +76,7 @@ export default function Cities({ showToast }) {
         center_lat: Number(addForm.center_lat),
         center_lng: Number(addForm.center_lng),
         bounds_radius_km: Number(addForm.bounds_radius_km) || 25,
+        code: (addForm.code || suggestCode(addForm.name)).toUpperCase(),
       };
       await apiClient.post('/api/v1/admin/cities', payload);
       setShowAddModal(false);
@@ -121,7 +131,7 @@ export default function Cities({ showToast }) {
           <table style={S.table}>
             <thead>
               <tr>
-                {['City', 'State', 'Status', 'Areas', 'Verified', 'Listings', 'Pending unmatched', ''].map((h) => (
+                {['City', 'Code', 'State', 'Status', 'Areas', 'Verified', 'Listings', 'Pending unmatched', ''].map((h) => (
                   <th key={h} style={S.th}>{h}</th>
                 ))}
               </tr>
@@ -133,6 +143,7 @@ export default function Cities({ showToast }) {
                 return (
                   <tr key={c.id} style={{ ...S.tr, cursor: 'pointer' }} onClick={() => setSelectedCityId(c.id)}>
                     <td style={S.td}><div style={S.tenantName}>{c.name}</div></td>
+                    <td style={S.td}><span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{c.code || '—'}</span></td>
                     <td style={S.td}>{c.state}</td>
                     <td style={S.td}>
                       <span style={{ ...S.statusBadge, background: badge.background, color: badge.color }}>{badge.label}</span>
@@ -199,7 +210,12 @@ export default function Cities({ showToast }) {
                   <input style={S.formInput} type="number" step="any" required value={addForm.center_lng ?? ''}
                     onChange={(e) => setAddForm((p) => ({ ...p, center_lng: e.target.value === '' ? null : Number(e.target.value) }))} />
                 </div>
-                <div style={{ ...S.formField, gridColumn: '1 / -1' }}>
+                <div style={S.formField}>
+                  <label style={S.formLabel}>City Code (for tenant codes)</label>
+                  <input style={S.formInput} maxLength={4} placeholder={suggestCode(addForm.name) || 'e.g. LDH'} value={addForm.code}
+                    onChange={(e) => setAddForm((p) => ({ ...p, code: e.target.value.toUpperCase().replace(/[^A-Z]/g, '') }))} />
+                </div>
+                <div style={S.formField}>
                   <label style={S.formLabel}>Bounds Radius (km)</label>
                   <input style={S.formInput} type="number" min="1" value={addForm.bounds_radius_km}
                     onChange={(e) => setAddForm((p) => ({ ...p, bounds_radius_km: e.target.value }))} />

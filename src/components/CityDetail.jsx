@@ -59,6 +59,7 @@ export default function CityDetail({ cityId, showToast, onBack }) {
       name: city.name, state: city.state,
       center_lat: city.center_lat, center_lng: city.center_lng,
       bounds_radius_km: city.bounds_radius_km,
+      code: city.code || '',
     });
     setEditError(null);
     setEditOpen(true);
@@ -73,6 +74,7 @@ export default function CityDetail({ cityId, showToast, onBack }) {
         name: editForm.name, state: editForm.state,
         center_lat: Number(editForm.center_lat), center_lng: Number(editForm.center_lng),
         bounds_radius_km: Number(editForm.bounds_radius_km),
+        ...(editForm.code ? { code: editForm.code } : {}),
       };
       const res = await apiClient.patch(`/api/v1/admin/cities/${cityId}`, payload);
       setCity((c) => ({ ...c, ...(res.data.city || res.data) }));
@@ -255,7 +257,13 @@ export default function CityDetail({ cityId, showToast, onBack }) {
                   <input style={S.formInput} type="number" step="any" required value={editForm.center_lng}
                     onChange={(e) => setEditForm((p) => ({ ...p, center_lng: e.target.value }))} />
                 </div>
-                <div style={{ ...S.formField, gridColumn: '1 / -1' }}>
+                <div style={S.formField}>
+                  <label style={S.formLabel}>City Code</label>
+                  <input style={S.formInput} maxLength={4} placeholder="e.g. LDH" value={editForm.code}
+                    onChange={(e) => setEditForm((p) => ({ ...p, code: e.target.value.toUpperCase().replace(/[^A-Z]/g, '') }))} />
+                  <span style={{ fontSize: '11px', color: '#64748b' }}>Only affects new tenant codes. Existing codes never change.</span>
+                </div>
+                <div style={S.formField}>
                   <label style={S.formLabel}>Bounds Radius (km)</label>
                   <input style={S.formInput} type="number" min="1" value={editForm.bounds_radius_km}
                     onChange={(e) => setEditForm((p) => ({ ...p, bounds_radius_km: e.target.value }))} />
