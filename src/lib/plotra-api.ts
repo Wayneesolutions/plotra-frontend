@@ -26,13 +26,14 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   }
 
   if (!res.ok) {
+    // Backend errors are either { error: "text" } or { error: { code, message } }.
+    const err = body && typeof body === "object" && "error" in body ? (body as { error: unknown }).error : null;
     const message =
-      body &&
-      typeof body === "object" &&
-      "error" in body &&
-      typeof (body as { error: unknown }).error === "string"
-        ? (body as { error: string }).error
-        : "Something went wrong. Please try again.";
+      typeof err === "string"
+        ? err
+        : err && typeof err === "object" && typeof (err as { message?: unknown }).message === "string"
+          ? (err as { message: string }).message
+          : "Something went wrong. Please try again.";
     throw new ApiError(message, res.status);
   }
 
@@ -75,6 +76,7 @@ export function submitAccessRequest(input: {
   email: string;
   phone: string;
   message?: string;
+  cityIds?: number[];
 }) {
   return request<{ message: string }>("/api/v1/public/request-access", {
     method: "POST",
@@ -84,8 +86,15 @@ export function submitAccessRequest(input: {
       email: input.email,
       phone: input.phone,
       message: input.message,
+      city_ids: input.cityIds,
     }),
   });
+}
+
+export type PublicCity = { id: number; name: string; state: string };
+
+export function listPublicCities() {
+  return request<{ cities: PublicCity[] }>("/api/v1/public/cities");
 }
 
 // Use the same localStorage keys as the existing dashboard (PrivateRoute checks pve_token).
