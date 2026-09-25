@@ -31,6 +31,7 @@ const AD_POSITION_LABELS = {
   listing_footer:    'Above footer (listing_footer)',
 };
 const AD_IMAGE_MAX_MB = 5;
+const toIsoOrNull = (v) => (v ? new Date(v).toISOString() : null);
 
 export default function AdminPanel() {
   const navigate = useNavigate();
@@ -505,8 +506,11 @@ export default function AdminPanel() {
       const payload = {
         ...adForm,
         city_filter: adForm.city_filter.trim() || null,
-        active_from: adForm.active_from || null,
-        active_to: adForm.active_to || null,
+        // <input type="datetime-local"> gives local time with no zone
+        // ("2026-09-25T16:28"); the server would read that as UTC and shift
+        // the window 5h30m into the future. Send a real ISO timestamp.
+        active_from: toIsoOrNull(adForm.active_from),
+        active_to: toIsoOrNull(adForm.active_to),
       };
       await apiClient.post('/api/v1/admin/ads', payload);
       setAdForm({
