@@ -629,7 +629,7 @@ export default function PropertyView() {
           )}
         </div>
 
-        {/* Ad above footer — paid campaign, else admin default, else Plotraa house ad */}
+        {/* Ad above footer — only shows a paid campaign or admin-set default (no built-in fallback) */}
         <AdSlot position="listing_footer" />
 
       </main>
@@ -905,9 +905,8 @@ const S = {
   landmarkText: { display: 'flex', flexDirection: 'column', gap: '3px', minWidth: 0, flex: 1 },
   lmType: { fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.4px', fontWeight: '700' },
   lmName: {
-    fontSize: '14px', color: '#0c1b2e', fontWeight: '600', lineHeight: 1.35,
-    display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-    overflow: 'hidden', overflowWrap: 'anywhere',
+    fontSize: '14px', color: '#0c1b2e', fontWeight: '600', lineHeight: 1.4,
+    whiteSpace: 'normal', overflowWrap: 'break-word', wordBreak: 'break-word',
   },
   distPill: {
     fontSize: '12px', fontWeight: '700', color: '#0c1b2e', whiteSpace: 'nowrap',
@@ -924,12 +923,12 @@ const S = {
   sourceLink: { fontSize: '11px', color: '#0c1b2e', fontWeight: '600', textDecoration: 'none', overflowWrap: 'anywhere' },
   intelTxt: { margin: '0 0 8px', fontSize: '14px', color: '#475569', lineHeight: 1.65, overflowWrap: 'anywhere' },
   sourceChip: {
-    display: 'inline-flex', alignItems: 'baseline', gap: '6px', maxWidth: '100%',
+    display: 'inline-flex', alignItems: 'baseline', flexWrap: 'wrap', columnGap: '6px', rowGap: '2px', maxWidth: '100%',
     fontSize: '11px', textDecoration: 'none', color: '#0c1b2e',
     backgroundColor: '#f5f7fb', border: '1px solid #e8edf5', borderRadius: '8px', padding: '5px 9px',
   },
   sourceDomain: { fontWeight: '800', flexShrink: 0 },
-  sourceTitle: { color: '#64748b', fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 },
+  sourceTitle: { color: '#64748b', fontWeight: '500', whiteSpace: 'normal', overflowWrap: 'break-word', minWidth: 0 },
 
   /* Developer rating / possession-record stat cards */
   devStatsRow: { display: 'flex', gap: '12px', marginBottom: '18px', flexWrap: 'wrap' },

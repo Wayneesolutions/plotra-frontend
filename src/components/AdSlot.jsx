@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import { API_BASE_URL } from '../api/config';
 import houseExterior from '../assets/house-exterior.jpg';
-import heroAerial from '../assets/hero-aerial.jpg';
 
 /**
  * Renders one matching ad for a given placement position (e.g.
@@ -11,8 +10,9 @@ import heroAerial from '../assets/hero-aerial.jpg';
  * Serving order:
  *   1. A paid campaign running now for this position (backend)
  *   2. The position's default ad set in Admin → Ad Placements (backend)
- *   3. A built-in Plotraa house ad (HOUSE_ADS below) — so slots listed there
- *      ALWAYS show something, even if the API is down or nothing is set.
+ *   3. A built-in Plotraa house ad (HOUSE_ADS below) — only calculator_result
+ *      has one, so it ALWAYS shows something. listing_footer shows only a
+ *      real ad (paid or admin default) and is empty otherwise.
  * Positions without a house ad still render nothing when unmatched.
  *
  * Fires an 'impression' event once, when a real (DB) ad loads, and a
@@ -95,14 +95,6 @@ const HOUSE_ADS = {
     text: 'Verified plots, homes and flats from trusted local dealers — with real satellite and street views.',
     cta: 'Explore properties',
     href: '/',
-  },
-  listing_footer: {
-    image: heroAerial,
-    eyebrow: 'For property dealers',
-    title: 'List your property on WhatsApp in 2 minutes',
-    text: 'Send details on WhatsApp — Plotraa builds a shareable listing page with maps, photos and buyer leads.',
-    cta: 'Get started',
-    href: '/request-access',
   },
 };
 
