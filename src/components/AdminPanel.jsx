@@ -8,6 +8,7 @@ import Settings from './Settings.jsx';
 import OpsPanel from './OpsPanel.jsx';
 import AdminPayments from './AdminPayments.jsx';
 import Cities from './Cities.jsx';
+import CityPicker from './CityPicker.jsx';
 import { InteractiveSatellite } from './PropertyMapMedia.jsx';
 import plotraIcon from '../assets/plotra-icon.png';
 
@@ -53,6 +54,12 @@ export default function AdminPanel() {
   const [createError, setCreateError]   = useState(null);
   const [createLoading, setCreateLoading] = useState(false);
   const [selectedTenantId, setSelectedTenantId] = useState(null); // NEW — gap: tenant drill-down
+  // Multi-city tenants: city list for pickers, Create Tenant cities,
+  // the approve-request city modal, and the All Tenants city filter.
+  const [adminCities, setAdminCities] = useState([]);
+  const [createCities, setCreateCities] = useState({ city_ids: [], primary_city_id: null });
+  const [approveModal, setApproveModal] = useState(null); // { req, cities: { city_ids, primary_city_id } }
+  const [tenantCityFilter, setTenantCityFilter] = useState('');
   const [toast, setToast] = useState(null);
 
   // NEW — Phase 6: Ad Placements tab state
@@ -153,6 +160,16 @@ export default function AdminPanel() {
       showToast('Failed to load tenants.', 'error');
     } finally {
       setLoading(false);
+    }
+  }, []);
+
+  const fetchAdminCities = useCallback(async () => {
+    try {
+      const res = await apiClient.get('/api/v1/admin/cities');
+      const list = Array.isArray(res.data) ? res.data : (res.data.cities || []);
+      setAdminCities(list.filter((c) => c.status !== 'disabled'));
+    } catch {
+      showToast('Failed to load cities.', 'error');
     }
   }, []);
 
@@ -308,6 +325,7 @@ export default function AdminPanel() {
   }, []);
 
   useEffect(() => {
+    if (['Pending Requests', 'All Tenants', 'Create Tenant'].includes(tab)) fetchAdminCities();
     if (tab === 'Pending Requests') fetchRequests();
     if (tab === 'Agent Signups') fetchAgentSignups();
     if (tab === 'Geo Review') fetchGeoReviewQueue();
@@ -317,7 +335,7 @@ export default function AdminPanel() {
     if (tab === 'Plans') fetchPlans();
     if (tab === 'listings') fetchPlatformListings(1, platformListingsFilters);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, fetchRequests, fetchAgentSignups, fetchGeoReviewQueue, fetchMarketplaceLeads, fetchTenants, fetchAds, fetchPlans, fetchPlatformListings]);
+  }, [tab, fetchAdminCities, fetchRequests, fetchAgentSignups, fetchGeoReviewQueue, fetchMarketplaceLeads, fetchTenants, fetchAds, fetchPlans, fetchPlatformListings]);
 
   const handleChangeTenantPlan = async (tenantId, newPlan) => {
     setActionLoading(tenantId);
@@ -332,10 +350,29 @@ export default function AdminPanel() {
     }
   };
 
-  const handleApprove = async (id) => {
+  // Approving now always goes through a city picker: the request's own
+  // cities (Request Access form) are pre-selected; WhatsApp signups and old
+  // requests have none, so the admin picks them here.
+  const handleApprove = (id) => {
+    const req = requests.find((r) => r.id === id);
+    let cityIds = Array.isArray(req?.city_ids) ? req.city_ids.map(Number) : [];
+    if (!cityIds.length && req?.operating_city) {
+      const m = adminCities.find((c) => c.name.toLowerCase() === String(req.operating_city).trim().toLowerCase());
+      if (m) cityIds = [m.id];
+    }
+    setApproveModal({ req, cities: { city_ids: cityIds, primary_city_id: cityIds[0] ?? null } });
+  };
+
+  const confirmApprove = async () => {
+    const id = approveModal.req.id;
+    if (!approveModal.cities.city_ids.length) {
+      showToast('Select at least one city.', 'error');
+      return;
+    }
     setActionLoading(id);
     try {
-      const res = await apiClient.post(`/api/v1/admin/requests/${id}/approve`);
+      const res = await apiClient.post(`/api/v1/admin/requests/${id}/approve`, approveModal.cities);
+      setApproveModal(null);
       // A WhatsApp signup's approval response has no `user` at all (Tier 1
       // gets no dashboard login, so there's no owner account/credential to
       // show) — it has a checkoutUrl instead, already sent to the prospect
@@ -346,6 +383,7 @@ export default function AdminPanel() {
           businessName: res.data.tenant.business_name,
           email: res.data.user.email,
           password: res.data.temporaryPassword,
+          codes: (res.data.tenant.cities || []).map((c) => c.code).join(', '),
         });
       } else {
         setCheckoutLinkSent({ businessName: res.data.tenant.business_name, checkoutUrl: res.data.checkoutUrl });
@@ -393,13 +431,19 @@ export default function AdminPanel() {
     setCreateLoading(true);
     setCreateError(null);
     try {
-      const res = await apiClient.post('/api/v1/admin/tenants', createForm);
+      if (!createCities.city_ids.length) {
+        setCreateError('Select at least one city.');
+        return;
+      }
+      const res = await apiClient.post('/api/v1/admin/tenants', { ...createForm, ...createCities });
       setCredential({
         businessName: res.data.tenant.business_name,
         email: res.data.user.email,
         password: res.data.temporaryPassword,
+        codes: (res.data.tenant.cities || []).map((c) => c.code).join(', '),
       });
       setCreateForm({ business_name: '', contact_name: '', email: '', phone: '' });
+      setCreateCities({ city_ids: [], primary_city_id: null });
     } catch (err) {
       setCreateError(err.response?.data?.error?.message || 'Failed to create tenant.');
     } finally {
@@ -721,6 +765,7 @@ export default function AdminPanel() {
                 <h3 style={S.modalTitle}>Account Created</h3>
                 <p style={S.modalSub}>
                   <strong>{credential.businessName}</strong> is now on the platform.
+                  {credential.codes ? <> Tenant code: <strong>{credential.codes}</strong>.</> : null}
                   Share these credentials directly with the owner.
                 </p>
                 <div style={S.credBox}>
@@ -776,7 +821,40 @@ export default function AdminPanel() {
             tenantId={selectedTenantId}
             onClose={() => setSelectedTenantId(null)}
             onChanged={fetchTenants}
+            cities={adminCities}
           />
+        )}
+
+        {/* Approve request — pick the tenant's cities first */}
+        {approveModal && (
+          <div style={S.modalOverlay}>
+            <div style={S.modal}>
+              <div style={S.modalStripe} />
+              <div style={S.modalBody}>
+                <h3 style={{ margin: '0 0 6px', fontSize: '18px', color: '#0c1b2e' }}>Approve {approveModal.req.business_name}</h3>
+                <p style={{ margin: '0 0 14px', fontSize: '13px', color: '#64748b' }}>
+                  Select the cities this dealer works in. Each city gets its own tenant code.
+                  {approveModal.req.operating_city ? ` They wrote: "${approveModal.req.operating_city}".` : ''}
+                  {approveModal.req.message ? ` Message: "${approveModal.req.message}"` : ''}
+                </p>
+                <CityPicker
+                  cities={adminCities}
+                  value={approveModal.cities}
+                  onChange={(cities) => setApproveModal((m) => ({ ...m, cities }))}
+                />
+                <div style={{ display: 'flex', gap: '10px', marginTop: '18px' }}>
+                  <button
+                    style={{ ...S.approveBtn, opacity: actionLoading === approveModal.req.id ? 0.6 : 1 }}
+                    disabled={actionLoading === approveModal.req.id || !approveModal.cities.city_ids.length}
+                    onClick={confirmApprove}
+                  >
+                    {actionLoading === approveModal.req.id ? 'Approving…' : 'Approve'}
+                  </button>
+                  <button style={S.rejectBtn} onClick={() => setApproveModal(null)}>Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* WhatsApp signup approval result — no credential (Tier 1 has no
@@ -1259,7 +1337,18 @@ export default function AdminPanel() {
                 <h1 style={S.pageTitle}>All Tenants</h1>
                 <p style={S.pageSubtitle}>Every real estate company on the platform</p>
               </div>
-              <button style={S.refreshBtn} onClick={fetchTenants}>Refresh</button>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <select
+                  value={tenantCityFilter}
+                  onChange={(e) => setTenantCityFilter(e.target.value)}
+                  style={{ fontSize: '13px', padding: '9px 12px', borderRadius: '9px', border: '1.5px solid #e2e8f0', background: '#fff' }}
+                >
+                  <option value="">All cities</option>
+                  <option value="none">No city</option>
+                  {adminCities.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+                <button style={S.refreshBtn} onClick={fetchTenants}>Refresh</button>
+              </div>
             </div>
 
             {loading ? (
@@ -1274,13 +1363,19 @@ export default function AdminPanel() {
                 <table style={S.table}>
                   <thead>
                     <tr>
-                      {['Business Name', 'Plan', 'Users', 'Status', 'Joined'].map((h) => (
+                      {['Code', 'Business Name', 'Cities', 'Plan', 'Users', 'Status', 'Joined'].map((h) => (
                         <th key={h} style={S.th}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {tenants.map((t) => (
+                    {tenants
+                      .filter((t) => {
+                        if (!tenantCityFilter) return true;
+                        if (tenantCityFilter === 'none') return !(t.cities || []).length;
+                        return (t.cities || []).some((c) => String(c.city_id) === String(tenantCityFilter));
+                      })
+                      .map((t) => (
                       <tr
                         key={t.id}
                         style={{ ...S.tr, cursor: 'pointer' }}
@@ -1288,7 +1383,23 @@ export default function AdminPanel() {
                         title="Click for tenant detail"
                       >
                         <td style={S.td}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            {(t.cities || []).length
+                              ? t.cities.map((c) => (
+                                  <span key={c.code} style={{ fontFamily: 'monospace', fontSize: '12px', fontWeight: 700, color: c.is_primary ? '#0c1b2e' : '#64748b' }}>
+                                    {c.code}
+                                  </span>
+                                ))
+                              : <span style={{ fontSize: '12px', color: '#b91c1c' }}>—</span>}
+                          </div>
+                        </td>
+                        <td style={S.td}>
                           <div style={S.tenantName}>{t.business_name}</div>
+                        </td>
+                        <td style={S.td}>
+                          {(t.cities || []).length
+                            ? t.cities.map((c) => c.name + (c.is_primary && t.cities.length > 1 ? ' ★' : '')).join(', ')
+                            : <span style={{ color: '#b91c1c', fontSize: '12px' }}>No city — set one</span>}
                         </td>
                         <td style={S.td}>
                           {plans.length > 0 ? (
@@ -1369,6 +1480,14 @@ export default function AdminPanel() {
                   <div style={S.formField}>
                     <label style={S.formLabel}>Phone Number</label>
                     <input style={S.formInput} type="tel" required placeholder="+91 98765 43210" value={createForm.phone} onChange={setField('phone')} />
+                  </div>
+                </div>
+
+                <div style={S.formField}>
+                  <label style={S.formLabel}>Cities (required)</label>
+                  <CityPicker cities={adminCities} value={createCities} onChange={setCreateCities} />
+                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '6px' }}>
+                    Each city gets its own tenant code, e.g. LDH-003. Codes never change.
                   </div>
                 </div>
 
