@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import apiClient from '../api/apiClient';
 import TenantDetailModal from './TenantDetailModal.jsx';
@@ -24,6 +24,12 @@ const TABS = [
   { label: 'Cities & Areas',   icon: '🏙️', desc: 'Multi-city locality master, unmatched queue, CSV import' },
 ];
 const AD_POSITIONS = ['calculator_result', 'listing_sidebar', 'listing_footer'];
+const AD_POSITION_LABELS = {
+  calculator_result: 'Below calculator (calculator_result)',
+  listing_sidebar:   'Listing sidebar (listing_sidebar)',
+  listing_footer:    'Above footer (listing_footer)',
+};
+const AD_IMAGE_MAX_MB = 5;
 
 export default function AdminPanel() {
   const navigate = useNavigate();
@@ -54,7 +60,11 @@ export default function AdminPanel() {
   const [adForm, setAdForm]           = useState({
     advertiser_name: '', position: AD_POSITIONS[0], image_url: '', click_url: '',
     city_filter: '', revenue_model: 'flat_fee', active_from: '', active_to: '',
+    is_default: false,
   });
+  const [adImageUploading, setAdImageUploading] = useState(false);
+  const [adImageName, setAdImageName]           = useState('');
+  const adImageInputRef = useRef(null);
   const [adCreateError, setAdCreateError]     = useState(null);
   const [adCreateLoading, setAdCreateLoading] = useState(false);
   const [adToggleLoading, setAdToggleLoading] = useState(null);
@@ -401,23 +411,86 @@ export default function AdminPanel() {
   const setAdField = (f) => (e) => setAdForm((p) => ({ ...p, [f]: e.target.value }));
 
 
+  // Upload the creative to S3 first; the returned URL becomes image_url.
+  const handleAdImageSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAdCreateError(null);
+    if (!/^image\/(jpeg|png|webp|gif)$/.test(file.type)) {
+      setAdCreateError('Only JPEG, PNG, WebP or GIF images are allowed.');
+      e.target.value = '';
+      return;
+    }
+    if (file.size > AD_IMAGE_MAX_MB * 1024 * 1024) {
+      setAdCreateError(`Image must be ${AD_IMAGE_MAX_MB} MB or smaller.`);
+      e.target.value = '';
+      return;
+    }
+    setAdImageUploading(true);
+    try {
+      const form = new FormData();
+      form.append('image', file);
+      const res = await apiClient.post('/api/v1/admin/ads/upload-image', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setAdForm((p) => ({ ...p, image_url: res.data.url }));
+      setAdImageName(file.name);
+    } catch (err) {
+      setAdCreateError(err.response?.data?.error?.message || 'Image upload failed.');
+      e.target.value = '';
+    } finally {
+      setAdImageUploading(false);
+    }
+  };
+
+  const clearAdImage = () => {
+    setAdForm((p) => ({ ...p, image_url: '' }));
+    setAdImageName('');
+    if (adImageInputRef.current) adImageInputRef.current.value = '';
+  };
+
   const handleCreateAd = async (e) => {
     e.preventDefault();
+    if (!adForm.image_url) {
+      setAdCreateError('Please upload an image for the ad.');
+      return;
+    }
     setAdCreateLoading(true);
     setAdCreateError(null);
     try {
-      const payload = { ...adForm, city_filter: adForm.city_filter.trim() || null };
+      const payload = {
+        ...adForm,
+        city_filter: adForm.city_filter.trim() || null,
+        active_from: adForm.active_from || null,
+        active_to: adForm.active_to || null,
+      };
       await apiClient.post('/api/v1/admin/ads', payload);
       setAdForm({
         advertiser_name: '', position: AD_POSITIONS[0], image_url: '', click_url: '',
         city_filter: '', revenue_model: 'flat_fee', active_from: '', active_to: '',
+        is_default: false,
       });
+      setAdImageName('');
+      if (adImageInputRef.current) adImageInputRef.current.value = '';
       showToast('Ad placement created.');
       fetchAds();
     } catch (err) {
       setAdCreateError(err.response?.data?.error?.message || 'Failed to create ad placement.');
     } finally {
       setAdCreateLoading(false);
+    }
+  };
+
+  const handleMakeDefaultAd = async (ad) => {
+    setAdToggleLoading(ad.id);
+    try {
+      await apiClient.patch(`/api/v1/admin/ads/${ad.id}`, { is_default: !ad.is_default, is_active: true });
+      showToast(ad.is_default ? 'Removed as default.' : `Set as default for ${ad.position}.`);
+      fetchAds();
+    } catch (err) {
+      showToast(err.response?.data?.error?.message || 'Failed to update ad placement.', 'error');
+    } finally {
+      setAdToggleLoading(null);
     }
   };
 
@@ -1335,12 +1408,35 @@ export default function AdminPanel() {
                   <div style={S.formField}>
                     <label style={S.formLabel}>Position</label>
                     <select style={S.formInput} value={adForm.position} onChange={setAdField('position')}>
-                      {AD_POSITIONS.map((p) => <option key={p} value={p}>{p}</option>)}
+                      {AD_POSITIONS.map((p) => <option key={p} value={p}>{AD_POSITION_LABELS[p] || p}</option>)}
                     </select>
                   </div>
                   <div style={S.formField}>
-                    <label style={S.formLabel}>Image URL</label>
-                    <input style={S.formInput} type="url" required placeholder="https://…" value={adForm.image_url} onChange={setAdField('image_url')} />
+                    <label style={S.formLabel}>Ad Image</label>
+                    <input
+                      ref={adImageInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      onChange={handleAdImageSelect}
+                      style={{ display: 'none' }}
+                      id="ad-image-input"
+                    />
+                    {adForm.image_url ? (
+                      <div style={S.adImagePreviewRow}>
+                        <img src={adForm.image_url} alt="Ad preview" style={S.adImagePreview} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={S.adImageName}>{adImageName || 'Uploaded image'}</div>
+                          <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                            <label htmlFor="ad-image-input" style={S.adImageLink}>Replace</label>
+                            <button type="button" onClick={clearAdImage} style={S.adImageLinkBtn}>Remove</button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <label htmlFor="ad-image-input" style={{ ...S.adImageDrop, opacity: adImageUploading ? 0.6 : 1 }}>
+                        {adImageUploading ? 'Uploading…' : `⬆ Upload image (JPG, PNG, WebP, GIF · max ${AD_IMAGE_MAX_MB} MB)`}
+                      </label>
+                    )}
                   </div>
                   <div style={S.formField}>
                     <label style={S.formLabel}>Click-through URL</label>
@@ -1359,15 +1455,27 @@ export default function AdminPanel() {
                   </div>
                   <div style={S.formField}>
                     <label style={S.formLabel}>Active From</label>
-                    <input style={S.formInput} type="datetime-local" required value={adForm.active_from} onChange={setAdField('active_from')} />
+                    <input style={S.formInput} type="datetime-local" required={!adForm.is_default} value={adForm.active_from} onChange={setAdField('active_from')} />
                   </div>
                   <div style={S.formField}>
                     <label style={S.formLabel}>Active To</label>
-                    <input style={S.formInput} type="datetime-local" required value={adForm.active_to} onChange={setAdField('active_to')} />
+                    <input style={S.formInput} type="datetime-local" required={!adForm.is_default} value={adForm.active_to} onChange={setAdField('active_to')} />
                   </div>
                 </div>
 
-                <button type="submit" disabled={adCreateLoading} style={{ ...S.createBtn, opacity: adCreateLoading ? 0.7 : 1 }}>
+                <label style={S.adDefaultRow}>
+                  <input
+                    type="checkbox"
+                    checked={adForm.is_default}
+                    onChange={(e) => setAdForm((p) => ({ ...p, is_default: e.target.checked }))}
+                  />
+                  <span>
+                    <strong>Default ad for this position</strong> — always shown when no paid ad is running
+                    (e.g. your company banner above the footer). Dates optional; replaces the current default.
+                  </span>
+                </label>
+
+                <button type="submit" disabled={adCreateLoading || adImageUploading} style={{ ...S.createBtn, opacity: adCreateLoading || adImageUploading ? 0.7 : 1 }}>
                   {adCreateLoading ? 'Creating…' : 'Create Ad Placement'}
                 </button>
               </form>
@@ -1394,7 +1502,13 @@ export default function AdminPanel() {
                     {ads.map((ad) => (
                       <tr key={ad.id} style={S.tr}>
                         <td style={S.td}>
-                          <div style={S.tenantName}>{ad.advertiser_name}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            {ad.image_url && <img src={ad.image_url} alt="" style={S.adThumb} />}
+                            <div>
+                              <div style={S.tenantName}>{ad.advertiser_name}</div>
+                              {ad.is_default && <span style={S.adDefaultBadge}>Default</span>}
+                            </div>
+                          </div>
                         </td>
                         <td style={S.td}>{ad.position}</td>
                         <td style={S.td}>{ad.city_filter || 'All'}</td>
@@ -1406,18 +1520,31 @@ export default function AdminPanel() {
                           </span>
                         </td>
                         <td style={S.td}>
-                          {new Date(ad.active_from).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                          {' → '}
-                          {new Date(ad.active_to).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          {ad.is_default && !ad.active_to ? 'Always (default)' : (
+                            <>
+                              {ad.active_from ? new Date(ad.active_from).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}
+                              {' → '}
+                              {ad.active_to ? new Date(ad.active_to).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'No end'}
+                            </>
+                          )}
                         </td>
                         <td style={S.td}>
-                          <button
-                            style={{ ...S.refreshBtn, opacity: adToggleLoading === ad.id ? 0.6 : 1 }}
-                            disabled={adToggleLoading === ad.id}
-                            onClick={() => handleToggleAd(ad)}
-                          >
-                            {ad.is_active ? 'Deactivate' : 'Activate'}
-                          </button>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            <button
+                              style={{ ...S.refreshBtn, opacity: adToggleLoading === ad.id ? 0.6 : 1 }}
+                              disabled={adToggleLoading === ad.id}
+                              onClick={() => handleMakeDefaultAd(ad)}
+                            >
+                              {ad.is_default ? 'Unset default' : 'Make default'}
+                            </button>
+                            <button
+                              style={{ ...S.refreshBtn, opacity: adToggleLoading === ad.id ? 0.6 : 1 }}
+                              disabled={adToggleLoading === ad.id}
+                              onClick={() => handleToggleAd(ad)}
+                            >
+                              {ad.is_active ? 'Deactivate' : 'Activate'}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -1861,6 +1988,31 @@ const S = {
     padding: '9px 20px', background: '#fff', color: '#dc2626',
     border: '1.5px solid #fca5a5', borderRadius: '9px',
     fontSize: '13px', fontWeight: '700', cursor: 'pointer',
+  },
+
+  // Ad Placements — image upload + default ad
+  adImageDrop: {
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    minHeight: '56px', padding: '12px 14px', borderRadius: '10px',
+    border: '1.5px dashed #cbd5e1', backgroundColor: '#f8fafc',
+    color: '#475569', fontSize: '13px', fontWeight: '600', cursor: 'pointer', textAlign: 'center',
+  },
+  adImagePreviewRow: {
+    display: 'flex', alignItems: 'center', gap: '12px', padding: '8px',
+    borderRadius: '10px', border: '1px solid #e2e8f0', backgroundColor: '#f8fafc',
+  },
+  adImagePreview: { width: '96px', height: '56px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0 },
+  adImageName: { fontSize: '13px', fontWeight: '600', color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  adImageLink: { fontSize: '12px', fontWeight: '700', color: '#ea580c', cursor: 'pointer' },
+  adImageLinkBtn: { fontSize: '12px', fontWeight: '700', color: '#64748b', background: 'none', border: 'none', padding: 0, cursor: 'pointer' },
+  adDefaultRow: {
+    display: 'flex', alignItems: 'flex-start', gap: '10px', margin: '4px 0 18px',
+    fontSize: '13px', color: '#475569', lineHeight: 1.5, cursor: 'pointer',
+  },
+  adThumb: { width: '56px', height: '34px', objectFit: 'cover', borderRadius: '5px', border: '1px solid #e2e8f0', flexShrink: 0 },
+  adDefaultBadge: {
+    display: 'inline-block', marginTop: '3px', fontSize: '10px', fontWeight: '700',
+    color: '#9a3412', backgroundColor: '#ffedd5', padding: '2px 8px', borderRadius: '999px',
   },
 
   // Tenant / ads table

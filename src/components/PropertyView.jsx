@@ -577,7 +577,7 @@ export default function PropertyView() {
           defaultPrice={listing.price}
         />
 
-        {/* NEW — Sponsored ad slot (Phase 6) */}
+        {/* Sponsored ad slot — always shows (falls back to default/house ad) */}
         <AdSlot position="calculator_result" />
 
         {/* Lead capture */}
@@ -631,6 +631,9 @@ export default function PropertyView() {
             </div>
           )}
         </div>
+
+        {/* Ad above footer — paid campaign, else admin default, else Plotraa house ad */}
+        <AdSlot position="listing_footer" />
 
       </main>
 
