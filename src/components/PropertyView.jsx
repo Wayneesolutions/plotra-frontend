@@ -188,6 +188,7 @@ export default function PropertyView() {
   );
 
   const { listing, media, landmarks, dealer } = data;
+  const cleanLandmarks = dedupeLandmarks(landmarks);
 
   // Developer profile / rating / possession record / nearby-comparison
   // content only applies to a unit inside a larger named project — a flat
@@ -399,25 +400,21 @@ export default function PropertyView() {
             <div style={S.sectionAccent} />
             <h2 style={S.sectionTitle}>Nearby Landmarks</h2>
           </div>
-          {landmarks && landmarks.length > 0 ? (
+          {cleanLandmarks.length > 0 ? (
             <div style={S.landmarkList}>
-              {landmarks.map((item, i) => (
-                <div key={i} className="pve-landmark-row" style={S.landmarkRow}>
-                  <div style={S.landmarkLeft}>
-                    <div style={S.landmarkIcon}>
-                      {ICONS[item.place_type] || '📌'}
-                    </div>
-                    <div style={S.landmarkText}>
-                      <span style={S.lmType}>{item.place_type}</span>
-                      <span style={S.lmName}>{item.place_name}</span>
-                    </div>
+              {cleanLandmarks.map((item, i) => (
+                <div key={`${item.place_name}-${i}`} className="pve-landmark-row" style={S.landmarkRow}>
+                  <div style={S.landmarkIcon}>
+                    {ICONS[item.place_type] || '📌'}
                   </div>
-                  <div style={S.landmarkRight}>
-                    <span style={S.distPill}>{item.distance_meters}m</span>
+                  <div style={S.landmarkText}>
+                    <span style={S.lmType}>{item.place_type}</span>
+                    <span style={S.lmName} title={item.place_name}>{item.place_name}</span>
                     <span style={S.timeRow}>
-                      🚶 {item.walk_minutes}m · 🚗 {item.drive_minutes}m
+                      🚶 {formatMinutes(item.walk_minutes)} · 🚗 {formatMinutes(item.drive_minutes)}
                     </span>
                   </div>
+                  <span style={S.distPill}>{formatDistance(item.distance_meters)}</span>
                 </div>
               ))}
             </div>
@@ -520,8 +517,8 @@ export default function PropertyView() {
                   <h4 style={S.intelSubhead}>{label}</h4>
                   {items.map((c, i) => (
                     <div key={i} style={S.citedItem}>
-                      <p style={S.descTxt}>{c.claim_text}</p>
-                      <a href={c.source_url} target="_blank" rel="noopener noreferrer" style={S.sourceLink}>
+                      <p style={S.intelTxt}>{cleanCitationText(c.claim_text)}</p>
+                      <a href={cleanUrl(c.source_url) || c.source_url} target="_blank" rel="noopener noreferrer" style={S.sourceLink}>
                         Source: {c.source_title || c.source_domain}
                       </a>
                     </div>
@@ -621,7 +618,7 @@ export default function PropertyView() {
           ) : (
             <div style={S.leadPrompt}>
               <div style={S.promptIcon}>📞</div>
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: '1 1 170px', minWidth: 0 }}>
                 <p style={S.promptTitle}>Interested in this property?</p>
                 <p style={S.promptNote}>Get a direct callback from our team.</p>
               </div>
@@ -632,7 +629,7 @@ export default function PropertyView() {
           )}
         </div>
 
-        {/* Ad above footer — paid campaign, else admin default, else Plotraa house ad */}
+        {/* Ad above footer — only shows a paid campaign or admin-set default (no built-in fallback) */}
         <AdSlot position="listing_footer" />
 
       </main>
@@ -654,16 +651,82 @@ function LocalIntelSection({ title, items }) {
   return (
     <div style={{ marginBottom: '14px' }}>
       <h4 style={S.intelSubhead}>{title}</h4>
-      {items.map((item, i) => (
-        <div key={i} style={S.citedItem}>
-          <p style={S.descTxt}>{item.text}</p>
-          <a href={item.source_url} target="_blank" rel="noopener noreferrer" style={S.sourceLink}>
-            Source: {item.source_title || item.source_url}
-          </a>
-        </div>
-      ))}
+      {items.map((item, i) => {
+        const href = cleanUrl(item.source_url);
+        const domain = domainOf(href);
+        return (
+          <div key={i} style={S.citedItem}>
+            <p style={S.intelTxt}>{cleanCitationText(item.text)}</p>
+            {href && (
+              <a href={href} target="_blank" rel="noopener noreferrer" style={S.sourceChip}>
+                <span style={S.sourceDomain}>{domain || 'Source'}</span>
+                {item.source_title && <span style={S.sourceTitle}>{item.source_title}</span>}
+              </a>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
+}
+
+/* ── Landmark + citation helpers ─────────────────────────── */
+
+// Same place often comes back twice from Places (e.g. two "Fortis Escorts
+// Hospital" entries for different gates) — keep the nearest one, sorted.
+function dedupeLandmarks(list) {
+  if (!Array.isArray(list)) return [];
+  const byName = new Map();
+  for (const item of list) {
+    if (!item?.place_name) continue;
+    const key = item.place_name.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    const prev = byName.get(key);
+    if (!prev || Number(item.distance_meters) < Number(prev.distance_meters)) byName.set(key, item);
+  }
+  return [...byName.values()].sort((a, b) => Number(a.distance_meters) - Number(b.distance_meters));
+}
+
+function formatDistance(m) {
+  const n = Number(m);
+  if (!Number.isFinite(n)) return '—';
+  if (n < 50) return 'Next door';
+  if (n < 1000) return `${Math.round(n / 10) * 10} m`;
+  return `${(n / 1000).toFixed(n < 10000 ? 1 : 0)} km`;
+}
+
+function formatMinutes(min) {
+  const n = Number(min);
+  if (!Number.isFinite(n)) return '—';
+  return `${Math.max(1, Math.round(n))} min`;
+}
+
+// Research text arrives with inline markdown citations like
+// "([hindustantimes.com](https://…?utm_source=openai))" — the source is
+// already shown as a link below, so drop them and any bare URLs.
+function cleanCitationText(text) {
+  if (!text) return '';
+  return String(text)
+    .replace(/\s*\(\s*\[[^\]]*\]\([^)]*\)\s*\)/g, '')   // ([label](url))
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')               // [label](url) -> label
+    .replace(/\(?https?:\/\/\S+\)?/g, '')                    // bare URLs
+    .replace(/\s+([.,;:])/g, '$1')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
+function cleanUrl(url) {
+  if (!url) return '';
+  try {
+    const u = new URL(url);
+    [...u.searchParams.keys()].forEach((k) => { if (k.startsWith('utm_')) u.searchParams.delete(k); });
+    return u.toString();
+  } catch {
+    return '';
+  }
+}
+
+function domainOf(url) {
+  try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return ''; }
 }
 
 /* ══════════════════════════════════════════════════
@@ -831,31 +894,41 @@ const S = {
   /* Landmarks */
   landmarkList: { display: 'flex', flexDirection: 'column' },
   landmarkRow: {
-    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    padding: '11px 8px',
-    borderBottom: '1px solid #f8fafd',
+    display: 'flex', alignItems: 'flex-start', gap: '12px',
+    padding: '12px 6px',
+    borderBottom: '1px solid #f1f4f9',
   },
-  landmarkLeft: { display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 },
   landmarkIcon: {
     width: '36px', height: '36px', borderRadius: '9px', backgroundColor: '#f0f4fa',
     display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0,
   },
-  landmarkText: { display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 },
+  landmarkText: { display: 'flex', flexDirection: 'column', gap: '3px', minWidth: 0, flex: 1 },
   lmType: { fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.4px', fontWeight: '700' },
-  lmName: { fontSize: '14px', color: '#0c1b2e', fontWeight: '600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
-  landmarkRight: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px', flexShrink: 0 },
-  distPill: {
-    fontSize: '13px', fontWeight: '700', color: '#0c1b2e',
-    backgroundColor: '#f0f4fa', padding: '3px 9px', borderRadius: '6px',
+  lmName: {
+    fontSize: '14px', color: '#0c1b2e', fontWeight: '600', lineHeight: 1.4,
+    whiteSpace: 'normal', overflowWrap: 'break-word', wordBreak: 'break-word',
   },
-  timeRow: { fontSize: '11px', color: '#94a3b8' },
+  distPill: {
+    fontSize: '12px', fontWeight: '700', color: '#0c1b2e', whiteSpace: 'nowrap',
+    backgroundColor: '#f0f4fa', padding: '4px 9px', borderRadius: '6px', flexShrink: 0,
+    marginTop: '2px',
+  },
+  timeRow: { fontSize: '11px', color: '#94a3b8', whiteSpace: 'nowrap' },
   emptyNote: { margin: 0, fontSize: '13px', color: '#94a3b8', fontStyle: 'italic' },
 
   /* Local Intelligence / Builder Due Diligence citations */
   intelSubhead: { fontSize: '12px', textTransform: 'uppercase', color: '#6b7280', margin: '0 0 6px 0', fontWeight: '700' },
-  citedItem: { borderLeft: '2px solid #eff2f8', paddingLeft: '10px', marginBottom: '10px' },
+  citedItem: { borderLeft: '2px solid #e8edf5', paddingLeft: '12px', marginBottom: '14px', minWidth: 0 },
   citedCategory: { fontSize: '10px', textTransform: 'uppercase', color: '#94a3b8', fontWeight: 'bold' },
-  sourceLink: { fontSize: '11px', color: '#0c1b2e', fontWeight: '600', textDecoration: 'none' },
+  sourceLink: { fontSize: '11px', color: '#0c1b2e', fontWeight: '600', textDecoration: 'none', overflowWrap: 'anywhere' },
+  intelTxt: { margin: '0 0 8px', fontSize: '14px', color: '#475569', lineHeight: 1.65, overflowWrap: 'anywhere' },
+  sourceChip: {
+    display: 'inline-flex', alignItems: 'baseline', flexWrap: 'wrap', columnGap: '6px', rowGap: '2px', maxWidth: '100%',
+    fontSize: '11px', textDecoration: 'none', color: '#0c1b2e',
+    backgroundColor: '#f5f7fb', border: '1px solid #e8edf5', borderRadius: '8px', padding: '5px 9px',
+  },
+  sourceDomain: { fontWeight: '800', flexShrink: 0 },
+  sourceTitle: { color: '#64748b', fontWeight: '500', whiteSpace: 'normal', overflowWrap: 'break-word', minWidth: 0 },
 
   /* Developer rating / possession-record stat cards */
   devStatsRow: { display: 'flex', gap: '12px', marginBottom: '18px', flexWrap: 'wrap' },
@@ -918,7 +991,7 @@ const S = {
   successTitle: { margin: '0 0 4px', fontSize: '15px', fontWeight: '700', color: '#059669' },
   successNote:  { margin: 0, fontSize: '13px', color: '#64748b' },
 
-  leadPrompt: { display: 'flex', alignItems: 'center', gap: '14px' },
+  leadPrompt: { display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' },
   promptIcon: {
     width: '44px', height: '44px', borderRadius: '50%', backgroundColor: '#e8edf8',
     display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0,
@@ -926,7 +999,7 @@ const S = {
   promptTitle: { margin: '0 0 3px', fontSize: '14px', fontWeight: '700', color: '#0c1b2e' },
   promptNote:  { margin: 0, fontSize: '12px', color: '#64748b' },
   leadTrigger: {
-    marginLeft: 'auto', padding: '10px 18px', border: 'none',
+    marginLeft: 'auto', padding: '11px 18px', border: 'none', flexGrow: 1, maxWidth: '100%',
     background: 'linear-gradient(135deg, #0c1b2e 0%, #1a3558 100%)',
     color: '#fff', borderRadius: '9px', fontSize: '13px', fontWeight: '700',
     cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
