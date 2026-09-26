@@ -19,7 +19,7 @@ export const legalSections: LegalSection[] = [
 <ul>
 <li><p>You must provide accurate business details, including your dealership name, contact number, and (where applicable) RERA or other real estate registration details.</p></li>
 <li><p>You are responsible for all activity under your account and for keeping your login and WhatsApp Business connection secure.</p></li>
-<li><p>Notify us immediately at <mark>[support email]</mark> of any suspected unauthorized access.</p></li>
+<li><p>Notify us immediately at info@plotraa.com of any suspected unauthorized access.</p></li>
 </ul>
 <h2 id="scope-of-service"><strong>1.3 Scope of Service</strong></h2>
 <p>Plotra provides tools including property/plot listing management, a public property page, a lead inbox, a plot boundary tracer, WhatsApp-based lead communication, and an admin panel. Feature availability depends on your subscription tier (Lite, Standard, Pro, Unlimited, or as otherwise published on our pricing page).</p>
@@ -57,7 +57,7 @@ export const legalSections: LegalSection[] = [
 <h2 id="changes-to-these-terms"><strong>1.13 Changes to These Terms</strong></h2>
 <p>We may update these Terms from time to time, with material changes notified at least 15 days in advance via email or in-platform notice.</p>
 <h2 id="contact"><strong>1.14 Contact</strong></h2>
-<p>Questions about these Terms can be directed to <mark>[legal/support email].</mark></p>`,
+<p>Questions about these Terms can be directed to info@plotraa.com.</p>`,
   },
   {
     slug: "privacy-policy",
@@ -100,13 +100,13 @@ export const legalSections: LegalSection[] = [
 <h2 id="data-retention"><strong>2.7 Data Retention</strong></h2>
 <p>Listing and lead data is retained while your subscription is active. On termination, data is retained for 30 days to allow export, then deleted unless a longer period is required by law.</p>
 <h2 id="rights-of-data-subjects"><strong>2.8 Rights of Data Subjects</strong></h2>
-<p>Buyers/leads who wish to have their inquiry data corrected or deleted may contact the agent they engaged with, or write to us at [privacy email] and we will assist in actioning the request on the Platform.</p>
+<p>Buyers/leads who wish to have their inquiry data corrected or deleted may contact the agent they engaged with, or write to us at info@plotraa.com and we will assist in actioning the request on the Platform.</p>
 <h2 id="international-considerations"><strong>2.9 International Considerations</strong></h2>
 <p>Where Plotra is used by agents serving NRI or overseas buyers (including Canada-based clients), data may be processed on servers located in different jurisdictions. We apply reasonable safeguards to such transfers.</p>
 <h2 id="changes-to-this-policy"><strong>2.10 Changes to This Policy</strong></h2>
 <p>We may update this Privacy Policy periodically, with material changes communicated via email or in-platform notice.</p>
 <h2 id="contact-1"><strong>2.11 Contact</strong></h2>
-<p>For privacy-related queries, contact [<mark>privacy email</mark>] or our Grievance Officer</p>`,
+<p>For privacy-related queries, contact info@plotraa.com or our Grievance Officer</p>`,
   },
   {
     slug: "refund-cancellation-policy",
@@ -114,7 +114,7 @@ export const legalSections: LegalSection[] = [
     html: `<p><em>Last updated: [<mark>Date</mark>]</em></p>
 <h2 id="subscription-cancellation"><strong>3.1 Subscription Cancellation</strong></h2>
 <ul>
-<li><p>You may cancel your Plotra subscription at any time by providing 30 days' written notice to [support email].</p></li>
+<li><p>You may cancel your Plotra subscription at any time by providing 30 days' written notice to info@plotraa.com.</p></li>
 <li><p>Cancellation takes effect at the end of the current billing cycle; access continues until that date.</p></li>
 </ul>
 <h2 id="refunds"><strong>3.2 Refunds</strong></h2>
@@ -134,7 +134,7 @@ export const legalSections: LegalSection[] = [
 <h2 id="data-after-cancellation"><strong>3.7 Data After Cancellation</strong></h2>
 <p>Following cancellation, you have 30 days to export your listing and lead data. See Section 2.7 for retention and deletion timelines.</p>
 <h2 id="how-to-request-a-refundcancellation"><strong>3.8 How to Request a Refund/Cancellation</strong></h2>
-<p>Send a written request to <mark>[support/billing email</mark>] including your account name, ID, and reason for the request. We aim to acknowledge requests within 3 business days.</p>`,
+<p>Send a written request to info@plotraa.com including your account name, ID, and reason for the request. We aim to acknowledge requests within 3 business days.</p>`,
   },
   {
     slug: "cookie-policy",
@@ -157,7 +157,7 @@ export const legalSections: LegalSection[] = [
 <h2 id="changes"><strong>4.5 Changes</strong></h2>
 <p>We may update this Cookie Policy periodically. Check this page for the latest version.</p>
 <h2 id="contact-2"><strong>4.6 Contact</strong></h2>
-<p>Questions about cookies can be sent to [<mark>privacy email].</mark></p>`,
+<p>Questions about cookies can be sent to info@plotraa.com.</p>`,
   },
   {
     slug: "acceptable-use-policy",
@@ -178,7 +178,7 @@ export const legalSections: LegalSection[] = [
 <h2 id="listing-standards"><strong>5.2 Listing Standards</strong></h2>
 <p>All listings must reflect properties you have the legal right to market, with accurate pricing, location, and boundary data. Plotra reserves the right to remove listings that appear fraudulent, duplicated, or in violation of applicable real estate regulations.</p>
 <h2 id="reporting-violations"><strong>5.3 Reporting Violations</strong></h2>
-<p>Suspected violations, including fraudulent listings or lead complaints, should be reported to [support/abuse email]. We may investigate and take action including listing removal, warnings, suspension, or termination.</p>
+<p>Suspected violations, including fraudulent listings or lead complaints, should be reported to info@plotraa.com. We may investigate and take action including listing removal, warnings, suspension, or termination.</p>
 <h2 id="enforcement"><strong>5.4 Enforcement</strong></h2>
 <p>Wayne E Solutions may suspend or restrict access immediately, without prior notice, for severe violations (fraud, security threats, unlawful activity), and may cooperate with law enforcement or real estate regulators where required.</p>`,
   },
@@ -225,7 +225,7 @@ export const legalSections: LegalSection[] = [
 <h2 id="governing-law-disputes"><strong>6.10 Governing Law &amp; Disputes</strong></h2>
 <p>Governed by the laws of India, courts of Ludhiana, Punjab, unless a signed agreement specifies otherwise.</p>
 <h2 id="requesting-a-full-agreement"><strong>6.11 Requesting a Full Agreement</strong></h2>
-<p>To receive the full, signed SaaS Agreement, contact [<mark>sales email</mark>].</p>`,
+<p>To receive the full, signed SaaS Agreement, contact info@plotraa.com.</p>`,
   },
   {
     slug: "contact-grievance-information",
@@ -234,21 +234,22 @@ export const legalSections: LegalSection[] = [
 <p>We take feedback, complaints, and data protection concerns seriously. If you have a question, complaint, or grievance relating to Plotra, please reach out using the details below.</p>
 <h2 id="general-support"><strong>7.1 General Support</strong></h2>
 <ul>
-<li><p>Email: [<mark>support@wayneesolutions.com]</mark></p></li>
+<li><p>Email: info@plotraa.com</p></li>
 <li><p>Phone: +91 83600 98455</p></li>
+<li><p>Instagram: <a href="https://www.instagram.com/plotraa/" target="_blank" rel="noreferrer">@plotraa</a></p></li>
 <li><p>Hours: [<mark>Mon–Sat, 10 AM – 7 PM IST</mark>]</p></li>
 </ul>
 <h2 id="grievance-officer"><strong>7.2 Grievance Officer</strong></h2>
 <p>In accordance with applicable Indian IT law (Information Technology Act, 2000 and rules thereunder, and the Digital Personal Data Protection Act, 2023), Wayne E Solutions has designated a Grievance Officer to address complaints related to data privacy, listings, or Platform use.</p>
 <ul>
-<li><p>Name: [<mark>Grievance Officer Name</mark>]</p></li>
-<li><p>Designation: <mark>[Title</mark>]</p></li>
-<li><p>Email: <mark>[grievance@wayneesolutions.com</mark>]</p></li>
+<li><p>Name: Pankaj Kumar</p></li>
+<li><p>Designation: Founder &amp; Director</p></li>
+<li><p>Email: pankaj@plotraa.com</p></li>
 <li><p>Address: [<mark>Registered Office Address, Ludhiana, Punjab, India]</mark></p></li>
 <li><p>Response Timeline: Acknowledgment within 48 hours, resolution within 30 days, as applicable under law.</p></li>
 </ul>
 <h2 id="reporting-a-fraudulent-listing"><strong>7.3 Reporting a Fraudulent Listing</strong></h2>
-<p>If you believe a listing on Plotra is fraudulent or misrepresents a property, report it to [abuse email] with the listing details; we will investigate and take appropriate action.</p>
+<p>If you believe a listing on Plotra is fraudulent or misrepresents a property, report it to info@plotraa.com with the listing details; we will investigate and take appropriate action.</p>
 <h2 id="registered-business-details"><strong>7.4 Registered Business Details</strong></h2>
 <ul>
 <li><p>Company: Wayne E Solutions</p></li>

@@ -1,6 +1,25 @@
 import { Link } from "react-router-dom";
 import { PlotraLogo } from "@/components/plotra/logo";
 
+function InstagramIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+    </svg>
+  );
+}
+
 const columns = [
   {
     title: "Product",
@@ -32,8 +51,9 @@ const columns = [
   {
     title: "Contact",
     links: [
-      { label: "hello@plotra.in", href: "mailto:hello@plotra.in" },
+      { label: "info@plotraa.com", href: "mailto:info@plotraa.com" },
       { label: "+91 83600 98455", href: "tel:+918360098455" },
+      { label: "Instagram", href: "https://www.instagram.com/plotraa/" },
       { label: "Ludhiana, Punjab", href: "/#listings" },
     ],
   },
@@ -85,6 +105,15 @@ export function SiteFooter() {
             >
               Terms
             </Link>
+            <a
+              href="https://www.instagram.com/plotraa/"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Plotraa on Instagram"
+              className="transition-colors hover:text-primary"
+            >
+              <InstagramIcon className="size-4" />
+            </a>
             <span className="inline-flex items-center gap-2">
               <span className="size-1.5 rounded-full bg-accent pulse-soft" />
               All systems live

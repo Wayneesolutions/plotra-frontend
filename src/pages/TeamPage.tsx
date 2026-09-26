@@ -6,9 +6,9 @@ import { SiteFooter } from "@/components/plotra/site-footer";
 import { Reveal } from "@/lib/motion";
 
 const TEAM = [
-  { initials: "PK", name: "Pankaj Kumar", role: "Founder & Director" },
-  { initials: "PN", name: "Pavnoor Kaur", role: "Co-founder" },
-  { initials: "PM", name: "Piyush Mehndiratta", role: "Marketing Head" },
+  { initials: "PK", name: "Pankaj Kumar", role: "Founder & Director", email: "pankaj@plotraa.com" },
+  { initials: "PN", name: "Pavnoor Kaur", role: "Co-founder", email: "pavnoor@plotraa.com" },
+  { initials: "PM", name: "Piyush Mehndiratta", role: "Marketing Head", email: "piyush@plotraa.com" },
   { initials: "SM", name: "Surbhi Mehndiratta", role: "Graphic Designer" },
   { initials: "BK", name: "Baljeet Kaur", role: "Graphic Designer" },
   { initials: "AS", name: "Arpan Saini", role: "Software Developer" },
@@ -47,6 +47,14 @@ export default function TeamPage() {
                   </div>
                   <div className="mt-5 font-display text-xl font-bold text-ink">{m.name}</div>
                   <div className="mt-1 text-sm leading-relaxed text-muted-foreground">{m.role}</div>
+                  {m.email && (
+                    <a
+                      href={`mailto:${m.email}`}
+                      className="mt-2 inline-block text-sm text-primary transition-colors hover:underline"
+                    >
+                      {m.email}
+                    </a>
+                  )}
                 </div>
               </Reveal>
             ))}
