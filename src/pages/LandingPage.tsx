@@ -231,7 +231,7 @@ function SatelliteStory() {
             ))}
           </ul>
           <Button asChild variant="ink" size="lg" className="mt-9">
-            <Link to={`/p/${listings[0]!.id}`}>
+            <Link to={`/showcase/${listings[0]!.id}`}>
               See a live listing <ArrowUpRight />
             </Link>
           </Button>

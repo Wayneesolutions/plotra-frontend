@@ -322,14 +322,20 @@
 }
 
 [data-reveal] {
-  opacity: 0;
-  transform: translateY(26px);
-  transition:
-    opacity 1.1s var(--ease-cinema),
-    transform 1.1s var(--ease-cinema);
+  /* Text/label reveal ("up" variant, the default): content is always fully
+     opaque from first paint — it never hides via opacity — only a small
+     slide-up motion plays once revealed. This is deliberate: an
+     opacity-based fade meant every heading, eyebrow and badge sitewide
+     could render faded or fully invisible for the ~1s of the transition,
+     which read as "text going missing" on fast scrolls or in screenshots.
+     Only image reveals ("pop", below) still fade in, since a photo
+     loading in doesn't read as missing content the way text does. */
+  transform: translateY(14px);
+  transition: transform 0.7s var(--ease-cinema);
 }
 
 [data-reveal="pop"] {
+  opacity: 0;
   transform: scale(0.95);
   filter: blur(8px);
   clip-path: inset(6% 6% 6% 6% round 24px);
