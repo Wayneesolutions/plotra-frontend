@@ -1,5 +1,4 @@
 import { useRef, useState } from "react";
-import { Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { media } from "@/lib/plotra-data";
 import { Reveal } from "@/lib/motion";
@@ -80,9 +79,6 @@ export function ReelStrip() {
               <span className="veil pointer-events-none absolute inset-0" />
               <span className="glass absolute left-3 top-3 rounded-full py-1 pl-3 pr-2.5 text-[10px] font-semibold uppercase tracking-widest text-accent">
                 {reel.category}
-              </span>
-              <span className="glass absolute right-3 top-3 grid size-9 place-items-center rounded-full text-ink-foreground transition-transform duration-500 group-hover:scale-110">
-                <Play className="size-3.5 fill-current" />
               </span>
               <span className="absolute inset-x-4 bottom-4 block text-sm font-semibold leading-snug text-ink-foreground">
                 {reel.caption}

@@ -18,6 +18,7 @@ const HowItWorksPage = lazy(() => import('./pages/HowItWorksPage.tsx'));
 const LegalPage = lazy(() => import('./pages/LegalPage.tsx'));
 const TeamPage = lazy(() => import('./pages/TeamPage.tsx'));
 const ChatWidgetPage = lazy(() => import('./pages/ChatWidgetPage.jsx'));
+const ShowcaseListingPage = lazy(() => import('./pages/ShowcaseListingPage.tsx'));
 
 export default function App() {
   return (
@@ -32,6 +33,7 @@ export default function App() {
           <Route path="/how-it-works" element={<HowItWorksPage />} />
           <Route path="/legal" element={<LegalPage />} />
           <Route path="/team" element={<TeamPage />} />
+          <Route path="/showcase/:id" element={<ShowcaseListingPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 

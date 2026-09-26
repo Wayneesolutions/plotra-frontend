@@ -19,19 +19,48 @@ export function useInView<T extends HTMLElement>(threshold = 0.2) {
       setInView(true);
       return;
     }
+
+    let settled = false;
+    const reveal = () => {
+      if (settled) return;
+      settled = true;
+      setInView(true);
+      io.disconnect();
+      window.removeEventListener("scroll", manualCheck);
+      window.removeEventListener("resize", manualCheck);
+    };
+
+    // Some in-app/webview browsers (e.g. embedded WhatsApp or Instagram
+    // browsers) fire IntersectionObserver unreliably — especially when the
+    // page loads already scrolled (an anchor link) or the viewport resizes
+    // as the browser chrome shows/hides. That can leave scroll-reveal text
+    // stuck permanently invisible. This manual rect check is a redundant
+    // safety net alongside the observer, so content is never hidden from
+    // the reader once it's actually on screen.
+    const manualCheck = () => {
+      const rect = el.getBoundingClientRect();
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+      if (rect.top < viewportHeight * 0.92 && rect.bottom > 0) reveal();
+    };
+
     const io = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          if (entry.isIntersecting) {
-            setInView(true);
-            io.disconnect();
-          }
+          if (entry.isIntersecting) reveal();
         }
       },
       { threshold, rootMargin: "0px 0px -8% 0px" },
     );
     io.observe(el);
-    return () => io.disconnect();
+    manualCheck();
+    window.addEventListener("scroll", manualCheck, { passive: true });
+    window.addEventListener("resize", manualCheck);
+
+    return () => {
+      io.disconnect();
+      window.removeEventListener("scroll", manualCheck);
+      window.removeEventListener("resize", manualCheck);
+    };
   }, [threshold]);
 
   return { ref, inView };

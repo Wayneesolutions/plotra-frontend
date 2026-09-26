@@ -15,7 +15,7 @@ export function PropertyCard({
 }) {
   return (
     <Link
-      to={`/p/${listing.id}`}
+      to={`/showcase/${listing.id}`}
       className={cn("group/card block", className)}
     >
       <PopImage
