@@ -7,6 +7,7 @@ import Billing from './components/Billing.jsx';
 import AdminRoute from './components/AdminRoute.jsx';
 import AdminPanel from './components/AdminPanel.jsx';
 import ResetPassword from './components/ResetPassword.jsx';
+import ScrollToTop from './components/ScrollToTop.jsx';
 
 // Public-facing pages — TypeScript/Tailwind design from plotra-lens
 const LandingPage = lazy(() => import('./pages/LandingPage.tsx'));
@@ -23,6 +24,7 @@ const ShowcaseListingPage = lazy(() => import('./pages/ShowcaseListingPage.tsx')
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Suspense fallback={null}>
         <Routes>
           {/* Public marketing + auth routes — new plotra-lens design */}
