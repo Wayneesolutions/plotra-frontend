@@ -11,7 +11,7 @@ export const legalSections: LegalSection[] = [
   {
     slug: "terms-conditions",
     title: "Terms & Conditions",
-    html: `<p><em>Last updated: [<mark>Date</mark>]</em></p>
+    html: `
 <p>These Terms &amp; Conditions ("Terms") govern access to and use of Plotra, a WhatsApp-native real estate agent operating system ("Platform," "Service") provided by Wayne E Solutions ("we," "us," "our"), a company operating from Ludhiana, Punjab, India. By registering for or using Plotra, you ("Agent," "Dealer," "you") agree to be bound by these Terms.</p>
 <h2 id="who-can-use-plotra"><strong>1.1 Who Can Use Plotra</strong></h2>
 <p>Plotra is intended for use by licensed/practicing real estate agents, property dealers, brokerages, and their authorized staff. You represent that you have the legal right to list, market, and deal in the properties you upload to the Platform.</p>
@@ -62,7 +62,7 @@ export const legalSections: LegalSection[] = [
   {
     slug: "privacy-policy",
     title: "Privacy Policy",
-    html: `<p><em>Last updated: [<mark>Date</mark>]</em></p>
+    html: `
 <p>This Privacy Policy explains how Wayne E Solutions collects, uses, and protects information through Plotra.</p>
 <h2 id="who-this-applies-to"><strong>2.1 Who This Applies To</strong></h2>
 <ul>
@@ -111,7 +111,7 @@ export const legalSections: LegalSection[] = [
   {
     slug: "refund-cancellation-policy",
     title: "Refund & Cancellation Policy",
-    html: `<p><em>Last updated: [<mark>Date</mark>]</em></p>
+    html: `
 <h2 id="subscription-cancellation"><strong>3.1 Subscription Cancellation</strong></h2>
 <ul>
 <li><p>You may cancel your Plotra subscription at any time by providing 30 days' written notice to info@plotraa.com.</p></li>
@@ -139,7 +139,7 @@ export const legalSections: LegalSection[] = [
   {
     slug: "cookie-policy",
     title: "Cookie Policy",
-    html: `<p><em>Last updated: [<mark>Date</mark>]</em></p>
+    html: `
 <p>This Cookie Policy explains how Wayne E Solutions uses cookies and similar technologies on the Plotra website and platform, including the public property page.</p>
 <h2 id="what-are-cookies"><strong>4.1 What Are Cookies</strong></h2>
 <p>Cookies are small text files stored on your device when you visit a website, used to make the site function and/or understand how it's used.</p>
@@ -162,7 +162,7 @@ export const legalSections: LegalSection[] = [
   {
     slug: "acceptable-use-policy",
     title: "Acceptable Use Policy",
-    html: `<p><em>Last updated: [<mark>Date</mark>]</em></p>
+    html: `
 <p>This Acceptable Use Policy ("AUP") applies to all Plotra users. By using Plotra, you agree not to:</p>
 <h2 id="prohibited-conduct"><strong>5.1 Prohibited Conduct</strong></h2>
 <ul>
@@ -185,7 +185,7 @@ export const legalSections: LegalSection[] = [
   {
     slug: "saas-agreement-summary-terms",
     title: "SaaS Agreement (Summary Terms)",
-    html: `<p><em>Last updated: [<mark>Date</mark>]</em></p>
+    html: `
 <p><em>This section summarizes the core commercial terms typically included in a signed SaaS Agreement between Wayne E Solutions and a subscribing agent/dealership. A full, signed agreement should be executed before onboarding; this page is a plain-language overview.</em></p>
 <h2 id="service-provided"><strong>6.1 Service Provided</strong></h2>
 <p>Wayne E Solutions grants a non-exclusive, non-transferable right to access and use Plotra during the subscription term, per the selected plan (Lite, Standard, Pro, or Unlimited).</p>
@@ -230,7 +230,7 @@ export const legalSections: LegalSection[] = [
   {
     slug: "contact-grievance-information",
     title: "Contact & Grievance Information",
-    html: `<p><em>Last updated: [<mark>Date</mark>]</em></p>
+    html: `
 <p>We take feedback, complaints, and data protection concerns seriously. If you have a question, complaint, or grievance relating to Plotra, please reach out using the details below.</p>
 <h2 id="general-support"><strong>7.1 General Support</strong></h2>
 <ul>
