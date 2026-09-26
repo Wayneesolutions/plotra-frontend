@@ -1,4 +1,4 @@
-// Auto-generated from Plotra-Legal-Pages.docx. Bracketed placeholders
+// Auto-generated from Plotraa-Legal-Pages.docx. Bracketed placeholders
 // (shown as highlighted <mark> text) must be filled in before publishing —
 // see the "Draft for legal review" note in the source document.
 export type LegalSection = {
@@ -12,9 +12,9 @@ export const legalSections: LegalSection[] = [
     slug: "terms-conditions",
     title: "Terms & Conditions",
     html: `
-<p>These Terms &amp; Conditions ("Terms") govern access to and use of Plotra, a WhatsApp-native real estate agent operating system ("Platform," "Service") provided by Wayne E Solutions ("we," "us," "our"), a company operating from Ludhiana, Punjab, India. By registering for or using Plotra, you ("Agent," "Dealer," "you") agree to be bound by these Terms.</p>
-<h2 id="who-can-use-plotra"><strong>1.1 Who Can Use Plotra</strong></h2>
-<p>Plotra is intended for use by licensed/practicing real estate agents, property dealers, brokerages, and their authorized staff. You represent that you have the legal right to list, market, and deal in the properties you upload to the Platform.</p>
+<p>These Terms &amp; Conditions ("Terms") govern access to and use of Plotraa, a WhatsApp-native real estate agent operating system ("Platform," "Service") provided by Wayne E Solutions ("we," "us," "our"), a company operating from Ludhiana, Punjab, India. By registering for or using Plotraa, you ("Agent," "Dealer," "you") agree to be bound by these Terms.</p>
+<h2 id="who-can-use-plotra"><strong>1.1 Who Can Use Plotraa</strong></h2>
+<p>Plotraa is intended for use by licensed/practicing real estate agents, property dealers, brokerages, and their authorized staff. You represent that you have the legal right to list, market, and deal in the properties you upload to the Platform.</p>
 <h2 id="account-registration"><strong>1.2 Account Registration</strong></h2>
 <ul>
 <li><p>You must provide accurate business details, including your dealership name, contact number, and (where applicable) RERA or other real estate registration details.</p></li>
@@ -22,24 +22,24 @@ export const legalSections: LegalSection[] = [
 <li><p>Notify us immediately at info@plotraa.com of any suspected unauthorized access.</p></li>
 </ul>
 <h2 id="scope-of-service"><strong>1.3 Scope of Service</strong></h2>
-<p>Plotra provides tools including property/plot listing management, a public property page, a lead inbox, a plot boundary tracer, WhatsApp-based lead communication, and an admin panel. Feature availability depends on your subscription tier (Lite, Standard, Pro, Unlimited, or as otherwise published on our pricing page).</p>
+<p>Plotraa provides tools including property/plot listing management, a public property page, a lead inbox, a plot boundary tracer, WhatsApp-based lead communication, and an admin panel. Feature availability depends on your subscription tier (Lite, Standard, Pro, Unlimited, or as otherwise published on our pricing page).</p>
 <h2 id="listings-your-responsibility"><strong>1.4 Listings — Your Responsibility</strong></h2>
 <ul>
 <li><p>You are solely responsible for the accuracy of property listings, including price, plot dimensions, ownership status, title, and boundary information you upload or trace.</p></li>
-<li><p>Plotra is a listing and lead-management tool, not a party to any property transaction, and does not verify land title, ownership, or legal status of any listed property.</p></li>
+<li><p>Plotraa is a listing and lead-management tool, not a party to any property transaction, and does not verify land title, ownership, or legal status of any listed property.</p></li>
 <li><p>You must not list properties you are not authorized to market, or misrepresent plot boundaries, dimensions, or legal status.</p></li>
 </ul>
 <h2 id="subscription-fees"><strong>1.5 Subscription &amp; Fees</strong></h2>
 <ul>
-<li><p>Plotra is offered on tiered subscription plans (e.g., Lite, Standard, Pro, Unlimited) as published on our pricing page or order form.</p></li>
+<li><p>Plotraa is offered on tiered subscription plans (e.g., Lite, Standard, Pro, Unlimited) as published on our pricing page or order form.</p></li>
 <li><p>Fees are billed in advance on a [monthly/annual] basis unless otherwise agreed.</p></li>
 <li><p>WhatsApp messaging beyond plan-included volumes may be billed separately at prevailing per-message/per-minute rates.</p></li>
 <li><p>Non-payment may result in suspension of your account, subject to the notice period in Section 1.9.</p></li>
 </ul>
 <h2 id="whatsapp-communications"><strong>1.6 WhatsApp Communications</strong></h2>
-<p>Plotra uses the WhatsApp Business Cloud API to help you communicate with leads and buyers. You are responsible for ensuring you have a lawful basis (such as the lead's prior inquiry or consent) before messaging any individual, and for complying with WhatsApp's own commerce and business messaging policies.</p>
+<p>Plotraa uses the WhatsApp Business Cloud API to help you communicate with leads and buyers. You are responsible for ensuring you have a lawful basis (such as the lead's prior inquiry or consent) before messaging any individual, and for complying with WhatsApp's own commerce and business messaging policies.</p>
 <h2 id="intellectual-property"><strong>1.7 Intellectual Property</strong></h2>
-<p>All software, design, and underlying technology of Plotra are the exclusive property of Wayne E Solutions. You retain ownership of the property listings, lead data, and business content you upload ("Your Data").</p>
+<p>All software, design, and underlying technology of Plotraa are the exclusive property of Wayne E Solutions. You retain ownership of the property listings, lead data, and business content you upload ("Your Data").</p>
 <h2 id="service-availability"><strong>1.8 Service Availability</strong></h2>
 <p>We aim to maintain high availability but do not guarantee uninterrupted service. We are not liable for downtime caused by third-party infrastructure, WhatsApp/Meta platform outages, or events outside our reasonable control.</p>
 <h2 id="suspension-termination"><strong>1.9 Suspension &amp; Termination</strong></h2>
@@ -49,7 +49,7 @@ export const legalSections: LegalSection[] = [
 <li><p>On termination, you may export your listing and lead data within 30 days, after which it may be deleted per our retention practices.</p></li>
 </ul>
 <h2 id="limitation-of-liability"><strong>1.10 Limitation of Liability</strong></h2>
-<p>To the maximum extent permitted by law, Wayne E Solutions' total liability shall not exceed the fees paid by you in the 12 months preceding the claim. We are not liable for indirect or consequential damages, including any loss arising from inaccurate listing data, disputed property transactions, or lost leads. Plotra does not guarantee any sale, lead conversion, or transaction outcome.</p>
+<p>To the maximum extent permitted by law, Wayne E Solutions' total liability shall not exceed the fees paid by you in the 12 months preceding the claim. We are not liable for indirect or consequential damages, including any loss arising from inaccurate listing data, disputed property transactions, or lost leads. Plotraa does not guarantee any sale, lead conversion, or transaction outcome.</p>
 <h2 id="indemnity"><strong>1.11 Indemnity</strong></h2>
 <p>You agree to indemnify Wayne E Solutions against claims arising from your listings, misrepresentation of property details, unlawful use of the Platform, or violation of buyer/lead data protection rights.</p>
 <h2 id="governing-law"><strong>1.12 Governing Law</strong></h2>
@@ -63,10 +63,10 @@ export const legalSections: LegalSection[] = [
     slug: "privacy-policy",
     title: "Privacy Policy",
     html: `
-<p>This Privacy Policy explains how Wayne E Solutions collects, uses, and protects information through Plotra.</p>
+<p>This Privacy Policy explains how Wayne E Solutions collects, uses, and protects information through Plotraa.</p>
 <h2 id="who-this-applies-to"><strong>2.1 Who This Applies To</strong></h2>
 <ul>
-<li><p>Agents/dealers and their staff who register and use Plotra.</p></li>
+<li><p>Agents/dealers and their staff who register and use Plotraa.</p></li>
 <li><p>Buyers/leads who inquire about a listed property via WhatsApp, the public property page, or lead forms.</p></li>
 </ul>
 <h2 id="data-we-collect"><strong>2.2 Data We Collect</strong></h2>
@@ -79,7 +79,7 @@ export const legalSections: LegalSection[] = [
 </ul>
 <h2 id="how-we-use-data"><strong>2.3 How We Use Data</strong></h2>
 <ul>
-<li><p>To provide and operate Plotra's features (listing management, lead inbox, WhatsApp messaging, plot tracing).</p></li>
+<li><p>To provide and operate Plotraa's features (listing management, lead inbox, WhatsApp messaging, plot tracing).</p></li>
 <li><p>To route leads to the correct agent/dealer account.</p></li>
 <li><p>To provide customer support and respond to account requests.</p></li>
 <li><p>To improve the Platform, using aggregated/anonymized analytics only.</p></li>
@@ -87,7 +87,7 @@ export const legalSections: LegalSection[] = [
 </ul>
 <p>We do not sell lead or buyer data, and we do not use it for purposes unrelated to connecting buyers with the agent they inquired with.</p>
 <h2 id="whatsapp-communications-1"><strong>2.4 WhatsApp Communications</strong></h2>
-<p>Plotra uses the WhatsApp Business Cloud API to relay buyer inquiries to agents and to enable agent-to-buyer communication. Agents are responsible for ensuring recipients have a lawful basis to be messaged (e.g., they initiated contact or opted in).</p>
+<p>Plotraa uses the WhatsApp Business Cloud API to relay buyer inquiries to agents and to enable agent-to-buyer communication. Agents are responsible for ensuring recipients have a lawful basis to be messaged (e.g., they initiated contact or opted in).</p>
 <h2 id="data-sharing"><strong>2.5 Data Sharing</strong></h2>
 <p>We share data only with:</p>
 <ul>
@@ -102,7 +102,7 @@ export const legalSections: LegalSection[] = [
 <h2 id="rights-of-data-subjects"><strong>2.8 Rights of Data Subjects</strong></h2>
 <p>Buyers/leads who wish to have their inquiry data corrected or deleted may contact the agent they engaged with, or write to us at info@plotraa.com and we will assist in actioning the request on the Platform.</p>
 <h2 id="international-considerations"><strong>2.9 International Considerations</strong></h2>
-<p>Where Plotra is used by agents serving NRI or overseas buyers (including Canada-based clients), data may be processed on servers located in different jurisdictions. We apply reasonable safeguards to such transfers.</p>
+<p>Where Plotraa is used by agents serving NRI or overseas buyers (including Canada-based clients), data may be processed on servers located in different jurisdictions. We apply reasonable safeguards to such transfers.</p>
 <h2 id="changes-to-this-policy"><strong>2.10 Changes to This Policy</strong></h2>
 <p>We may update this Privacy Policy periodically, with material changes communicated via email or in-platform notice.</p>
 <h2 id="contact-1"><strong>2.11 Contact</strong></h2>
@@ -114,7 +114,7 @@ export const legalSections: LegalSection[] = [
     html: `
 <h2 id="subscription-cancellation"><strong>3.1 Subscription Cancellation</strong></h2>
 <ul>
-<li><p>You may cancel your Plotra subscription at any time by providing 30 days' written notice to info@plotraa.com.</p></li>
+<li><p>You may cancel your Plotraa subscription at any time by providing 30 days' written notice to info@plotraa.com.</p></li>
 <li><p>Cancellation takes effect at the end of the current billing cycle; access continues until that date.</p></li>
 </ul>
 <h2 id="refunds"><strong>3.2 Refunds</strong></h2>
@@ -140,7 +140,7 @@ export const legalSections: LegalSection[] = [
     slug: "cookie-policy",
     title: "Cookie Policy",
     html: `
-<p>This Cookie Policy explains how Wayne E Solutions uses cookies and similar technologies on the Plotra website and platform, including the public property page.</p>
+<p>This Cookie Policy explains how Wayne E Solutions uses cookies and similar technologies on the Plotraa website and platform, including the public property page.</p>
 <h2 id="what-are-cookies"><strong>4.1 What Are Cookies</strong></h2>
 <p>Cookies are small text files stored on your device when you visit a website, used to make the site function and/or understand how it's used.</p>
 <h2 id="types-of-cookies-we-use"><strong>4.2 Types of Cookies We Use</strong></h2>
@@ -153,7 +153,7 @@ export const legalSections: LegalSection[] = [
 <h2 id="third-party-cookies"><strong>4.3 Third-Party Cookies</strong></h2>
 <p>Some cookies may be set by third-party analytics or map/embedding services we use. Refer to the relevant third party's own policy for details.</p>
 <h2 id="managing-cookies"><strong>4.4 Managing Cookies</strong></h2>
-<p>You can control or disable cookies via your browser settings. Disabling strictly necessary cookies may prevent you from logging into your Plotra dashboard.</p>
+<p>You can control or disable cookies via your browser settings. Disabling strictly necessary cookies may prevent you from logging into your Plotraa dashboard.</p>
 <h2 id="changes"><strong>4.5 Changes</strong></h2>
 <p>We may update this Cookie Policy periodically. Check this page for the latest version.</p>
 <h2 id="contact-2"><strong>4.6 Contact</strong></h2>
@@ -163,7 +163,7 @@ export const legalSections: LegalSection[] = [
     slug: "acceptable-use-policy",
     title: "Acceptable Use Policy",
     html: `
-<p>This Acceptable Use Policy ("AUP") applies to all Plotra users. By using Plotra, you agree not to:</p>
+<p>This Acceptable Use Policy ("AUP") applies to all Plotraa users. By using Plotraa, you agree not to:</p>
 <h2 id="prohibited-conduct"><strong>5.1 Prohibited Conduct</strong></h2>
 <ul>
 <li><p>List properties you are not authorized to market, or misrepresent ownership, title, boundaries, dimensions, or legal status of any plot/property.</p></li>
@@ -176,7 +176,7 @@ export const legalSections: LegalSection[] = [
 <li><p>Use the Platform for any purpose other than legitimate real estate marketing and lead management.</p></li>
 </ul>
 <h2 id="listing-standards"><strong>5.2 Listing Standards</strong></h2>
-<p>All listings must reflect properties you have the legal right to market, with accurate pricing, location, and boundary data. Plotra reserves the right to remove listings that appear fraudulent, duplicated, or in violation of applicable real estate regulations.</p>
+<p>All listings must reflect properties you have the legal right to market, with accurate pricing, location, and boundary data. Plotraa reserves the right to remove listings that appear fraudulent, duplicated, or in violation of applicable real estate regulations.</p>
 <h2 id="reporting-violations"><strong>5.3 Reporting Violations</strong></h2>
 <p>Suspected violations, including fraudulent listings or lead complaints, should be reported to info@plotraa.com. We may investigate and take action including listing removal, warnings, suspension, or termination.</p>
 <h2 id="enforcement"><strong>5.4 Enforcement</strong></h2>
@@ -188,7 +188,7 @@ export const legalSections: LegalSection[] = [
     html: `
 <p><em>This section summarizes the core commercial terms typically included in a signed SaaS Agreement between Wayne E Solutions and a subscribing agent/dealership. A full, signed agreement should be executed before onboarding; this page is a plain-language overview.</em></p>
 <h2 id="service-provided"><strong>6.1 Service Provided</strong></h2>
-<p>Wayne E Solutions grants a non-exclusive, non-transferable right to access and use Plotra during the subscription term, per the selected plan (Lite, Standard, Pro, or Unlimited).</p>
+<p>Wayne E Solutions grants a non-exclusive, non-transferable right to access and use Plotraa during the subscription term, per the selected plan (Lite, Standard, Pro, or Unlimited).</p>
 <h2 id="term-renewal"><strong>6.2 Term &amp; Renewal</strong></h2>
 <ul>
 <li><p>The initial subscription term is [1/12] month(s) unless otherwise specified.</p></li>
@@ -231,7 +231,7 @@ export const legalSections: LegalSection[] = [
     slug: "contact-grievance-information",
     title: "Contact & Grievance Information",
     html: `
-<p>We take feedback, complaints, and data protection concerns seriously. If you have a question, complaint, or grievance relating to Plotra, please reach out using the details below.</p>
+<p>We take feedback, complaints, and data protection concerns seriously. If you have a question, complaint, or grievance relating to Plotraa, please reach out using the details below.</p>
 <h2 id="general-support"><strong>7.1 General Support</strong></h2>
 <ul>
 <li><p>Email: info@plotraa.com</p></li>
@@ -249,7 +249,7 @@ export const legalSections: LegalSection[] = [
 <li><p>Response Timeline: Acknowledgment within 48 hours, resolution within 30 days, as applicable under law.</p></li>
 </ul>
 <h2 id="reporting-a-fraudulent-listing"><strong>7.3 Reporting a Fraudulent Listing</strong></h2>
-<p>If you believe a listing on Plotra is fraudulent or misrepresents a property, report it to info@plotraa.com with the listing details; we will investigate and take appropriate action.</p>
+<p>If you believe a listing on Plotraa is fraudulent or misrepresents a property, report it to info@plotraa.com with the listing details; we will investigate and take appropriate action.</p>
 <h2 id="registered-business-details"><strong>7.4 Registered Business Details</strong></h2>
 <ul>
 <li><p>Company: Wayne E Solutions</p></li>
