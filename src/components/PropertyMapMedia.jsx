@@ -119,7 +119,7 @@ function useMapExpand({ mapRef, mapsApiRef, recenter }) {
 // backs it with a hard server-side block once a listing is live) — lets
 // a dealer nudge the pin to the exact spot when the AI's geocode is close
 // but not quite right.
-function InteractiveSatellite({ lat, lng, fallbackUrl, draggable = false, onPositionChange }) {
+function InteractiveSatellite({ lat, lng, fallbackUrl, draggable = false, onPositionChange, alt = 'Satellite view and plot boundary' }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const mapsApiRef = useRef(null);
@@ -197,7 +197,7 @@ function InteractiveSatellite({ lat, lng, fallbackUrl, draggable = false, onPosi
 
   if (failed) {
     if (!fallbackUrl) return null;
-    return <img src={fallbackUrl} alt="Satellite Grid Layout" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />;
+    return <img src={fallbackUrl} alt={alt} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />;
   }
   return (
     <div style={expanded ? expandedWrapStyle : collapsedWrapStyle}>
@@ -241,7 +241,7 @@ function InteractiveSatellite({ lat, lng, fallbackUrl, draggable = false, onPosi
 // out of navigating Street View too. `locked` defaults to true so nothing
 // else calling this component without passing it changes behavior; see
 // PropertyView.jsx for how it's actually gated on approval status.
-function InteractiveStreetView({ lat, lng, fallbackUrl, locked = true }) {
+function InteractiveStreetView({ lat, lng, fallbackUrl, locked = true, alt = 'Street view of the property' }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const mapsApiRef = useRef(null);
@@ -317,7 +317,7 @@ function InteractiveStreetView({ lat, lng, fallbackUrl, locked = true }) {
 
   if (failed) {
     if (!fallbackUrl) return null;
-    return <img src={fallbackUrl} alt="Street Frontage Elevation" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />;
+    return <img src={fallbackUrl} alt={alt} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />;
   }
   return (
     <div style={expanded ? expandedWrapStyle : collapsedWrapStyle}>

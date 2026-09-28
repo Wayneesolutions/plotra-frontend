@@ -7,6 +7,7 @@ import { SiteNav } from "@/components/plotra/site-nav";
 import { SiteFooter } from "@/components/plotra/site-footer";
 import { media } from "@/lib/plotra-data";
 import { Reveal, useParallax } from "@/lib/motion";
+import { PageSeo } from "@/components/Seo";
 import { ApiError, listPublicCities, submitAccessRequest, type PublicCity } from "@/lib/plotra-api";
 
 export default function RequestAccessPage() {
@@ -31,13 +32,14 @@ export default function RequestAccessPage() {
 
   return (
     <>
+    <PageSeo path="/request-access" />
     <SiteNav />
     <main className="grid min-h-[100svh] overflow-x-clip lg:grid-cols-2">
       <div className="relative hidden overflow-hidden lg:block">
         <img
           ref={bgRef}
           src={media.plotAerial}
-          alt="Aerial view of plots along a Punjab highway"
+          alt="Aerial view of plots along a highway, listed by property dealers on Plotraa"
           className="absolute inset-0 size-full scale-125 object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/50 to-transparent" />
@@ -71,9 +73,10 @@ export default function RequestAccessPage() {
             </div>
           ) : (
             <>
-              <h1 className="mt-8 font-display text-4xl font-bold text-ink">Request access</h1>
+              <h1 className="mt-8 font-display text-4xl font-bold text-ink">Request access to Plotraa</h1>
               <p className="mt-3 text-sm text-muted-foreground">
-                Accounts are invite and admin-approval only.
+                Plotraa is invite-only while we onboard property dealers city by city. Tell us about
+                your business and we'll set you up with a real setup call.
               </p>
               <form
                 className="mt-8 space-y-4"

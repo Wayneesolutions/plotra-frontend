@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { SiteNav } from "@/components/plotra/site-nav";
 import { SiteFooter } from "@/components/plotra/site-footer";
 import { Reveal } from "@/lib/motion";
+import { PageSeo } from "@/components/Seo";
 
 const TEAM = [
   { initials: "PK", name: "Pankaj Kumar", role: "Founder & Director", email: "pankaj@plotraa.com" },
@@ -19,6 +20,7 @@ const TEAM = [
 export default function TeamPage() {
   return (
     <main className="overflow-x-clip">
+      <PageSeo path="/team" />
       <SiteNav />
 
       <section className="bg-lavender px-5 pb-14 pt-32 sm:px-8 sm:pt-40">
@@ -26,11 +28,11 @@ export default function TeamPage() {
           <Reveal>
             <p className="label-eyebrow text-primary">The people behind Plotraa</p>
             <h1 className="text-balance-tight mt-4 max-w-2xl font-display text-4xl font-bold text-ink sm:text-6xl">
-              Meet the team.
+              Meet the team behind Plotraa
             </h1>
             <p className="mt-5 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Plotraa is built by Wayne E Solutions — a small team based in Ludhiana, Punjab,
-              building the WhatsApp-native CRM Punjab's property dealers actually use.
+              Plotraa is built by Wayne E Solutions, a small team based in Ludhiana, Punjab,
+              building the WhatsApp-native CRM property dealers actually use.
             </p>
           </Reveal>
         </div>

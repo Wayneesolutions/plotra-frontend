@@ -5,6 +5,7 @@ import { SiteFooter } from "@/components/plotra/site-footer";
 import { Reveal } from "@/lib/motion";
 import { legalSections } from "@/lib/legal-content";
 import { cn } from "@/lib/utils";
+import { PageSeo } from "@/components/Seo";
 
 export default function LegalPage() {
   const [searchParams] = useSearchParams();
@@ -18,6 +19,7 @@ export default function LegalPage() {
 
   return (
     <main className="overflow-x-clip">
+      <PageSeo path="/legal" />
       <SiteNav />
 
       <section className="bg-lavender px-5 pb-16 pt-32 sm:px-8 sm:pt-40">

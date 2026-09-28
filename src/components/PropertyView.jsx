@@ -6,6 +6,49 @@ import RentVsBuyCalculator from './RentVsBuyCalculator.jsx';
 import { InteractiveSatellite, InteractiveStreetView } from './PropertyMapMedia.jsx';
 import AdSlot from './AdSlot.jsx';
 import plotraIcon from '../assets/plotra-icon.png';
+import { Seo } from './Seo';
+
+// ₹72 lakh / ₹1.25 crore — the way buyers search and read prices in India.
+function formatIndianPrice(price) {
+  if (price == null || Number.isNaN(Number(price))) return null;
+  const n = Number(price);
+  const trim = (v) => String(Number(v.toFixed(2)));
+  if (n >= 1e7) return `₹${trim(n / 1e7)} crore`;
+  if (n >= 1e5) return `₹${trim(n / 1e5)} lakh`;
+  return `₹${n.toLocaleString('en-IN')}`;
+}
+
+// Builds title / description / H1 / alt text for a listing page following
+// the on-page SEO template:
+//   Title: {Size} {Type} for Sale in {Area}, {City} | Plotraa  (suffix dropped if > 60 chars)
+//   H1:    {Size} {Type} for sale in {Area}, {City}
+// Missing size or location degrade gracefully instead of leaving gaps.
+function buildListingSeo(listing, dealer, locationLabel) {
+  const size = (listing.plot_area || '').trim();
+  const type = (listing.property_type || 'Property').trim();
+  const loc = locationLabel || null;
+
+  const base = [size, type].filter(Boolean).join(' ');
+  const inLoc = loc ? ` in ${loc}` : '';
+  const titleCore = `${base} for Sale${inLoc}`;
+  const title = `${titleCore} | Plotraa`.length > 60 ? titleCore : `${titleCore} | Plotraa`;
+
+  const lowerBase = [size, type.toLowerCase()].filter(Boolean).join(' ');
+  const price = formatIndianPrice(listing.price);
+  const dealerName = dealer?.businessName || dealer?.business_name || dealer?.name || 'the dealer';
+  const description =
+    `${lowerBase.charAt(0).toUpperCase()}${lowerBase.slice(1)} for sale${inLoc}${price ? ` at ${price}` : ''}. ` +
+    `See photos, satellite view and plot boundary, and contact ${dealerName} on WhatsApp.`;
+
+  return {
+    title,
+    description,
+    h1: size && loc ? `${base} for sale${inLoc}` : listing.title,
+    photoAlt: (n) => `${lowerBase} for sale${inLoc} – photo ${n}`,
+    satelliteAlt: `Satellite view and plot boundary of ${lowerBase}${inLoc}`,
+    streetAlt: `Street view of ${lowerBase}${inLoc}`,
+  };
+}
 
 // Returns a locality-level area string without exposing the specific house/plot
 // number. Mirrors the backend's extractGeneralArea text heuristic so listings
@@ -226,9 +269,19 @@ export default function PropertyView() {
   const bothImages     = showSatellite && showStreetview;
   const showHeroSection = canAdjustLocation || showStreetview;
   const photos        = media?.photo_urls || [];
+  const seo           = buildListingSeo(listing, dealer, getDisplayArea(listing));
 
   return (
     <div style={S.root}>
+      {/* Only live (approved) listings are indexable — pending/pre-approval
+          pages can still have a wrong pin or incomplete details. */}
+      <Seo
+        title={seo.title}
+        description={seo.description}
+        path={`/p/${slug}`}
+        image={photos[0] || media?.streetview_image_url || undefined}
+        noindex={listing.status !== 'active'}
+      />
 
       {/* ══ SITE HEADER ══════════════════════════════════════════ */}
       <header style={S.siteNav}>
@@ -262,6 +315,7 @@ export default function PropertyView() {
               fallbackUrl={media?.satellite_image_url}
               draggable={canAdjustLocation}
               onPositionChange={canAdjustLocation ? handlePinDragEnd : undefined}
+              alt={seo.satelliteAlt}
             />
             <div style={S.heroBadge}>🛰 Satellite View</div>
             {canAdjustLocation && (
@@ -294,7 +348,7 @@ export default function PropertyView() {
                 false) — same lifecycle as InteractiveSatellite's
                 `draggable` above. Pre-approval, the dealer/agent can still
                 freely navigate Street View to verify the spot. */}
-            <InteractiveStreetView lat={listing.lat} lng={listing.lng} fallbackUrl={media?.streetview_image_url} locked={!canAdjustLocation} />
+            <InteractiveStreetView lat={listing.lat} lng={listing.lng} fallbackUrl={media?.streetview_image_url} locked={!canAdjustLocation} alt={seo.streetAlt} />
             <div style={S.heroBadge}>📸 Street View</div>
           </div>
         )}
@@ -338,7 +392,7 @@ export default function PropertyView() {
               <span style={{ color: '#059669', fontSize: '8px' }}>●</span> Available
             </span>
           </div>
-          <h1 style={S.propTitle}>{listing.title}</h1>
+          <h1 style={S.propTitle}>{seo.h1}</h1>
           <p style={S.propAddr}>📍 {getDisplayArea(listing)}</p>
         </div>
 
@@ -384,7 +438,7 @@ export default function PropertyView() {
                 <a key={url} href={url} target="_blank" rel="noopener noreferrer" style={S.photoCard}>
                   <img
                     src={url}
-                    alt={`Property photo ${i + 1}`}
+                    alt={seo.photoAlt(i + 1)}
                     style={S.photoCardImg}
                     loading="lazy"
                   />

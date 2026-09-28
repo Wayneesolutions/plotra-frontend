@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /login
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /widget
+Disallow: /showcase/
+
+Sitemap: https://plotraa.com/sitemap.xml

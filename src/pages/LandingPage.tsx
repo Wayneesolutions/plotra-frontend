@@ -19,10 +19,12 @@ import { PricingSection } from "@/components/plotra/sections/pricing-section";
 import { Reveal, useCountUp, useMagnetic, useParallax } from "@/lib/motion";
 import { listings, media } from "@/lib/plotra-data";
 import { cn } from "@/lib/utils";
+import { PageSeo } from "@/components/Seo";
 
 export default function LandingPage() {
   return (
     <main className="overflow-x-clip">
+      <PageSeo path="/" />
       <SiteNav />
       <Hero />
       <Bridge />
@@ -45,7 +47,7 @@ function Hero() {
     <section className="relative min-h-[100svh] w-full overflow-hidden bg-ink">
       <img
         src={media.heroAerial}
-        alt="Aerial view of a developing residential neighbourhood in Punjab at golden hour"
+        alt="Aerial view of residential plots for sale in a developing Punjab neighbourhood"
         width={1920}
         height={1080}
         className="absolute inset-0 size-full scale-110 object-cover kenburns"
@@ -58,7 +60,7 @@ function Hero() {
           <Reveal>
             <MetaPill className="text-accent">
               <span className="size-1.5 rounded-full bg-accent pulse-soft" /> WhatsApp-native
-              property CRM · Punjab
+              real estate CRM for property dealers
             </MetaPill>
           </Reveal>
 
@@ -72,8 +74,10 @@ function Hero() {
 
           <Reveal delay={420}>
             <p className="mt-6 max-w-lg text-base leading-relaxed text-ink-foreground/75 sm:text-lg">
-              Plotraa turns a simple WhatsApp message into a professional, shareable property listing
-              — with satellite imagery, plot boundary and a live page buyers can open instantly.
+              Plotraa is a WhatsApp-native real estate CRM for property dealers. Send the plot size,
+              location and price on WhatsApp and Plotraa turns it into a professional, shareable
+              property listing with satellite imagery, a traced plot boundary and a live page buyers
+              can open instantly.
             </p>
           </Reveal>
 
@@ -156,7 +160,7 @@ function SatelliteStory() {
         <div className="relative">
           <PopImage
             src={media.satellitePlot}
-            alt="Satellite view of a plot with traced boundary"
+            alt="Satellite view of a plot with its boundary traced by Plotraa"
             ratio="aspect-square"
             parallax={0.06}
             className="shadow-[var(--shadow-float)]"
@@ -198,7 +202,7 @@ function SatelliteStory() {
           />
           <FloatingMedia
             src={media.houseExterior}
-            alt="House exterior at dusk"
+            alt="House for sale listed on Plotraa by a property dealer via WhatsApp"
             caption="Ludhiana · 2,000 sq.ft"
             price="₹1.25 Cr"
             className="absolute -bottom-10 -right-4 w-44 sm:w-60"
@@ -209,7 +213,7 @@ function SatelliteStory() {
         <Reveal>
           <p className="label-eyebrow text-primary">Satellite to street</p>
           <h2 className="text-balance-tight mt-4 font-display text-4xl font-bold text-ink sm:text-5xl">
-            Buyers trust what they can see from above.
+            Satellite plot boundary on every property listing
           </h2>
           <p className="mt-5 max-w-md text-base leading-relaxed text-muted-foreground">
             Every Plotraa listing pairs satellite imagery with a traced plot boundary and real
@@ -258,7 +262,7 @@ function Trust() {
           <Reveal>
             <p className="label-eyebrow text-accent">Trusted across Punjab</p>
             <h2 className="text-balance-tight mt-4 max-w-lg font-display text-4xl font-bold text-ink-foreground sm:text-5xl">
-              Numbers that come from real dealer activity.
+              Numbers from real dealer activity
             </h2>
           </Reveal>
           <div className="mt-12 grid grid-cols-2 gap-x-8 gap-y-10">
@@ -275,7 +279,7 @@ function Trust() {
           <img
             ref={parallaxRef}
             src={media.nightNeighborhood}
-            alt="Aerial night view of an Indian neighbourhood"
+            alt="Aerial night view of a residential neighbourhood with property listings"
             loading="lazy"
             className="size-full scale-110 object-cover"
           />
@@ -318,7 +322,7 @@ function FinalCta() {
       <div className="media-zoom relative min-h-[70vh]">
         <img
           src={media.nightNeighborhood}
-          alt="Neighbourhood at twilight"
+          alt="Aerial night view of a residential neighbourhood with property listings"
           loading="lazy"
           className="absolute inset-0 size-full scale-105 object-cover kenburns"
         />
@@ -338,7 +342,7 @@ function FinalCta() {
         <div className="relative mx-auto flex min-h-[70vh] max-w-4xl flex-col items-center justify-center px-5 py-24 text-center sm:px-8">
           <Reveal>
             <h2 className="text-balance-tight font-display text-4xl font-bold text-ink-foreground sm:text-6xl">
-              Turn WhatsApp messages into professional property listings.
+              Turn WhatsApp messages into professional property listings
             </h2>
           </Reveal>
           <Reveal delay={160}>
