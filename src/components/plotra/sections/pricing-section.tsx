@@ -5,15 +5,32 @@ import { Reveal } from "@/lib/motion";
 import { plans } from "@/lib/plotra-data";
 import { cn } from "@/lib/utils";
 
-export function PricingSection() {
+/**
+ * `asPage` is used on /pricing: the heading becomes the page H1 with the
+ * "Straightforward plans" line under it, and each plan name becomes an H2
+ * ("Starter plan", ...). On the home page the section keeps H2 / H3.
+ */
+export function PricingSection({ asPage = false }: { asPage?: boolean }) {
+  const PlanHeading = asPage ? "h2" : "h3";
   return (
     <section id="pricing" className="bg-background px-5 py-24 sm:px-8 sm:py-32">
       <div className="mx-auto max-w-6xl">
         <Reveal className="text-center">
           <p className="label-eyebrow text-primary">Pricing</p>
-          <h2 className="text-balance-tight mt-4 font-display text-4xl font-bold text-ink sm:text-5xl">
-            Straightforward plans. No lock-in.
-          </h2>
+          {asPage ? (
+            <>
+              <h1 className="text-balance-tight mt-4 font-display text-4xl font-bold text-ink sm:text-5xl">
+                Plotraa pricing for property dealers
+              </h1>
+              <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+                Straightforward monthly plans for property dealers and teams. No lock-in.
+              </p>
+            </>
+          ) : (
+            <h2 className="text-balance-tight mt-4 font-display text-4xl font-bold text-ink sm:text-5xl">
+              Straightforward plans. No lock-in.
+            </h2>
+          )}
         </Reveal>
 
         <div className="mt-14 grid gap-6 lg:grid-cols-3">
@@ -32,7 +49,9 @@ export function PricingSection() {
                     Recommended
                   </span>
                 ) : null}
-                <h3 className="font-display text-2xl font-bold text-ink">{plan.name}</h3>
+                <PlanHeading className="font-display text-2xl font-bold text-ink">
+                  {asPage ? `${plan.name} plan` : plan.name}
+                </PlanHeading>
                 <p className="mt-4 font-display text-4xl font-bold text-ink">
                   {plan.price}
                   <span className="ml-1 text-sm font-medium text-muted-foreground">

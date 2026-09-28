@@ -18,8 +18,7 @@ export function PlotraLogo({
     >
       <img
         src={plotraIcon}
-        alt=""
-        aria-hidden
+        alt="Plotraa logo"
         className="h-10 w-auto shrink-0 object-contain sm:h-11"
       />
       Plotraa

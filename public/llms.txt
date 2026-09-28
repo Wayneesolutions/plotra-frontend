@@ -1,0 +1,16 @@
+# Plotraa
+
+> Plotraa is a WhatsApp-native real estate CRM for property dealers, built by Wayne E Solutions (Ludhiana, Punjab, India). Dealers send plot size, location and price on WhatsApp, and Plotraa creates a shareable property listing with satellite imagery and a traced plot boundary, then tracks buyer leads.
+
+- Plans: Starter, Growth, Unlimited (monthly, no lock-in)
+- Invite-only: dealers are onboarded city by city
+- Plotraa is a listing and lead-management tool, not a party to property transactions
+
+## Pages
+
+- [Home](https://plotraa.com/): List a property by sending a WhatsApp message. Plotraa creates a shareable listing with satellite imagery and plot boundary, and tracks every buyer lead.
+- [How It Works](https://plotraa.com/how-it-works): Send plot size, location and price on WhatsApp. Plotraa's AI builds a property page with satellite imagery and boundary, and sends every buyer lead to you.
+- [Pricing](https://plotraa.com/pricing): Monthly Plotraa plans for property dealers: Starter, Growth and Unlimited. WhatsApp listings, AI property extraction, lead inbox and team access. No lock-in.
+- [Team](https://plotraa.com/team): Plotraa is built by Wayne E Solutions, a small team in Ludhiana, Punjab, building the WhatsApp-native CRM that property dealers actually use every day.
+- [Legal](https://plotraa.com/legal): Plotraa's terms and conditions, privacy policy, refund and cancellation policy, cookie policy, acceptable use policy and grievance contact information.
+- [Request Access](https://plotraa.com/request-access): Request a Plotraa account for your property business. We onboard dealers city by city with a real setup call and review new requests within one working day.
