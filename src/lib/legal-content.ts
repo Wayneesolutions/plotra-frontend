@@ -1,6 +1,4 @@
-// Auto-generated from Plotraa-Legal-Pages.docx. Bracketed placeholders
-// (shown as highlighted <mark> text) must be filled in before publishing —
-// see the "Draft for legal review" note in the source document.
+// Auto-generated from Plotraa-Legal-Pages.docx.
 export type LegalSection = {
   slug: string;
   title: string;
@@ -237,7 +235,6 @@ export const legalSections: LegalSection[] = [
 <li><p>Email: info@plotraa.com</p></li>
 <li><p>Phone: +91 83600 98455</p></li>
 <li><p>Instagram: <a href="https://www.instagram.com/plotraa/" target="_blank" rel="noreferrer">@plotraa</a></p></li>
-<li><p>Hours: [<mark>Mon–Sat, 10 AM – 7 PM IST</mark>]</p></li>
 </ul>
 <h2 id="grievance-officer"><strong>7.2 Grievance Officer</strong></h2>
 <p>In accordance with applicable Indian IT law (Information Technology Act, 2000 and rules thereunder, and the Digital Personal Data Protection Act, 2023), Wayne E Solutions has designated a Grievance Officer to address complaints related to data privacy, listings, or Platform use.</p>
@@ -245,7 +242,6 @@ export const legalSections: LegalSection[] = [
 <li><p>Name: Pankaj Kumar</p></li>
 <li><p>Designation: Founder &amp; Director</p></li>
 <li><p>Email: pankaj@plotraa.com</p></li>
-<li><p>Address: [<mark>Registered Office Address, Ludhiana, Punjab, India]</mark></p></li>
 <li><p>Response Timeline: Acknowledgment within 48 hours, resolution within 30 days, as applicable under law.</p></li>
 </ul>
 <h2 id="reporting-a-fraudulent-listing"><strong>7.3 Reporting a Fraudulent Listing</strong></h2>
@@ -253,9 +249,6 @@ export const legalSections: LegalSection[] = [
 <h2 id="registered-business-details"><strong>7.4 Registered Business Details</strong></h2>
 <ul>
 <li><p>Company: Wayne E Solutions</p></li>
-<li><p>Registered Address: [<mark>Full Address, Ludhiana, Punjab, India</mark>]</p></li>
-<li><p>GSTIN: [<mark>GSTIN if applicable</mark>]</p></li>
-<li><p>CIN/Business Registration No.: [<mark>If applicable</mark>]</p></li>
 </ul>`,
   },
 ];
