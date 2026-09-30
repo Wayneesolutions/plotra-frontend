@@ -30,8 +30,7 @@ export default function LegalPage() {
               Plotraa legal information
             </h1>
             <p className="mt-5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-              Operated by Wayne E Solutions, Ludhiana, Punjab, India. This page is a draft for legal
-              review — highlighted placeholders below still need to be filled in before publishing.
+              Operated by Wayne E Solutions, Ludhiana, Punjab, India.
             </p>
           </Reveal>
         </div>
