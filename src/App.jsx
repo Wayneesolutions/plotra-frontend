@@ -20,6 +20,10 @@ const LegalPage = lazy(() => import('./pages/LegalPage.tsx'));
 const TeamPage = lazy(() => import('./pages/TeamPage.tsx'));
 const ChatWidgetPage = lazy(() => import('./pages/ChatWidgetPage.jsx'));
 const ShowcaseListingPage = lazy(() => import('./pages/ShowcaseListingPage.tsx'));
+// Blog — public pages + a standalone admin (own login, not the dashboard)
+const BlogPage = lazy(() => import('./pages/BlogPage.tsx'));
+const BlogPostPage = lazy(() => import('./pages/BlogPostPage.tsx'));
+const BlogAdminPage = lazy(() => import('./pages/BlogAdminPage.tsx'));
 
 export default function App() {
   return (
@@ -38,6 +42,15 @@ export default function App() {
           <Route path="/showcase/:id" element={<ShowcaseListingPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+
+          {/* Public blog */}
+          <Route path="/blog" element={<BlogPage />} />
+          <Route path="/blog/:slug" element={<BlogPostPage />} />
+
+          {/* Blog admin — intentionally NOT behind PrivateRoute/AdminRoute and
+              not linked from the dashboard: it signs in with its own
+              credentials and keeps its own token (see src/lib/blog-api.ts) */}
+          <Route path="/blog-admin" element={<BlogAdminPage />} />
 
           {/* Protected dealer dashboard — unchanged */}
           <Route
