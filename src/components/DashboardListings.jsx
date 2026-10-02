@@ -101,7 +101,9 @@ export default function DashboardListings() {
       // any tenant on any plan.
       const enabled = !!billing?.multi_agent_whatsapp;
       setMultiAgentEnabled(enabled);
-      if (enabled) {
+      // Agents can't reassign listings (backend rejects it), so don't load
+      // or show the rest of the team's numbers to them.
+      if (enabled && storedUser?.role !== 'agent') {
         const usersRes = await apiClient.get('/api/v1/dashboard/users');
         setTeamMembers((usersRes.data.users || []).filter((u) => u.phone));
       }
@@ -693,7 +695,7 @@ export default function DashboardListings() {
                     )}
                   </div>
 
-                  {multiAgentEnabled && (
+                  {multiAgentEnabled && storedUser?.role !== 'agent' && (
                     <div style={S.assignRow}>
                       <label style={S.assignLabel}>💬 WhatsApp contact for buyers:</label>
                       <select
