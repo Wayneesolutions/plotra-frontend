@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PlotraLogo } from "@/components/plotra/logo";
+import { PlotraLockup } from "@/components/plotra/logo";
 import { SiteNav } from "@/components/plotra/site-nav";
 import { SiteFooter } from "@/components/plotra/site-footer";
 import { media } from "@/lib/plotra-data";
@@ -54,7 +54,7 @@ export default function RequestAccessPage() {
       <div className="flex items-start justify-center bg-background px-5 pb-16 pt-28 sm:px-10 sm:pt-32">
         <Reveal className="w-full max-w-md">
           <Link to="/">
-            <PlotraLogo />
+            <PlotraLockup />
           </Link>
 
           {sent ? (

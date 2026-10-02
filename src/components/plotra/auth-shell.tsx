@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { PlotraLogo } from "@/components/plotra/logo";
+import { PlotraLockup } from "@/components/plotra/logo";
 import { SiteNav } from "@/components/plotra/site-nav";
 import { SiteFooter } from "@/components/plotra/site-footer";
 import { media } from "@/lib/plotra-data";
@@ -32,7 +32,7 @@ export function AuthShell({
         <Reveal className="relative w-full max-w-md">
           <div className="glass rounded-[1.75rem] p-8">
             <Link to="/" className="inline-block">
-              <PlotraLogo tone="light" />
+              <PlotraLockup tone="light" />
             </Link>
             <h1 className="mt-7 font-display text-3xl font-bold text-ink-foreground">{title}</h1>
             <p className="mt-2 text-sm text-ink-foreground/65">{subtitle}</p>
