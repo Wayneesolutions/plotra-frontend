@@ -1,35 +1,29 @@
-import plotraIcon from "@/assets/plotra-icon.png";
+import logoHorizontal from "@/assets/plotraa-logo-horizontal.png";
 import lockupDark from "@/assets/plotraa-logo-full.png";
 import lockupLight from "@/assets/plotraa-logo-full-light.png";
 import { cn } from "@/lib/utils";
 
 /**
- * Compact logo for bars and sidebars: the mark with "Plotraa" set beside it.
- * The full lockup (below) is stacked, so at nav height its wordmark and
- * tagline would be too small to read.
+ * Logo for bars and headers: the mark with the PLOTRAA wordmark beside it,
+ * both taken from the brand artwork (plotraa-logo-horizontal.png). The
+ * stacked lockup below also carries the tagline, which is unreadable at
+ * nav height. The artwork is orange on transparent, so the same file works
+ * on light and dark bars — `tone` is kept only so existing callers compile.
  */
 export function PlotraLogo({
   className,
-  tone = "ink",
 }: {
   className?: string;
   tone?: "ink" | "light";
 }) {
   return (
-    <span
-      className={cn(
-        "font-display inline-flex items-center gap-2.5 text-xl font-bold tracking-tight sm:text-2xl",
-        tone === "light" ? "text-ink-foreground" : "text-ink",
-        className,
-      )}
-    >
-      <img
-        src={plotraIcon}
-        alt="Plotraa logo"
-        className="h-10 w-auto shrink-0 object-contain sm:h-11"
-      />
-      Plotraa
-    </span>
+    <img
+      src={logoHorizontal}
+      alt="Plotraa"
+      width={673}
+      height={176}
+      className={cn("h-7 w-auto shrink-0 object-contain sm:h-11", className)}
+    />
   );
 }
 

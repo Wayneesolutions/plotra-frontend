@@ -5,7 +5,7 @@ import { API_BASE_URL } from '../api/config';
 import RentVsBuyCalculator from './RentVsBuyCalculator.jsx';
 import { InteractiveSatellite, InteractiveStreetView } from './PropertyMapMedia.jsx';
 import AdSlot from './AdSlot.jsx';
-import plotraIcon from '../assets/plotra-icon.png';
+import plotraaLogo from '../assets/plotraa-logo-horizontal.png';
 import { Seo } from './Seo';
 
 // ₹72 lakh / ₹1.25 crore — the way buyers search and read prices in India.
@@ -287,8 +287,7 @@ export default function PropertyView() {
       <header style={S.siteNav}>
         <div style={S.navInner}>
           <div style={S.navLogo}>
-            <img src={plotraIcon} alt="Plotraa" style={{ height: '30px', width: 'auto', flexShrink: 0 }} />
-            <span style={S.navBrand}>Plotraa</span>
+            <img src={plotraaLogo} alt="Plotraa" style={{ height: '32px', width: 'auto', flexShrink: 0 }} />
           </div>
           <span style={S.navLabel}>Property Listing</span>
         </div>
@@ -691,8 +690,7 @@ export default function PropertyView() {
       {/* ══ FOOTER ══════════════════════════════════════════════ */}
       <footer style={S.footer}>
         <div style={S.footerLogoRow}>
-          <img src={plotraIcon} alt="Plotraa" style={{ height: '26px', width: 'auto', flexShrink: 0 }} />
-          <span style={S.footerBrand}>Plotraa</span>
+          <img src={plotraaLogo} alt="Plotraa" style={{ height: '28px', width: 'auto', flexShrink: 0 }} />
         </div>
         <p style={S.footerTxt}>Real Estate Visual Explorer · Dealer Powered Listing</p>
       </footer>
@@ -826,10 +824,6 @@ const S = {
     width: '26px', height: '26px', borderRadius: '7px',
     backgroundColor: '#c8a96e',
     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-  },
-  navBrand: {
-    fontSize: '12px', fontWeight: '800', color: '#c8a96e',
-    letterSpacing: '2px', textTransform: 'uppercase',
   },
   navLabel: {
     fontSize: '11px', color: 'rgba(255,255,255,0.32)',
@@ -1091,6 +1085,5 @@ const S = {
     backgroundColor: 'rgba(200,169,110,0.18)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
   },
-  footerBrand: { fontSize: '12px', fontWeight: '800', color: '#c8a96e', letterSpacing: '1.5px', textTransform: 'uppercase' },
   footerTxt:   { margin: 0, fontSize: '11px', color: 'rgba(255,255,255,0.28)' },
 };
