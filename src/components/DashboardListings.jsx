@@ -8,7 +8,7 @@ import LeadsInbox from './LeadsInbox.jsx';
 import OpsPanel from './OpsPanel.jsx';
 import Analytics from './Analytics.jsx';
 import Settings from './Settings.jsx';
-import plotraIcon from '../assets/plotra-icon.png';
+import plotraaLogo from '../assets/plotraa-logo-horizontal.png';
 
 export default function DashboardListings() {
   const navigate   = useNavigate();
@@ -297,8 +297,7 @@ export default function DashboardListings() {
       {/* ══ TOP NAV ══════════════════════════════════════════════ */}
       <header style={S.nav} role="banner">
         <div style={S.navLeft}>
-          <img src={plotraIcon} alt="Plotraa" style={{ height: '32px', width: 'auto', flexShrink: 0 }} />
-          <span style={S.navBrand}>Plotraa</span>
+          <img src={plotraaLogo} alt="Plotraa" style={{ height: '34px', width: 'auto', flexShrink: 0 }} />
           <div style={S.navDivider} />
           <div style={S.navMeta}>
             <span style={S.navBizName}>{storedUser?.businessName || storedUser?.name}</span>
@@ -929,10 +928,6 @@ const S = {
     backgroundColor: '#c8a96e',
     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
     boxShadow: '0 2px 8px rgba(200,169,110,0.35)',
-  },
-  navBrand: {
-    fontSize: '13px', fontWeight: '800', color: '#c8a96e',
-    letterSpacing: '2px', textTransform: 'uppercase',
   },
   navDivider: { width: '1px', height: '18px', backgroundColor: 'rgba(255,255,255,0.12)', margin: '0 2px' },
   navSection: { fontSize: '12px', color: 'rgba(255,255,255,0.38)', fontWeight: '500' },
