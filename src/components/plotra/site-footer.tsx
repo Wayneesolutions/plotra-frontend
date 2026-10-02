@@ -35,6 +35,7 @@ const columns = [
     title: "Company",
     links: [
       { label: "Team", href: "/team" },
+      { label: "Blog", href: "/blog" },
       { label: "Request access", href: "/request-access" },
       { label: "Sign in", href: "/login" },
     ],

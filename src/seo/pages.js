@@ -105,6 +105,15 @@ export const SEO_PAGES = {
       "Plotraa's terms and conditions, privacy policy, refund and cancellation policy, cookie policy, acceptable use policy and grievance contact information.",
     jsonLd: [breadcrumb('Legal', '/legal')],
   },
+  '/blog': {
+    title: 'Plotraa Blog: Guides for Property Dealers and Buyers',
+    description:
+      'Practical guides from Plotraa on listing property, pricing plots, checking paperwork and winning buyer leads on WhatsApp.',
+    jsonLd: [
+      { '@type': 'Blog', url: `${SITE_URL}/blog`, name: 'Plotraa Blog', publisher: { '@id': ORG_ID } },
+      breadcrumb('Blog', '/blog'),
+    ],
+  },
   '/request-access': {
     title: 'Request Access to Plotraa: Property Dealer Sign-Up Form',
     description:

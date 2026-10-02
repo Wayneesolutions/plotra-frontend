@@ -446,3 +446,104 @@
   font-style: normal;
   font-weight: 600;
 }
+
+/* --------------------------------- BLOG PROSE ------------------------------ */
+/* Shared by the public post page and the blog admin editor, so the editor
+   shows the post the way readers will see it. */
+
+.blog-prose {
+  font-size: 1.0625rem;
+  line-height: 1.8;
+  color: var(--color-foreground);
+  overflow-wrap: break-word;
+}
+
+.blog-prose > :first-child {
+  margin-top: 0;
+}
+
+.blog-prose p,
+.blog-prose ul,
+.blog-prose ol,
+.blog-prose blockquote {
+  margin-top: 1.15rem;
+}
+
+.blog-prose h2,
+.blog-prose h3,
+.blog-prose h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--color-ink);
+}
+
+.blog-prose h2 {
+  margin-top: 2.5rem;
+  font-size: 1.625rem;
+}
+
+.blog-prose h3 {
+  margin-top: 2rem;
+  font-size: 1.3rem;
+}
+
+.blog-prose h4 {
+  margin-top: 1.75rem;
+  font-size: 1.0625rem;
+}
+
+.blog-prose ul,
+.blog-prose ol {
+  padding-left: 1.4rem;
+}
+
+.blog-prose ul {
+  list-style: disc;
+}
+
+.blog-prose ol {
+  list-style: decimal;
+}
+
+.blog-prose li {
+  margin-top: 0.4rem;
+}
+
+.blog-prose li > p {
+  margin-top: 0;
+}
+
+.blog-prose a {
+  color: var(--color-indigo-deep);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--color-primary);
+  text-underline-offset: 3px;
+}
+
+.blog-prose a:hover {
+  color: var(--color-primary);
+}
+
+.blog-prose strong,
+.blog-prose b {
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.blog-prose blockquote {
+  border-left: 3px solid var(--color-accent);
+  padding-left: 1.1rem;
+  color: var(--color-muted-foreground);
+}
+
+.blog-editor {
+  font-size: 1rem;
+}
+
+.blog-editor:empty::before {
+  content: attr(data-placeholder);
+  color: color-mix(in oklch, var(--color-ink) 35%, transparent);
+  pointer-events: none;
+}

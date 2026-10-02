@@ -5,6 +5,7 @@ Disallow: /forgot-password
 Disallow: /reset-password
 Disallow: /dashboard
 Disallow: /admin
+Disallow: /blog-admin
 Disallow: /widget
 Disallow: /showcase/
 
