@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { Link } from "react-router-dom";
 import { ExternalLink, ImagePlus, LogOut, Plus, Search, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PlotraLogo } from "@/components/plotra/logo";
+import { PlotraLockup, PlotraLogo } from "@/components/plotra/logo";
 import { Seo } from "@/components/Seo";
 import { RichTextEditor } from "@/components/blog/RichTextEditor";
 import {
@@ -285,7 +285,7 @@ function LoginView({ notice, onSignedIn }: { notice: string; onSignedIn: (email:
   return (
     <main className="grid min-h-[100svh] place-items-center bg-ink px-5 py-16">
       <div className="w-full max-w-sm">
-        <PlotraLogo tone="light" />
+        <PlotraLockup tone="light" />
         <h1 className="mt-8 font-display text-3xl font-bold text-ink-foreground">Blog admin</h1>
         <p className="mt-2 text-sm text-ink-foreground/65">
           Sign in to publish and edit posts on plotraa.com/blog. This login is separate from the dealer dashboard.

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { PlotraLogo } from "@/components/plotra/logo";
+import { PlotraLockup } from "@/components/plotra/logo";
 
 function InstagramIcon({ className }: { className?: string }) {
   return (
@@ -66,7 +66,7 @@ export function SiteFooter() {
       <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8">
         <div className="grid gap-12 md:grid-cols-[1.2fr_repeat(4,1fr)]">
           <div>
-            <PlotraLogo tone="light" />
+            <PlotraLockup tone="light" className="h-36" />
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-ink-foreground/60">
               The WhatsApp-native real estate CRM built for Punjab property dealers.
             </p>
