@@ -9,6 +9,7 @@ const links = [
   { label: "How it works", to: "/how-it-works" },
   { label: "Team", to: "/team" },
   { label: "Pricing", to: "/pricing" },
+  { label: "Blog", to: "/blog" },
 ];
 
 export function SiteNav() {
