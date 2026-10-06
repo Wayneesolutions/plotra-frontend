@@ -33,6 +33,24 @@ const AD_POSITION_LABELS = {
 const AD_IMAGE_MAX_MB = 5;
 const toIsoOrNull = (v) => (v ? new Date(v).toISOString() : null);
 
+// Plan categories — the website pricing page groups active plans under these.
+const PLAN_CATEGORIES = [
+  { key: 'basic', label: 'Basic' },
+  { key: 'basic_with_leads', label: 'Basic with Leads' },
+];
+const planCategoryLabel = (key) => PLAN_CATEGORIES.find((c) => c.key === key)?.label || 'No category';
+const numOrNull = (v) => (v === '' || v === null || v === undefined ? null : Number(v));
+// Catalog/display fields shared by the create + edit plan forms.
+const planCatalogPayload = (form) => ({
+  category: form.category || null,
+  discount_percent: numOrNull(form.discount_percent),
+  max_users: numOrNull(form.max_users),
+  included_leads: numOrNull(form.included_leads),
+  monthly_listing_limit: numOrNull(form.monthly_listing_limit),
+  // One feature bullet per line — these are the lines shown on the pricing page.
+  features: String(form.features || '').split('\n').map((f) => f.trim()).filter(Boolean),
+});
+
 export default function AdminPanel() {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('pve_user') || '{}');
@@ -80,13 +98,13 @@ export default function AdminPanel() {
   // Plans tab state
   const [plans, setPlans] = useState([]);
   const [editModal, setEditModal] = useState(null);       // plan object being edited
-  const [planEditForm, setPlanEditForm] = useState({ label: '', price_inr: '', listing_limit: '' });
+  const [planEditForm, setPlanEditForm] = useState({ label: '', price_inr: '', listing_limit: '', category: '', discount_percent: '', max_users: '', included_leads: '', monthly_listing_limit: '', features: '' });
   const [planSaveLoading, setPlanSaveLoading] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null); // plan key pending delete
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [planToggleLoading, setPlanToggleLoading] = useState(null); // plan key being toggled
   const [showCreatePlan, setShowCreatePlan] = useState(false);
-  const [createPlanForm, setCreatePlanForm] = useState({ key: '', label: '', price_inr: '', listing_limit: '' });
+  const [createPlanForm, setCreatePlanForm] = useState({ key: '', label: '', price_inr: '', listing_limit: '', category: '', discount_percent: '', max_users: '', included_leads: '', monthly_listing_limit: '', features: '' });
   const [createPlanLoading, setCreatePlanLoading] = useState(false);
 
   // Agent signups (WhatsApp "join as agent" requests)
@@ -561,6 +579,12 @@ export default function AdminPanel() {
       label: plan.label,
       price_inr: plan.price_inr,
       listing_limit: plan.listing_limit === null ? '' : plan.listing_limit,
+      category: plan.category || '',
+      discount_percent: plan.discount_percent ?? '',
+      max_users: plan.max_users ?? '',
+      included_leads: plan.included_leads ?? '',
+      monthly_listing_limit: plan.monthly_listing_limit ?? '',
+      features: (Array.isArray(plan.features) ? plan.features : []).join('\n'),
     });
   };
 
@@ -572,6 +596,7 @@ export default function AdminPanel() {
         label: planEditForm.label,
         price_inr: Number(planEditForm.price_inr),
         listing_limit: planEditForm.listing_limit === '' ? null : Number(planEditForm.listing_limit),
+        ...planCatalogPayload(planEditForm),
       };
       const res = await apiClient.patch(`/api/v1/admin/plans/${editModal.key}`, payload);
       setPlans((prev) => prev.map((p) => (p.key === editModal.key ? res.data.plan : p)));
@@ -621,12 +646,13 @@ export default function AdminPanel() {
         label: createPlanForm.label,
         price_inr: Number(createPlanForm.price_inr),
         listing_limit: createPlanForm.listing_limit === '' ? null : Number(createPlanForm.listing_limit),
+        ...planCatalogPayload(createPlanForm),
         sort_order: plans.length + 1,
       };
       const res = await apiClient.post('/api/v1/admin/plans', payload);
       setPlans((prev) => [...prev, res.data.plan]);
       setShowCreatePlan(false);
-      setCreatePlanForm({ key: '', label: '', price_inr: '', listing_limit: '' });
+      setCreatePlanForm({ key: '', label: '', price_inr: '', listing_limit: '', category: '', discount_percent: '', max_users: '', included_leads: '', monthly_listing_limit: '', features: '' });
       showToast('Plan created.');
     } catch (err) {
       showToast(err.response?.data?.error?.message || 'Failed to create plan.', 'error');
@@ -1717,9 +1743,42 @@ export default function AdminPanel() {
                         onChange={(e) => setCreatePlanForm((p) => ({ ...p, price_inr: e.target.value }))} />
                     </div>
                     <div style={S.formField}>
-                      <label style={S.formLabel}>Listing Limit (blank = unlimited)</label>
+                      <label style={S.formLabel}>Lifetime listing limit (legacy — blank = none)</label>
                       <input style={S.formInput} type="number" placeholder="Leave blank for unlimited" value={createPlanForm.listing_limit}
                         onChange={(e) => setCreatePlanForm((p) => ({ ...p, listing_limit: e.target.value }))} />
+                    </div>
+                    <div style={S.formField}>
+                      <label style={S.formLabel}>Category (pricing page group)</label>
+                      <select style={S.formInput} value={createPlanForm.category}
+                        onChange={(e) => setCreatePlanForm((p) => ({ ...p, category: e.target.value }))}>
+                        <option value="">No category</option>
+                        {PLAN_CATEGORIES.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
+                      </select>
+                    </div>
+                    <div style={S.formField}>
+                      <label style={S.formLabel}>Discount badge % (blank = none)</label>
+                      <input style={S.formInput} type="number" min="1" max="99" placeholder="e.g. 40" value={createPlanForm.discount_percent}
+                        onChange={(e) => setCreatePlanForm((p) => ({ ...p, discount_percent: e.target.value }))} />
+                    </div>
+                    <div style={S.formField}>
+                      <label style={S.formLabel}>Users included (blank = not shown)</label>
+                      <input style={S.formInput} type="number" min="1" placeholder="e.g. 4" value={createPlanForm.max_users}
+                        onChange={(e) => setCreatePlanForm((p) => ({ ...p, max_users: e.target.value }))} />
+                    </div>
+                    <div style={S.formField}>
+                      <label style={S.formLabel}>Leads included (blank = none)</label>
+                      <input style={S.formInput} type="number" min="1" placeholder="e.g. 30" value={createPlanForm.included_leads}
+                        onChange={(e) => setCreatePlanForm((p) => ({ ...p, included_leads: e.target.value }))} />
+                    </div>
+                    <div style={S.formField}>
+                      <label style={S.formLabel}>Listings per month (blank = no monthly limit)</label>
+                      <input style={S.formInput} type="number" min="1" placeholder="e.g. 100" value={createPlanForm.monthly_listing_limit}
+                        onChange={(e) => setCreatePlanForm((p) => ({ ...p, monthly_listing_limit: e.target.value }))} />
+                    </div>
+                    <div style={{ ...S.formField, gridColumn: '1 / -1' }}>
+                      <label style={S.formLabel}>Features (one per line — shown on the pricing page)</label>
+                      <textarea style={{ ...S.formInput, minHeight: '120px', resize: 'vertical', fontFamily: 'inherit' }} value={createPlanForm.features}
+                        onChange={(e) => setCreatePlanForm((p) => ({ ...p, features: e.target.value }))} />
                     </div>
                   </div>
                   <button type="submit" disabled={createPlanLoading} style={{ ...S.createBtn, opacity: createPlanLoading ? 0.7 : 1 }}>
@@ -1756,6 +1815,12 @@ export default function AdminPanel() {
                       <div style={S.planCardPriceRow}>
                         <span style={S.planCardPrice}>₹{plan.price_inr.toLocaleString('en-IN')}</span>
                         <span style={S.planCardPricePer}>/month</span>
+                        {plan.discount_percent ? (
+                          <span style={S.planDiscountBadge}>{plan.discount_percent}% off</span>
+                        ) : null}
+                      </div>
+                      <div style={S.planCategoryRow}>
+                        <span style={S.planCategoryChip}>{planCategoryLabel(plan.category)}</span>
                       </div>
 
                       <div style={S.planCardDivider} />
@@ -1765,7 +1830,9 @@ export default function AdminPanel() {
                         <div style={S.planCardStat}>
                           <span style={S.planCardStatLabel}>Listing Limit</span>
                           <span style={{ ...S.planCardStatVal, color: color.accent }}>
-                            {plan.listing_limit === null ? '∞ Unlimited' : plan.listing_limit}
+                            {plan.monthly_listing_limit
+                              ? `${plan.monthly_listing_limit}/mo`
+                              : (plan.listing_limit === null ? '∞ Unlimited' : plan.listing_limit)}
                           </span>
                         </div>
                         <div style={S.planCardStat}>
@@ -1773,6 +1840,14 @@ export default function AdminPanel() {
                           <span style={{ ...S.planCardStatVal, color: color.accent }}>
                             {Array.isArray(plan.features) ? plan.features.length : 0}
                           </span>
+                        </div>
+                        <div style={S.planCardStat}>
+                          <span style={S.planCardStatLabel}>Users</span>
+                          <span style={{ ...S.planCardStatVal, color: color.accent }}>{plan.max_users ?? '—'}</span>
+                        </div>
+                        <div style={S.planCardStat}>
+                          <span style={S.planCardStatLabel}>Leads</span>
+                          <span style={{ ...S.planCardStatVal, color: color.accent }}>{plan.included_leads ?? '—'}</span>
                         </div>
                       </div>
 
@@ -1849,14 +1924,14 @@ export default function AdminPanel() {
         {/* ── Edit Plan Modal ──────────────────────────────── */}
         {editModal && (
           <div style={S.modalOverlay}>
-            <div style={{ ...S.modal, maxWidth: '480px' }}>
+            <div style={{ ...S.modal, maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto' }}>
               <div style={S.modalStripe} />
               <div style={{ padding: '32px' }}>
                 <h3 style={{ ...S.modalTitle, fontSize: '18px', textAlign: 'left', marginBottom: '6px' }}>
                   Edit Plan — {editModal.label}
                 </h3>
                 <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '24px' }}>
-                  Changes apply immediately to all agents viewing pricing.
+                  Changes apply immediately — active plans are what the website pricing page shows.
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div style={S.formField}>
@@ -1870,10 +1945,43 @@ export default function AdminPanel() {
                       onChange={(e) => setPlanEditForm((p) => ({ ...p, price_inr: e.target.value }))} />
                   </div>
                   <div style={S.formField}>
-                    <label style={S.formLabel}>Listing Limit (blank = unlimited)</label>
+                    <label style={S.formLabel}>Lifetime listing limit (legacy — blank = none)</label>
                     <input style={S.formInput} type="number" placeholder="Leave blank for unlimited"
                       value={planEditForm.listing_limit}
                       onChange={(e) => setPlanEditForm((p) => ({ ...p, listing_limit: e.target.value }))} />
+                  </div>
+                  <div style={S.formField}>
+                    <label style={S.formLabel}>Category (pricing page group)</label>
+                    <select style={S.formInput} value={planEditForm.category}
+                      onChange={(e) => setPlanEditForm((p) => ({ ...p, category: e.target.value }))}>
+                      <option value="">No category</option>
+                      {PLAN_CATEGORIES.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
+                    </select>
+                  </div>
+                  <div style={S.formField}>
+                    <label style={S.formLabel}>Discount badge % (blank = none)</label>
+                    <input style={S.formInput} type="number" min="1" max="99" placeholder="e.g. 40" value={planEditForm.discount_percent}
+                      onChange={(e) => setPlanEditForm((p) => ({ ...p, discount_percent: e.target.value }))} />
+                  </div>
+                  <div style={S.formField}>
+                    <label style={S.formLabel}>Users included (blank = not shown)</label>
+                    <input style={S.formInput} type="number" min="1" placeholder="e.g. 4" value={planEditForm.max_users}
+                      onChange={(e) => setPlanEditForm((p) => ({ ...p, max_users: e.target.value }))} />
+                  </div>
+                  <div style={S.formField}>
+                    <label style={S.formLabel}>Leads included (blank = none)</label>
+                    <input style={S.formInput} type="number" min="1" placeholder="e.g. 30" value={planEditForm.included_leads}
+                      onChange={(e) => setPlanEditForm((p) => ({ ...p, included_leads: e.target.value }))} />
+                  </div>
+                  <div style={S.formField}>
+                    <label style={S.formLabel}>Listings per month (blank = no monthly limit)</label>
+                    <input style={S.formInput} type="number" min="1" placeholder="e.g. 100" value={planEditForm.monthly_listing_limit}
+                      onChange={(e) => setPlanEditForm((p) => ({ ...p, monthly_listing_limit: e.target.value }))} />
+                  </div>
+                  <div style={{ ...S.formField, gridColumn: '1 / -1' }}>
+                    <label style={S.formLabel}>Features (one per line — shown on the pricing page)</label>
+                    <textarea style={{ ...S.formInput, minHeight: '120px', resize: 'vertical', fontFamily: 'inherit' }} value={planEditForm.features}
+                      onChange={(e) => setPlanEditForm((p) => ({ ...p, features: e.target.value }))} />
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '10px', marginTop: '28px', justifyContent: 'flex-end' }}>
@@ -2247,6 +2355,15 @@ const S = {
     growth:    { accent: '#b45309', gradient: 'linear-gradient(90deg, #b45309, #c8a96e)' },
     unlimited: { accent: '#065f46', gradient: 'linear-gradient(90deg, #065f46, #10b981)' },
     _default:  { accent: '#6b7280', gradient: 'linear-gradient(90deg, #6b7280, #9ca3af)' },
+  },
+  planDiscountBadge: {
+    marginLeft: '10px', padding: '3px 10px', borderRadius: '999px', background: '#fff1ec', color: '#c2410c',
+    fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em', alignSelf: 'center',
+  },
+  planCategoryRow: { padding: '0 20px 14px' },
+  planCategoryChip: {
+    display: 'inline-block', padding: '3px 10px', borderRadius: '6px', background: '#f1f5f9', color: '#475569',
+    fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em',
   },
   planCreateCard: {
     background: '#fff', borderRadius: '16px', border: '1.5px solid #c8a96e',

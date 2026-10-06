@@ -141,53 +141,6 @@ export const listings: Listing[] = [
   },
 ];
 
-export const plans = [
-  {
-    name: "Starter",
-    price: "₹1,499",
-    period: "per month",
-    limit: "Up to 15 active listings",
-    recommended: false,
-    features: [
-      "WhatsApp listing creation",
-      "AI property extraction",
-      "Public listing pages",
-      "Lead inbox",
-      "1 team member",
-    ],
-  },
-  {
-    name: "Growth",
-    price: "₹3,999",
-    period: "per month",
-    limit: "Up to 100 active listings",
-    recommended: true,
-    features: [
-      "Everything in Starter",
-      "Satellite plot boundary tracing",
-      "AI buyer conversations",
-      "Lead scoring & filters",
-      "5 team members",
-      "Document verification queue",
-    ],
-  },
-  {
-    name: "Unlimited",
-    price: "₹8,999",
-    period: "per month",
-    limit: "Unlimited listings",
-    recommended: false,
-    features: [
-      "Everything in Growth",
-      "Unlimited team members",
-      "AI call log & transcripts",
-      "Site visit scheduling",
-      "Priority support",
-      "Custom domain listings",
-    ],
-  },
-];
-
 export type Lead = {
   id: string;
   name: string;
