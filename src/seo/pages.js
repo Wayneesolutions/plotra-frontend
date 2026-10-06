@@ -82,7 +82,7 @@ export const SEO_PAGES = {
   '/pricing': {
     title: 'Plotraa Pricing: Real Estate CRM Plans for Dealers',
     description:
-      'Monthly Plotraa plans for property dealers: Starter, Growth and Unlimited. WhatsApp listings, AI property extraction, lead inbox and team access. No lock-in.',
+      'Monthly Plotraa plans for property dealers in two categories: Basic and Basic with Leads. WhatsApp listings, AI property extraction, lead inbox and team access. No lock-in.',
     jsonLd: [breadcrumb('Pricing', '/pricing')],
   },
   '/team': {
