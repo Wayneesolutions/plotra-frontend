@@ -107,3 +107,32 @@ export function clearSession() {
   localStorage.removeItem("pve_token");
   localStorage.removeItem("pve_user");
 }
+
+export type SellPropertyInput = {
+  name: string;
+  phone: string;
+  email?: string;
+  propertyType?: string;
+  city?: string;
+  locality?: string;
+  expectedPrice?: string;
+  sizeText?: string;
+  description?: string;
+};
+
+export function submitSellProperty(input: SellPropertyInput) {
+  return request<{ message: string }>("/api/v1/public/sell-property", {
+    method: "POST",
+    body: JSON.stringify({
+      name: input.name,
+      phone: input.phone,
+      email: input.email || undefined,
+      property_type: input.propertyType || undefined,
+      city: input.city || undefined,
+      locality: input.locality || undefined,
+      expected_price: input.expectedPrice || undefined,
+      size_text: input.sizeText || undefined,
+      description: input.description || undefined,
+    }),
+  });
+}
