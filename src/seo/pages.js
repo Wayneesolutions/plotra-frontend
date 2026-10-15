@@ -114,6 +114,12 @@ export const SEO_PAGES = {
       breadcrumb('Blog', '/blog'),
     ],
   },
+  '/sell-property': {
+    title: 'Sell Your Property with Plotraa: Get Matched with a Trusted Dealer',
+    description:
+      'Want to sell a plot, house or flat? Share your property details and Plotraa will connect you with a verified local dealer.',
+    jsonLd: [breadcrumb('Sell Property', '/sell-property')],
+  },
   '/request-access': {
     title: 'Request Access to Plotraa: Property Dealer Sign-Up Form',
     description:
