@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { API_BASE_URL } from '../api/config';
 import RentVsBuyCalculator from './RentVsBuyCalculator.jsx';
+import AgentProfileCard from './AgentProfileCard.jsx';
 import { InteractiveSatellite, InteractiveStreetView } from './PropertyMapMedia.jsx';
 import AdSlot from './AdSlot.jsx';
 import plotraaLogo from '../assets/plotraa-logo-horizontal.png';
@@ -230,7 +231,7 @@ export default function PropertyView() {
     </div>
   );
 
-  const { listing, media, landmarks, dealer } = data;
+  const { listing, media, landmarks, dealer, agentProfile } = data;
   const cleanLandmarks = dedupeLandmarks(landmarks);
 
   // Developer profile / rating / possession record / nearby-comparison
@@ -394,6 +395,9 @@ export default function PropertyView() {
           <h1 style={S.propTitle}>{seo.h1}</h1>
           <p style={S.propAddr}>📍 {getDisplayArea(listing)}</p>
         </div>
+
+        {/* Agent profile — rating, experience, RERA (no name) */}
+        <AgentProfileCard profile={agentProfile} />
 
         {/* WhatsApp CTA */}
         {waMeLink && (

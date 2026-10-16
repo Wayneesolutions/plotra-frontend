@@ -14,6 +14,7 @@ const LandingPage = lazy(() => import('./pages/LandingPage.tsx'));
 const LoginPage = lazy(() => import('./pages/LoginPage.tsx'));
 const RequestAccessPage = lazy(() => import('./pages/RequestAccessPage.tsx'));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage.tsx'));
+const SellPropertyPage = lazy(() => import('./pages/SellPropertyPage.tsx'));
 const PricingPage = lazy(() => import('./pages/PricingPage.tsx'));
 const HowItWorksPage = lazy(() => import('./pages/HowItWorksPage.tsx'));
 const LegalPage = lazy(() => import('./pages/LegalPage.tsx'));
@@ -35,6 +36,7 @@ export default function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/request-access" element={<RequestAccessPage />} />
+          <Route path="/sell-property" element={<SellPropertyPage />} />
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/how-it-works" element={<HowItWorksPage />} />
           <Route path="/legal" element={<LegalPage />} />

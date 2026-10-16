@@ -36,6 +36,7 @@ const columns = [
     links: [
       { label: "Team", href: "/team" },
       { label: "Blog", href: "/blog" },
+      { label: "Sell your property", href: "/sell-property" },
       { label: "Request access", href: "/request-access" },
       { label: "Sign in", href: "/login" },
     ],

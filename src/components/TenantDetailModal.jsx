@@ -16,6 +16,8 @@ export default function TenantDetailModal({ tenantId, onClose, onChanged, cities
   const [cityPick, setCityPick] = useState({ city_ids: [], primary_city_id: null });
   const [agentPicks, setAgentPicks] = useState({}); // userId -> { city_ids }
   const [msg, setMsg] = useState(null); // { type: 'ok'|'err', text }
+  // Public agent profile shown on property pages (rating / experience / RERA)
+  const [profileForm, setProfileForm] = useState({ agent_rating: '', agent_experience_years: '', rera_certified: false });
 
   const load = useCallback(() => {
     setLoading(true);
@@ -27,6 +29,11 @@ export default function TenantDetailModal({ tenantId, onClose, onChanged, cities
         setPlanPick(r.data.tenant.plan);
         const tc = r.data.tenant.cities || [];
         setCityPick({ city_ids: tc.map((c) => c.city_id), primary_city_id: tc.find((c) => c.is_primary)?.city_id ?? tc[0]?.city_id ?? null });
+        setProfileForm({
+          agent_rating: r.data.tenant.agentRating ?? '',
+          agent_experience_years: r.data.tenant.agentExperienceYears ?? '',
+          rera_certified: !!r.data.tenant.reraCertified,
+        });
         setAgentPicks(Object.fromEntries((r.data.agents || []).map((a) => [a.id, { city_ids: a.city_ids || [] }])));
         setEditForm({
           business_name: r.data.tenant.businessName || '',
@@ -50,6 +57,24 @@ export default function TenantDetailModal({ tenantId, onClose, onChanged, cities
       onChanged?.();
     } catch (err) {
       alert(err.response?.data?.error?.message || 'Failed to update status.');
+    } finally {
+      setActioning(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    setActioning(true);
+    setMsg(null);
+    try {
+      await apiClient.patch(`/api/v1/admin/tenants/${tenantId}/agent-profile`, {
+        agent_rating: profileForm.agent_rating === '' ? null : Number(profileForm.agent_rating),
+        agent_experience_years: profileForm.agent_experience_years === '' ? null : Number(profileForm.agent_experience_years),
+        rera_certified: profileForm.rera_certified,
+      });
+      await load();
+      setMsg({ type: 'ok', text: 'Agent profile saved.' });
+    } catch (err) {
+      setMsg({ type: 'err', text: err.response?.data?.error?.message || 'Failed to save agent profile.' });
     } finally {
       setActioning(false);
     }
@@ -182,6 +207,28 @@ export default function TenantDetailModal({ tenantId, onClose, onChanged, cities
               {msg && (
                 <div style={msg.type === 'ok' ? S.okBanner : S.banner}>{msg.text}</div>
               )}
+
+              {/* Public agent profile (property page) */}
+              <div style={S.usageCard}>
+                <div style={S.cardHead}><span>Public agent profile</span></div>
+                <div style={S.editGrid}>
+                  <label style={S.editField}>
+                    <span style={S.infoLabel}>Rating (0–5)</span>
+                    <input style={S.input} type="number" min="0" max="5" step="0.1" value={profileForm.agent_rating} onChange={(e) => setProfileForm((f) => ({ ...f, agent_rating: e.target.value }))} />
+                  </label>
+                  <label style={S.editField}>
+                    <span style={S.infoLabel}>Experience (years)</span>
+                    <input style={S.input} type="number" min="0" max="80" step="1" value={profileForm.agent_experience_years} onChange={(e) => setProfileForm((f) => ({ ...f, agent_experience_years: e.target.value }))} />
+                  </label>
+                  <label style={{ ...S.editField, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <input type="checkbox" checked={profileForm.rera_certified} onChange={(e) => setProfileForm((f) => ({ ...f, rera_certified: e.target.checked }))} />
+                    <span style={S.infoLabel}>RERA certified</span>
+                  </label>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <button style={S.linkBtn} onClick={handleSaveProfile} disabled={actioning}>{actioning ? 'Saving…' : 'Save profile'}</button>
+                  </div>
+                </div>
+              </div>
 
               {/* Business + owner details */}
               <div style={S.usageCard}>

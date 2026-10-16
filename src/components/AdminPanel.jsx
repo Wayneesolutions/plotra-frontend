@@ -7,6 +7,7 @@ import Analytics from './Analytics.jsx';
 import Settings from './Settings.jsx';
 import OpsPanel from './OpsPanel.jsx';
 import AdminPayments from './AdminPayments.jsx';
+import AdminSellerLeads from './AdminSellerLeads.jsx';
 import Cities from './Cities.jsx';
 import CityPicker from './CityPicker.jsx';
 import { InteractiveSatellite } from './PropertyMapMedia.jsx';
@@ -17,6 +18,7 @@ const TABS = [
   { label: 'Agent Signups',    icon: '🤝', desc: 'WhatsApp agent signup requests' },
   { label: 'Geo Review',       icon: '📍', desc: 'Correct WhatsApp listing pins before the agent sees them' },
   { label: 'Marketplace Leads', icon: '🔎', desc: 'Leads delivered per dealer via the shared-number property search' },
+  { label: 'Seller Leads',    icon: '🏷️', desc: 'Sell-your-property submissions to forward to dealers' },
   { label: 'All Tenants',      icon: '🏢', desc: 'View and manage all active accounts' },
   { label: 'Create Tenant',    icon: '➕', desc: 'Manually onboard a new dealer account' },
   { label: 'Ad Placements',    icon: '📢', desc: 'Manage ads shown across listing pages' },
@@ -2009,6 +2011,7 @@ export default function AdminPanel() {
             the one toast instance at this component's root, same as
             every other tab. */}
         {tab === 'Payments' && <AdminPayments showToast={showToast} />}
+        {tab === 'Seller Leads' && <AdminSellerLeads showToast={showToast} />}
 
         {/* ── Tab: Cities & Areas ───────────────────────────
             Self-contained like AdminPayments.jsx above — own fetching,
