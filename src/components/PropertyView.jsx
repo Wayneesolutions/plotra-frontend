@@ -280,7 +280,10 @@ export default function PropertyView() {
         title={seo.title}
         description={seo.description}
         path={`/p/${slug}`}
-        image={photos[0] || media?.streetview_image_url || undefined}
+        // Never the raw street-view image: it's unblurred, and a WhatsApp/
+        // Facebook link preview would show the whole street around a live
+        // listing. Dealer photos only.
+        image={photos[0] || undefined}
         noindex={listing.status !== 'active'}
       />
 
@@ -348,7 +351,10 @@ export default function PropertyView() {
                 false) — same lifecycle as InteractiveSatellite's
                 `draggable` above. Pre-approval, the dealer/agent can still
                 freely navigate Street View to verify the spot. */}
-            <InteractiveStreetView lat={listing.lat} lng={listing.lng} fallbackUrl={media?.streetview_image_url} locked={!canAdjustLocation} alt={seo.streetAlt} />
+            {/* Live listings: frozen on the property with everything around
+                it (street, neighbours) blurred. Pre-approval the dealer
+                still sees the full, movable view to check the spot. */}
+            <InteractiveStreetView lat={listing.lat} lng={listing.lng} fallbackUrl={media?.streetview_image_url} locked={!canAdjustLocation} focusOnProperty={!canAdjustLocation} alt={seo.streetAlt} />
             <div style={S.heroBadge}>📸 Street View</div>
           </div>
         )}
