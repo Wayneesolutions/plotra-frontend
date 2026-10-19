@@ -244,13 +244,14 @@ function InteractiveSatellite({ lat, lng, fallbackUrl, draggable = false, onPosi
 // Live-listing mode (panoId + heading, no coordinates): the buyer sees the
 // real panorama from the one spot that faces the property and can look up,
 // down and along the front of the house, but cannot walk away from it and
-// cannot turn more than LIVE_MAX_TURN degrees either side of the property.
+// cannot turn more than LIVE_MAX_TURN degrees either side of the property
+// (so the road behind them and the back of the house are never in view).
 // Nothing is blurred.
-const LIVE_MAX_TURN = 75;     // degrees left/right of the property
-const LIVE_PITCH_MIN = -25;   // look down at the gate / ground
-const LIVE_PITCH_MAX = 70;    // look up at the roof and sky
-const LIVE_ZOOM_MIN = 0.6;
-const LIVE_ZOOM_MAX = 4;
+const LIVE_MAX_TURN = 30;     // degrees left/right of the property
+const LIVE_PITCH_MIN = -10;   // look down at the gate / ground
+const LIVE_PITCH_MAX = 40;    // look up at the roof and sky
+const LIVE_ZOOM_MIN = 1.3;    // cannot zoom out to a wide view of the street
+const LIVE_ZOOM_MAX = 3.5;
 
 function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
 
@@ -278,7 +279,7 @@ function InteractiveStreetView({ lat, lng, panoId = null, initialHeading = 0, fa
           const panorama = new maps.StreetViewPanorama(containerRef.current, {
             pano: panoId,
             pov: clampPov({ heading: initialHeading, pitch: 5 }, initialHeading),
-            zoom: 1,
+            zoom: LIVE_ZOOM_MIN,
             addressControl: false,
             fullscreenControl: false,
             gestureHandling: 'greedy',
