@@ -113,6 +113,20 @@ export default function PropertyView() {
   const [locationSaved, setLocationSaved] = useState(false);
   const [mapKey, setMapKey] = useState(0);
 
+  // Dealer-chosen blur areas (signboards / house number) on the live street
+  // view. Editable only before approval; blurDraft is what's on screen,
+  // blurSaved flags that the draft matches what's stored.
+  const [blurDraft, setBlurDraft] = useState([]);
+  const [blurDirty, setBlurDirty] = useState(false);
+  const [savingBlur, setSavingBlur] = useState(false);
+  const [blurMessage, setBlurMessage] = useState(null); // { ok: boolean, text }
+
+  useEffect(() => {
+    setBlurDraft(data?.streetView?.blurRegions || []);
+    setBlurDirty(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.streetView?.panoId]);
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -201,10 +215,34 @@ export default function PropertyView() {
       }));
       setDraggedPosition(null);
       setLocationSaved(true);
+      // The street-view spot depends on the pin, so refresh it (areas marked
+      // on the old view no longer apply and come back empty).
+      axios.get(`${API_BASE_URL}/api/v1/public/listings/${slug}`)
+        .then((fresh) => setData((prev) => ({ ...prev, streetView: fresh.data.streetView || null })))
+        .catch(() => {});
     } catch (err) {
       setLocationSaveError(err.response?.data?.error?.message || 'Could not save the new location. Please try again.');
     } finally {
       setSavingLocation(false);
+    }
+  };
+
+  const handleSaveBlur = async () => {
+    if (!data?.streetView?.panoId) return;
+    setSavingBlur(true);
+    setBlurMessage(null);
+    try {
+      const res = await axios.patch(`${API_BASE_URL}/api/v1/public/listings/${slug}/blur-regions`, {
+        panoId: data.streetView.panoId,
+        regions: blurDraft,
+      });
+      setData((prev) => ({ ...prev, streetView: { ...prev.streetView, blurRegions: res.data.blurRegions } }));
+      setBlurDirty(false);
+      setBlurMessage({ ok: true, text: blurDraft.length ? 'Saved. These areas will be blurred on the live page.' : 'Saved. Nothing will be blurred.' });
+    } catch (err) {
+      setBlurMessage({ ok: false, text: err.response?.data?.error?.message || 'Could not save. Please try again.' });
+    } finally {
+      setSavingBlur(false);
     }
   };
 
@@ -364,6 +402,7 @@ export default function PropertyView() {
             <InteractiveStreetView
               panoId={streetView.panoId}
               initialHeading={streetView.heading}
+              blurRegions={streetView.blurRegions || []}
               locked
               alt={seo.streetAlt}
             />
@@ -379,6 +418,39 @@ export default function PropertyView() {
           </div>
         )}
       </section>
+      )}
+
+      {/* ══ HIDE SIGNS (dealer, before approval) ═════════════════
+          Once the location is right, the dealer can mark signboards or a
+          house number on the front of the property to be blurred for
+          buyers. Same locked street view buyers get, so what's marked here
+          is what's hidden there. Not available once the listing is live. */}
+      {canAdjustLocation && streetView?.panoId && (
+        <section style={S.blurEditor}>
+          <h3 style={S.blurTitle}>Hide signboards or the house number (optional)</h3>
+          <p style={S.blurHelp}>
+            Happy with the pin? Mark anything on the front of the property you don't want buyers to read, such as a
+            signboard or an address. Those areas are blurred on the live page. This can't be changed once the listing is live.
+          </p>
+          <div style={{ position: 'relative', width: '100%', height: '360px', borderRadius: '12px', overflow: 'hidden', background: '#000' }}>
+            <InteractiveStreetView
+              panoId={streetView.panoId}
+              initialHeading={streetView.heading}
+              blurRegions={blurDraft}
+              editable
+              onRegionsChange={(next) => { setBlurDraft(next); setBlurDirty(true); setBlurMessage(null); }}
+              locked
+              alt={seo.streetAlt}
+            />
+          </div>
+          <div style={S.blurActions}>
+            <button onClick={handleSaveBlur} disabled={savingBlur || !blurDirty} style={{ ...S.locationSaveBtn, flex: 'none', padding: '10px 16px', fontSize: '14px', opacity: savingBlur || !blurDirty ? 0.5 : 1 }}>
+              {savingBlur ? 'Saving…' : 'Save hidden areas'}
+            </button>
+            <span style={S.blurCount}>{blurDraft.length === 0 ? 'No areas hidden' : `${blurDraft.length} area${blurDraft.length > 1 ? 's' : ''} hidden`}</span>
+          </div>
+          {blurMessage && <div style={{ ...(blurMessage.ok ? S.locationSavedMsg : S.locationErrorMsg), position: 'static', marginTop: '8px' }}>{blurMessage.text}</div>}
+        </section>
       )}
 
       {/* ══ ANCHOR STRIP (price + area + type) ══════════════════ */}
@@ -888,6 +960,11 @@ const S = {
      parent), so without a higher z-index here, expanding the map to full
      screen for precise pin placement would visually bury this Save/
      Cancel banner underneath it. */
+  blurEditor: { maxWidth: '960px', margin: '20px auto 0', padding: '0 16px' },
+  blurTitle: { fontSize: '17px', fontWeight: 700, margin: '0 0 6px', color: '#0f172a' },
+  blurHelp: { fontSize: '14px', lineHeight: 1.5, color: '#475569', margin: '0 0 12px' },
+  blurActions: { display: 'flex', alignItems: 'center', gap: '12px', marginTop: '10px' },
+  blurCount: { fontSize: '13px', color: '#64748b' },
   locationEditArea: { position: 'absolute', bottom: '12px', left: '12px', right: '12px', zIndex: 2100 },
   locationHintMsg: { backgroundColor: 'rgba(17, 24, 39, 0.8)', color: '#e5e7eb', fontSize: '12px', padding: '6px 10px', borderRadius: '6px', display: 'inline-block' },
   locationSavedMsg: { backgroundColor: 'rgba(22, 101, 52, 0.9)', color: '#fff', fontSize: '12px', padding: '6px 10px', borderRadius: '6px', display: 'inline-block' },
