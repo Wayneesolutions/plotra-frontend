@@ -247,9 +247,9 @@ function InteractiveSatellite({ lat, lng, fallbackUrl, draggable = false, onPosi
 // cannot turn more than LIVE_MAX_TURN degrees either side of the property
 // (so the road behind them and the back of the house are never in view).
 // Nothing is blurred.
-const LIVE_MAX_TURN = 30;     // degrees left/right of the property
-const LIVE_PITCH_MIN = -10;   // look down at the gate / ground
-const LIVE_PITCH_MAX = 40;    // look up at the roof and sky
+const LIVE_MAX_TURN = 50;     // degrees left/right of the property
+const LIVE_PITCH_MIN = -15;   // look down at the gate / ground
+const LIVE_PITCH_MAX = 45;    // look up at the roof and sky
 const LIVE_ZOOM_MIN = 1.3;    // cannot zoom out to a wide view of the street
 const LIVE_ZOOM_MAX = 3.5;
 
