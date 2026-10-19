@@ -241,55 +241,7 @@ function InteractiveSatellite({ lat, lng, fallbackUrl, draggable = false, onPosi
 // out of navigating Street View too. `locked` defaults to true so nothing
 // else calling this component without passing it changes behavior; see
 // PropertyView.jsx for how it's actually gated on approval status.
-// Privacy blur for live listings: everything except the pinned property is
-// blurred and dimmed, roads and neighbours included. A soft-edged ellipse in
-// the middle stays sharp; the camera is fixed facing the property (see
-// `focusOnProperty` below), so that middle is always the property itself.
-//
-// The bottom 24px strip is deliberately NOT covered: Google's logo and
-// copyright line sit there and Maps Platform terms don't allow hiding them.
-// Browsers without backdrop-filter get a near-opaque tint instead of a blur,
-// so nothing outside the property leaks through there either.
-const FOCUS_MASK = 'radial-gradient(ellipse 27% 34% at 50% 42%, transparent 72%, #000 100%)';
-const supportsBackdropBlur = typeof CSS !== 'undefined' && typeof CSS.supports === 'function'
-  && (CSS.supports('backdrop-filter', 'blur(2px)') || CSS.supports('-webkit-backdrop-filter', 'blur(2px)'));
-
-const focusOverlayStyle = {
-  position: 'absolute', top: 0, left: 0, right: 0, bottom: '24px',
-  zIndex: 3, pointerEvents: 'none',
-  transform: 'translateZ(0)', WebkitTransform: 'translateZ(0)',
-  ...(supportsBackdropBlur
-    ? { backdropFilter: 'blur(16px) saturate(0.7)', WebkitBackdropFilter: 'blur(16px) saturate(0.7)', background: 'rgba(15,23,42,0.28)' }
-    : { background: 'rgba(15,23,42,0.92)' }),
-  maskImage: FOCUS_MASK,
-  WebkitMaskImage: FOCUS_MASK,
-};
-const focusRingStyle = {
-  position: 'absolute', left: '50%', top: '42%', width: '46%', height: '56%',
-  transform: 'translate(-50%, -50%)', borderRadius: '50%',
-  border: '2px dashed rgba(255,255,255,0.55)', zIndex: 4, pointerEvents: 'none',
-};
-const focusBadgeStyle = {
-  position: 'absolute', top: '10px', right: '10px', zIndex: 5, pointerEvents: 'none',
-  background: 'rgba(17,24,39,0.82)', color: '#fff', fontSize: '11px', fontWeight: 600,
-  padding: '5px 9px', borderRadius: '999px', letterSpacing: '0.01em',
-};
-
-function PropertyFocusOverlay() {
-  return (
-    <>
-      <div style={focusOverlayStyle} aria-hidden="true" />
-      <div style={focusRingStyle} aria-hidden="true" />
-      <div style={focusBadgeStyle}>🔒 Only the property is shown</div>
-    </>
-  );
-}
-
-// `focusOnProperty` (live listings, see PropertyView.jsx): the panorama is
-// frozen facing the property — no rotating, zooming or walking away — and
-// PropertyFocusOverlay blurs everything around it. A rotatable view would let
-// the property slide out of the sharp middle and the street into it.
-function InteractiveStreetView({ lat, lng, fallbackUrl, locked = true, focusOnProperty = false, alt = 'Street view of the property' }) {
+function InteractiveStreetView({ lat, lng, fallbackUrl, locked = true, alt = 'Street view of the property' }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const mapsApiRef = useRef(null);
@@ -324,30 +276,16 @@ function InteractiveStreetView({ lat, lng, fallbackUrl, locked = true, focusOnPr
           const initialHeading = calculateBearing(
             lockedPosition.lat(), lockedPosition.lng(), coords.lat, coords.lng
           );
-          // Focus mode: tilt slightly up and zoom in a little so the
-          // building fills the sharp middle and the road drops to the
-          // blurred bottom of the frame.
-          const lockedPov = { heading: initialHeading, pitch: focusOnProperty ? 6 : 0 };
           const panorama = new maps.StreetViewPanorama(containerRef.current, {
             position: lockedPosition,
-            pov: lockedPov,
-            zoom: focusOnProperty ? 1.6 : 1,
+            pov: { heading: initialHeading, pitch: 0 },
+            zoom: 1,
             addressControl: false,
             // See InteractiveSatellite above — iOS Safari silently omits
             // this native control entirely, replaced with the custom
             // expand button below.
             fullscreenControl: false,
-            gestureHandling: focusOnProperty ? 'none' : 'greedy',
-            ...(focusOnProperty ? {
-              panControl: false,
-              zoomControl: false,
-              motionTracking: false,
-              motionTrackingControl: false,
-              showRoadLabels: false,
-              disableDefaultUI: true,
-              scrollwheel: false,
-              keyboardShortcuts: false,
-            } : {}),
+            gestureHandling: 'greedy',
             // Locks the panorama to this exact property — no navigation
             // arrows to walk down the street, no click-to-move on the
             // ground. Look-around (drag to rotate, scroll to zoom) stays
@@ -358,7 +296,7 @@ function InteractiveStreetView({ lat, lng, fallbackUrl, locked = true, focusOnPr
           });
           mapRef.current = panorama;
 
-          if (locked || focusOnProperty) {
+          if (locked) {
             let resetting = false;
             panorama.addListener('position_changed', () => {
               if (resetting) return; // avoid feedback loop from our own setPosition call below
@@ -370,50 +308,16 @@ function InteractiveStreetView({ lat, lng, fallbackUrl, locked = true, focusOnPr
               }
             });
           }
-
-          // Backstop for focus mode: gestures are off, but if anything still
-          // turns the camera, snap it back so the property stays in the
-          // sharp middle and the street never does.
-          if (focusOnProperty) {
-            let resettingPov = false;
-            panorama.addListener('pov_changed', () => {
-              if (resettingPov) return;
-              const pov = panorama.getPov();
-              if (Math.abs(pov.heading - lockedPov.heading) > 0.5 || Math.abs(pov.pitch - lockedPov.pitch) > 0.5) {
-                resettingPov = true;
-                panorama.setPov(lockedPov);
-                resettingPov = false;
-              }
-            });
-          }
         });
       })
       .catch(() => { if (!cancelled) setFailed(true); });
 
     return () => { cancelled = true; };
-  }, [lat, lng, locked, focusOnProperty]);
+  }, [lat, lng, locked]);
 
   if (failed) {
     if (!fallbackUrl) return null;
-    if (focusOnProperty) {
-      return (
-        <div style={collapsedWrapStyle}>
-          <img src={fallbackUrl} alt={alt} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          <PropertyFocusOverlay />
-        </div>
-      );
-    }
     return <img src={fallbackUrl} alt={alt} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />;
-  }
-  if (focusOnProperty) {
-    // No expand button: a frozen, blurred view has nothing more to show
-    // full screen.
-    return (
-      <div style={collapsedWrapStyle}>
-        <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
-        <PropertyFocusOverlay />
-      </div>
-    );
   }
   return (
     <div style={expanded ? expandedWrapStyle : collapsedWrapStyle}>

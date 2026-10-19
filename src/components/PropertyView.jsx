@@ -112,6 +112,7 @@ export default function PropertyView() {
   const [locationSaveError, setLocationSaveError] = useState(null);
   const [locationSaved, setLocationSaved] = useState(false);
   const [mapKey, setMapKey] = useState(0);
+  const [frontViewFailed, setFrontViewFailed] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -231,7 +232,7 @@ export default function PropertyView() {
     </div>
   );
 
-  const { listing, media, landmarks, dealer, agentProfile } = data;
+  const { listing, media, landmarks, dealer, agentProfile, frontViewUrl } = data;
   const cleanLandmarks = dedupeLandmarks(landmarks);
 
   // Developer profile / rating / possession record / nearby-comparison
@@ -266,9 +267,15 @@ export default function PropertyView() {
   // Once confirmed and live, satellite drops away; street view carries
   // forward on its own for buyers.
   const showSatellite  = canAdjustLocation && hasSatellite;
-  const showStreetview = hasStreetview;
+  // Before approval: the dealer's movable Street View, to check the spot.
+  // Live: no Street View at all. Buyers get one still photo of the
+  // property's front with everything else blurred, made on the server
+  // (frontViewUrl, see the backend's frontViewService.js). The page never
+  // receives the exact coordinates of a live listing.
+  const showStreetview = canAdjustLocation && hasStreetview;
+  const showFrontView  = !canAdjustLocation && !!frontViewUrl && !frontViewFailed;
   const bothImages     = showSatellite && showStreetview;
-  const showHeroSection = canAdjustLocation || showStreetview;
+  const showHeroSection = canAdjustLocation || showFrontView;
   const photos        = media?.photo_urls || [];
   const seo           = buildListingSeo(listing, dealer, getDisplayArea(listing));
 
@@ -347,15 +354,23 @@ export default function PropertyView() {
         )}
         {showStreetview && (
           <div style={{ ...S.heroSlot, flex: bothImages ? 1 : 'unset', height: bothImages ? '280px' : '260px' }}>
-            {/* Task 1: locked only once approved/live (canAdjustLocation
-                false) — same lifecycle as InteractiveSatellite's
-                `draggable` above. Pre-approval, the dealer/agent can still
-                freely navigate Street View to verify the spot. */}
-            {/* Live listings: frozen on the property with everything around
-                it (street, neighbours) blurred. Pre-approval the dealer
-                still sees the full, movable view to check the spot. */}
-            <InteractiveStreetView lat={listing.lat} lng={listing.lng} fallbackUrl={media?.streetview_image_url} locked={!canAdjustLocation} focusOnProperty={!canAdjustLocation} alt={seo.streetAlt} />
+            {/* Pre-approval only: the dealer can freely move around Street
+                View to verify the spot before publishing. */}
+            <InteractiveStreetView lat={listing.lat} lng={listing.lng} fallbackUrl={media?.streetview_image_url} locked={false} alt={seo.streetAlt} />
             <div style={S.heroBadge}>📸 Street View</div>
+          </div>
+        )}
+        {showFrontView && (
+          <div style={{ ...S.heroSlot, height: '260px' }}>
+            <img
+              src={`${API_BASE_URL}${frontViewUrl}`}
+              alt={seo.streetAlt}
+              draggable={false}
+              onError={() => setFrontViewFailed(true)}
+              onContextMenu={(e) => e.preventDefault()}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', userSelect: 'none', pointerEvents: 'none' }}
+            />
+            <div style={S.heroBadge}>🏠 Front view · surroundings hidden</div>
           </div>
         )}
         {canAdjustLocation && !hasSatellite && !hasStreetview && (
