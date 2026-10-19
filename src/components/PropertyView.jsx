@@ -112,7 +112,6 @@ export default function PropertyView() {
   const [locationSaveError, setLocationSaveError] = useState(null);
   const [locationSaved, setLocationSaved] = useState(false);
   const [mapKey, setMapKey] = useState(0);
-  const [frontViewFailed, setFrontViewFailed] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -232,7 +231,7 @@ export default function PropertyView() {
     </div>
   );
 
-  const { listing, media, landmarks, dealer, agentProfile, frontViewUrl } = data;
+  const { listing, media, landmarks, dealer, agentProfile, streetView } = data;
   const cleanLandmarks = dedupeLandmarks(landmarks);
 
   // Developer profile / rating / possession record / nearby-comparison
@@ -268,14 +267,14 @@ export default function PropertyView() {
   // forward on its own for buyers.
   const showSatellite  = canAdjustLocation && hasSatellite;
   // Before approval: the dealer's movable Street View, to check the spot.
-  // Live: no Street View at all. Buyers get one still photo of the
-  // property's front with everything else blurred, made on the server
-  // (frontViewUrl, see the backend's frontViewService.js). The page never
-  // receives the exact coordinates of a live listing.
+  // Live: the same panorama, but locked to the one spot facing the property
+  // (streetView = panorama id + heading from the backend, never the exact
+  // coordinates). Buyers can look up, down and along the house; they cannot
+  // walk away from it. Nothing is blurred.
   const showStreetview = canAdjustLocation && hasStreetview;
-  const showFrontView  = !canAdjustLocation && !!frontViewUrl && !frontViewFailed;
+  const showLiveStreet = !canAdjustLocation && !!streetView?.panoId;
   const bothImages     = showSatellite && showStreetview;
-  const showHeroSection = canAdjustLocation || showFrontView;
+  const showHeroSection = canAdjustLocation || showLiveStreet;
   const photos        = media?.photo_urls || [];
   const seo           = buildListingSeo(listing, dealer, getDisplayArea(listing));
 
@@ -360,17 +359,15 @@ export default function PropertyView() {
             <div style={S.heroBadge}>📸 Street View</div>
           </div>
         )}
-        {showFrontView && (
-          <div style={{ ...S.heroSlot, height: '260px' }}>
-            <img
-              src={`${API_BASE_URL}${frontViewUrl}`}
+        {showLiveStreet && (
+          <div style={{ ...S.heroSlot, height: '340px' }}>
+            <InteractiveStreetView
+              panoId={streetView.panoId}
+              initialHeading={streetView.heading}
+              locked
               alt={seo.streetAlt}
-              draggable={false}
-              onError={() => setFrontViewFailed(true)}
-              onContextMenu={(e) => e.preventDefault()}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', userSelect: 'none', pointerEvents: 'none' }}
             />
-            <div style={S.heroBadge}>🏠 Front view · surroundings hidden</div>
+            <div style={S.heroBadge}>📸 Street View · drag to look around the property</div>
           </div>
         )}
         {canAdjustLocation && !hasSatellite && !hasStreetview && (

@@ -241,7 +241,27 @@ function InteractiveSatellite({ lat, lng, fallbackUrl, draggable = false, onPosi
 // out of navigating Street View too. `locked` defaults to true so nothing
 // else calling this component without passing it changes behavior; see
 // PropertyView.jsx for how it's actually gated on approval status.
-function InteractiveStreetView({ lat, lng, fallbackUrl, locked = true, alt = 'Street view of the property' }) {
+// Live-listing mode (panoId + heading, no coordinates): the buyer sees the
+// real panorama from the one spot that faces the property and can look up,
+// down and along the front of the house, but cannot walk away from it and
+// cannot turn more than LIVE_MAX_TURN degrees either side of the property.
+// Nothing is blurred.
+const LIVE_MAX_TURN = 75;     // degrees left/right of the property
+const LIVE_PITCH_MIN = -25;   // look down at the gate / ground
+const LIVE_PITCH_MAX = 70;    // look up at the roof and sky
+const LIVE_ZOOM_MIN = 0.6;
+const LIVE_ZOOM_MAX = 4;
+
+function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
+
+/** Pure: keeps a point of view inside the allowed look-around window. */
+function clampPov(pov, centerHeading) {
+  let delta = ((pov.heading - centerHeading + 540) % 360) - 180; // -180..180
+  delta = clamp(delta, -LIVE_MAX_TURN, LIVE_MAX_TURN);
+  return { heading: (centerHeading + delta + 360) % 360, pitch: clamp(pov.pitch, LIVE_PITCH_MIN, LIVE_PITCH_MAX) };
+}
+
+function InteractiveStreetView({ lat, lng, panoId = null, initialHeading = 0, fallbackUrl, locked = true, alt = 'Street view of the property' }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const mapsApiRef = useRef(null);
@@ -249,6 +269,57 @@ function InteractiveStreetView({ lat, lng, fallbackUrl, locked = true, alt = 'St
   const [expanded, setExpanded] = useMapExpand({ mapRef, mapsApiRef });
 
   useEffect(() => {
+    if (panoId) {
+      let cancelledLive = false;
+      loadGoogleMaps()
+        .then((maps) => {
+          if (cancelledLive || !containerRef.current) return;
+          mapsApiRef.current = maps;
+          const panorama = new maps.StreetViewPanorama(containerRef.current, {
+            pano: panoId,
+            pov: clampPov({ heading: initialHeading, pitch: 5 }, initialHeading),
+            zoom: 1,
+            addressControl: false,
+            fullscreenControl: false,
+            gestureHandling: 'greedy',
+            // No walking: no arrows on the road, no tap-to-move, no
+            // double-click-to-move. Looking around stays fully interactive.
+            linksControl: false,
+            clickToGo: false,
+            disableDoubleClickZoom: true,
+            panControl: false,
+            showRoadLabels: false,
+            motionTracking: false,
+            motionTrackingControl: false,
+            enableCloseButton: false,
+          });
+          mapRef.current = panorama;
+
+          let adjusting = false;
+          panorama.addListener('pov_changed', () => {
+            if (adjusting) return;
+            const pov = panorama.getPov();
+            const next = clampPov(pov, initialHeading);
+            if (Math.abs(next.heading - pov.heading) > 0.5 || Math.abs(next.pitch - pov.pitch) > 0.5) {
+              adjusting = true;
+              panorama.setPov(next);
+              adjusting = false;
+            }
+          });
+          panorama.addListener('zoom_changed', () => {
+            const z = panorama.getZoom();
+            const next = clamp(z, LIVE_ZOOM_MIN, LIVE_ZOOM_MAX);
+            if (next !== z) panorama.setZoom(next);
+          });
+          // Backstop: if anything still moves us to another panorama, snap back.
+          panorama.addListener('pano_changed', () => {
+            if (panorama.getPano() !== panoId) panorama.setPano(panoId);
+          });
+        })
+        .catch(() => { if (!cancelledLive) setFailed(true); });
+      return () => { cancelledLive = true; };
+    }
+
     const coords = toValidCoords(lat, lng);
     if (!coords) { setFailed(true); return; }
     let cancelled = false;
@@ -313,7 +384,7 @@ function InteractiveStreetView({ lat, lng, fallbackUrl, locked = true, alt = 'St
       .catch(() => { if (!cancelled) setFailed(true); });
 
     return () => { cancelled = true; };
-  }, [lat, lng, locked]);
+  }, [lat, lng, locked, panoId, initialHeading]);
 
   if (failed) {
     if (!fallbackUrl) return null;
@@ -335,4 +406,4 @@ function InteractiveStreetView({ lat, lng, fallbackUrl, locked = true, alt = 'St
   );
 }
 
-export { InteractiveSatellite, InteractiveStreetView };
+export { InteractiveSatellite, InteractiveStreetView, clampPov };
