@@ -8,9 +8,22 @@ import { regionToRect, rectToRegion } from '../utils/streetViewProjection';
 const LIVE_PADDING = 0.12; // grow each live box a little so the whole sign is covered
 const MIN_BOX_PX = 28;
 
+// Browsers without backdrop-filter (some older Android/iOS WebViews) would
+// show a clear box over the panorama: the sign stays readable. Use a solid
+// tint there instead, so a hidden area is always hidden.
+const SUPPORTS_BACKDROP = typeof CSS !== 'undefined' && typeof CSS.supports === 'function'
+  && (CSS.supports('backdrop-filter', 'blur(1px)') || CSS.supports('-webkit-backdrop-filter', 'blur(1px)'));
+
 export default function SignBlurLayer({ regions, view, editable = false, selected = null, onSelect, onChange }) {
   const dragRef = useRef(null);
-  if (!view || !view.size || !view.size.width || !view.size.height || !regions?.length) return null;
+  if (!regions?.length && !editable) return null;
+  // Until the first measurement of the panorama the boxes can't be placed.
+  // Buyers get a neutral cover for that moment instead of an unblurred view.
+  if (!view || !view.size || !view.size.width || !view.size.height) {
+    if (editable || !regions?.length) return null;
+    return <div style={{ position: 'absolute', inset: 0, zIndex: 3, background: '#e5e7eb', pointerEvents: 'none' }} />;
+  }
+  if (!regions?.length) return null;
   const { pov, zoom, size } = view;
 
   const startDrag = (e, index, mode) => {
@@ -52,8 +65,10 @@ export default function SignBlurLayer({ regions, view, editable = false, selecte
             onPointerCancel={endDrag}
             style={{
               position: 'absolute', left: rect.left, top: rect.top, width: rect.width, height: rect.height,
-              backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)',
-              background: 'rgba(255,255,255,0.12)', borderRadius: '6px',
+              ...(SUPPORTS_BACKDROP
+                ? { backdropFilter: 'blur(22px)', WebkitBackdropFilter: 'blur(22px)', background: 'rgba(255,255,255,0.18)' }
+                : { background: editable ? 'rgba(75,85,99,0.75)' : 'rgb(75,85,99)' }),
+              borderRadius: '6px',
               pointerEvents: editable ? 'auto' : 'none', touchAction: 'none', cursor: editable ? 'move' : 'default',
               border: editable ? (isSelected ? '2px solid #f59e0b' : '2px dashed rgba(245,158,11,0.9)') : 'none',
               boxSizing: 'border-box',
