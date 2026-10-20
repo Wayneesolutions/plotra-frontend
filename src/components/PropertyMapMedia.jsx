@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { loadGoogleMaps } from '../utils/googleMapsLoader';
+import SignBlurLayer from './SignBlurLayer.jsx';
 
 // Coerces lat/lng to real numbers and validates them. Needed defensively
 // even though the backend now sends real numbers (publicListingController.js
@@ -57,6 +58,11 @@ const expandedWrapStyle = {
 };
 const collapsedWrapStyle = {
   width: '100%', height: '100%', position: 'relative', isolation: 'isolate', zIndex: 2,
+};
+const toolbarBtnStyle = {
+  WebkitAppearance: 'none', appearance: 'none', border: '1.5px solid rgba(255,255,255,0.35)',
+  background: 'rgba(17,24,39,0.85)', color: '#fff', fontSize: '13px', fontWeight: 600,
+  padding: '8px 12px', borderRadius: '8px', cursor: 'pointer',
 };
 const expandBtnStyle = {
   position: 'absolute', top: '10px', right: '10px',
@@ -262,16 +268,26 @@ function clampPov(pov, centerHeading) {
   return { heading: (centerHeading + delta + 360) % 360, pitch: clamp(pov.pitch, LIVE_PITCH_MIN, LIVE_PITCH_MAX) };
 }
 
-function InteractiveStreetView({ lat, lng, panoId = null, initialHeading = 0, fallbackUrl, locked = true, alt = 'Street view of the property' }) {
+function InteractiveStreetView({
+  lat, lng, panoId = null, initialHeading = 0, fallbackUrl, locked = true, alt = 'Street view of the property',
+  // Areas to blur (signboards / house number), in panorama angles. `editable`
+  // is the dealer choosing them before the listing goes live.
+  blurRegions = [], editable = false, onRegionsChange,
+}) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const mapsApiRef = useRef(null);
   const [failed, setFailed] = useState(false);
   const [expanded, setExpanded] = useMapExpand({ mapRef, mapsApiRef });
+  const [view, setView] = useState(null); // { pov, zoom, size } for placing blur boxes
+  const [selectedRegion, setSelectedRegion] = useState(null);
+  const viewRef = useRef(null);
+  viewRef.current = view;
 
   useEffect(() => {
     if (panoId) {
       let cancelledLive = false;
+      let resizeObserver = null;
       loadGoogleMaps()
         .then((maps) => {
           if (cancelledLive || !containerRef.current) return;
@@ -296,6 +312,28 @@ function InteractiveStreetView({ lat, lng, panoId = null, initialHeading = 0, fa
           });
           mapRef.current = panorama;
 
+          // Track what the buyer is looking at so blur boxes can follow it.
+          let raf = 0;
+          const readView = () => {
+            raf = 0;
+            const el = containerRef.current;
+            if (!el) return;
+            setView({
+              pov: panorama.getPov(),
+              zoom: panorama.getZoom(),
+              size: { width: el.clientWidth, height: el.clientHeight },
+            });
+          };
+          const scheduleView = () => { if (!raf) raf = requestAnimationFrame(readView); };
+          panorama.addListener('pov_changed', scheduleView);
+          panorama.addListener('zoom_changed', scheduleView);
+          panorama.addListener('status_changed', scheduleView);
+          if (typeof ResizeObserver !== 'undefined') {
+            resizeObserver = new ResizeObserver(scheduleView);
+            resizeObserver.observe(containerRef.current);
+          }
+          scheduleView();
+
           let adjusting = false;
           panorama.addListener('pov_changed', () => {
             if (adjusting) return;
@@ -318,7 +356,7 @@ function InteractiveStreetView({ lat, lng, panoId = null, initialHeading = 0, fa
           });
         })
         .catch(() => { if (!cancelledLive) setFailed(true); });
-      return () => { cancelledLive = true; };
+      return () => { cancelledLive = true; if (resizeObserver) resizeObserver.disconnect(); };
     }
 
     const coords = toValidCoords(lat, lng);
@@ -394,6 +432,44 @@ function InteractiveStreetView({ lat, lng, panoId = null, initialHeading = 0, fa
   return (
     <div style={expanded ? expandedWrapStyle : collapsedWrapStyle}>
       <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+      {panoId && (blurRegions.length > 0 || editable) && (
+        <SignBlurLayer
+          regions={blurRegions}
+          view={view}
+          editable={editable}
+          selected={selectedRegion}
+          onSelect={setSelectedRegion}
+          onChange={onRegionsChange}
+        />
+      )}
+      {panoId && editable && (
+        <div style={{ position: 'absolute', left: 10, bottom: 10, zIndex: 9999999, display: 'flex', gap: 8, transform: 'translateZ(0)' }}>
+          <button
+            type="button"
+            style={toolbarBtnStyle}
+            disabled={!view || blurRegions.length >= 8}
+            onClick={() => {
+              if (!viewRef.current) return;
+              const { pov } = viewRef.current;
+              onRegionsChange?.([...blurRegions, { heading: pov.heading, pitch: pov.pitch, width: 12, height: 8 }]);
+              setSelectedRegion(blurRegions.length);
+            }}
+          >
+            ＋ Hide an area
+          </button>
+          <button
+            type="button"
+            style={toolbarBtnStyle}
+            disabled={selectedRegion == null || !blurRegions[selectedRegion]}
+            onClick={() => {
+              onRegionsChange?.(blurRegions.filter((_, i) => i !== selectedRegion));
+              setSelectedRegion(null);
+            }}
+          >
+            Remove selected
+          </button>
+        </div>
+      )}
       <button
         type="button"
         onClick={() => setExpanded((e) => !e)}
