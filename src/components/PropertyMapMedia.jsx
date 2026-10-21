@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { loadGoogleMaps } from '../utils/googleMapsLoader';
-import SignBlurLayer from './SignBlurLayer.jsx';
 
 // Coerces lat/lng to real numbers and validates them. Needed defensively
 // even though the backend now sends real numbers (publicListingController.js
@@ -58,11 +57,6 @@ const expandedWrapStyle = {
 };
 const collapsedWrapStyle = {
   width: '100%', height: '100%', position: 'relative', isolation: 'isolate', zIndex: 2,
-};
-const toolbarBtnStyle = {
-  WebkitAppearance: 'none', appearance: 'none', border: '1.5px solid rgba(255,255,255,0.35)',
-  background: 'rgba(17,24,39,0.85)', color: '#fff', fontSize: '13px', fontWeight: 600,
-  padding: '8px 12px', borderRadius: '8px', cursor: 'pointer',
 };
 const expandBtnStyle = {
   position: 'absolute', top: '10px', right: '10px',
@@ -247,118 +241,17 @@ function InteractiveSatellite({ lat, lng, fallbackUrl, draggable = false, onPosi
 // out of navigating Street View too. `locked` defaults to true so nothing
 // else calling this component without passing it changes behavior; see
 // PropertyView.jsx for how it's actually gated on approval status.
-// Live-listing mode (panoId + heading, no coordinates): the buyer sees the
-// real panorama from the one spot that faces the property and can look up,
-// down and along the front of the house, but cannot walk away from it and
-// cannot turn more than LIVE_MAX_TURN degrees either side of the property
-// (so the road behind them and the back of the house are never in view).
-// Nothing is blurred.
-const LIVE_MAX_TURN = 50;     // degrees left/right of the property
-const LIVE_PITCH_MIN = -15;   // look down at the gate / ground
-const LIVE_PITCH_MAX = 45;    // look up at the roof and sky
-const LIVE_ZOOM_MIN = 1.3;    // cannot zoom out to a wide view of the street
-const LIVE_ZOOM_MAX = 3.5;
-
-function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
-
-/** Pure: keeps a point of view inside the allowed look-around window. */
-function clampPov(pov, centerHeading) {
-  let delta = ((pov.heading - centerHeading + 540) % 360) - 180; // -180..180
-  delta = clamp(delta, -LIVE_MAX_TURN, LIVE_MAX_TURN);
-  return { heading: (centerHeading + delta + 360) % 360, pitch: clamp(pov.pitch, LIVE_PITCH_MIN, LIVE_PITCH_MAX) };
-}
-
-function InteractiveStreetView({
-  lat, lng, panoId = null, initialHeading = 0, fallbackUrl, locked = true, alt = 'Street view of the property',
-  // Areas to blur (signboards / house number), in panorama angles. `editable`
-  // is the dealer choosing them before the listing goes live.
-  blurRegions = [], editable = false, onRegionsChange,
-}) {
+// Live listings no longer use this component: buyers get a fixed front photo
+// with the blur baked in (FrontPhotoBlurEditor.jsx / backend
+// frontViewService.js). This is the dealer's pre-approval view only.
+function InteractiveStreetView({ lat, lng, fallbackUrl, locked = true, alt = 'Street view of the property' }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const mapsApiRef = useRef(null);
   const [failed, setFailed] = useState(false);
   const [expanded, setExpanded] = useMapExpand({ mapRef, mapsApiRef });
-  const [view, setView] = useState(null); // { pov, zoom, size } for placing blur boxes
-  const [selectedRegion, setSelectedRegion] = useState(null);
-  const viewRef = useRef(null);
-  viewRef.current = view;
 
   useEffect(() => {
-    if (panoId) {
-      let cancelledLive = false;
-      let resizeObserver = null;
-      loadGoogleMaps()
-        .then((maps) => {
-          if (cancelledLive || !containerRef.current) return;
-          mapsApiRef.current = maps;
-          const panorama = new maps.StreetViewPanorama(containerRef.current, {
-            pano: panoId,
-            pov: clampPov({ heading: initialHeading, pitch: 5 }, initialHeading),
-            zoom: LIVE_ZOOM_MIN,
-            addressControl: false,
-            fullscreenControl: false,
-            gestureHandling: 'greedy',
-            // No walking: no arrows on the road, no tap-to-move, no
-            // double-click-to-move. Looking around stays fully interactive.
-            linksControl: false,
-            clickToGo: false,
-            disableDoubleClickZoom: true,
-            panControl: false,
-            showRoadLabels: false,
-            motionTracking: false,
-            motionTrackingControl: false,
-            enableCloseButton: false,
-          });
-          mapRef.current = panorama;
-
-          // Track what the buyer is looking at so blur boxes can follow it.
-          let raf = 0;
-          const readView = () => {
-            raf = 0;
-            const el = containerRef.current;
-            if (!el) return;
-            setView({
-              pov: panorama.getPov(),
-              zoom: panorama.getZoom(),
-              size: { width: el.clientWidth, height: el.clientHeight },
-            });
-          };
-          const scheduleView = () => { if (!raf) raf = requestAnimationFrame(readView); };
-          panorama.addListener('pov_changed', scheduleView);
-          panorama.addListener('zoom_changed', scheduleView);
-          panorama.addListener('status_changed', scheduleView);
-          if (typeof ResizeObserver !== 'undefined') {
-            resizeObserver = new ResizeObserver(scheduleView);
-            resizeObserver.observe(containerRef.current);
-          }
-          scheduleView();
-
-          let adjusting = false;
-          panorama.addListener('pov_changed', () => {
-            if (adjusting) return;
-            const pov = panorama.getPov();
-            const next = clampPov(pov, initialHeading);
-            if (Math.abs(next.heading - pov.heading) > 0.5 || Math.abs(next.pitch - pov.pitch) > 0.5) {
-              adjusting = true;
-              panorama.setPov(next);
-              adjusting = false;
-            }
-          });
-          panorama.addListener('zoom_changed', () => {
-            const z = panorama.getZoom();
-            const next = clamp(z, LIVE_ZOOM_MIN, LIVE_ZOOM_MAX);
-            if (next !== z) panorama.setZoom(next);
-          });
-          // Backstop: if anything still moves us to another panorama, snap back.
-          panorama.addListener('pano_changed', () => {
-            if (panorama.getPano() !== panoId) panorama.setPano(panoId);
-          });
-        })
-        .catch(() => { if (!cancelledLive) setFailed(true); });
-      return () => { cancelledLive = true; if (resizeObserver) resizeObserver.disconnect(); };
-    }
-
     const coords = toValidCoords(lat, lng);
     if (!coords) { setFailed(true); return; }
     let cancelled = false;
@@ -423,7 +316,7 @@ function InteractiveStreetView({
       .catch(() => { if (!cancelled) setFailed(true); });
 
     return () => { cancelled = true; };
-  }, [lat, lng, locked, panoId, initialHeading]);
+  }, [lat, lng, locked]);
 
   if (failed) {
     if (!fallbackUrl) return null;
@@ -432,44 +325,6 @@ function InteractiveStreetView({
   return (
     <div style={expanded ? expandedWrapStyle : collapsedWrapStyle}>
       <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
-      {panoId && (blurRegions.length > 0 || editable) && (
-        <SignBlurLayer
-          regions={blurRegions}
-          view={view}
-          editable={editable}
-          selected={selectedRegion}
-          onSelect={setSelectedRegion}
-          onChange={onRegionsChange}
-        />
-      )}
-      {panoId && editable && (
-        <div style={{ position: 'absolute', left: 10, bottom: 10, zIndex: 9999999, display: 'flex', gap: 8, transform: 'translateZ(0)' }}>
-          <button
-            type="button"
-            style={toolbarBtnStyle}
-            disabled={!view || blurRegions.length >= 8}
-            onClick={() => {
-              if (!viewRef.current) return;
-              const { pov } = viewRef.current;
-              onRegionsChange?.([...blurRegions, { heading: pov.heading, pitch: pov.pitch, width: 12, height: 8 }]);
-              setSelectedRegion(blurRegions.length);
-            }}
-          >
-            ＋ Hide an area
-          </button>
-          <button
-            type="button"
-            style={toolbarBtnStyle}
-            disabled={selectedRegion == null || !blurRegions[selectedRegion]}
-            onClick={() => {
-              onRegionsChange?.(blurRegions.filter((_, i) => i !== selectedRegion));
-              setSelectedRegion(null);
-            }}
-          >
-            Remove selected
-          </button>
-        </div>
-      )}
       <button
         type="button"
         onClick={() => setExpanded((e) => !e)}
@@ -483,4 +338,4 @@ function InteractiveStreetView({
   );
 }
 
-export { InteractiveSatellite, InteractiveStreetView, clampPov };
+export { InteractiveSatellite, InteractiveStreetView };
