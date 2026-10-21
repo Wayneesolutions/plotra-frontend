@@ -46,7 +46,7 @@ export default function LoginPage() {
           }
         }}
       >
-        <AuthField name="email" label="Email" type="email" required placeholder="you@business.in" />
+        <AuthField name="email" label="Email or WhatsApp number" type="text" required placeholder="you@business.in or 98765 43210" />
         <AuthField
           name="password"
           label="Password"

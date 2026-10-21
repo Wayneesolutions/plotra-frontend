@@ -16,7 +16,7 @@ import plotraIcon from '../assets/plotra-icon.png';
 
 const TABS = [
   { label: 'Pending Requests', icon: '📋', desc: 'Approve or reject new dealer signups' },
-  { label: 'Agent Signups',    icon: '🤝', desc: 'WhatsApp agent signup requests' },
+  { label: 'Agent Signups',    icon: '🤝', desc: 'People who joined on WhatsApp — approving makes them a dealer (7-day trial)' },
   { label: 'Geo Review',       icon: '📍', desc: 'Correct WhatsApp listing pins before the agent sees them' },
   { label: 'Marketplace Leads', icon: '🔎', desc: 'Leads delivered per dealer via the shared-number property search' },
   { label: 'Seller Leads',    icon: '🏷️', desc: 'Sell-your-property submissions to forward to dealers' },
@@ -272,8 +272,10 @@ export default function AdminPanel() {
       setAgentSignups((prev) => prev.filter((s) => s.id !== id));
       setAgentSignupCredential({
         name: res.data.user.name,
-        email: res.data.user.email,
-        password: res.data.temporaryPassword,
+        phone: res.data.user.phone,
+        business: res.data.tenant?.business_name,
+        trialEndsAt: res.data.trialEndsAt,
+        setupUrl: res.data.setupUrl,
       });
     } catch (err) {
       showToast(err.response?.data?.error?.message || 'Failed to approve signup.', 'error');
@@ -827,22 +829,24 @@ export default function AdminPanel() {
               <div style={S.modalStripe} />
               <div style={S.modalBody}>
                 <div style={S.modalIcon}>✅</div>
-                <h3 style={S.modalTitle}>Agent Approved</h3>
+                <h3 style={S.modalTitle}>Dealer Approved</h3>
                 <p style={S.modalSub}>
-                  <strong>{agentSignupCredential.name}</strong> has been approved. A WhatsApp notification with these credentials has been sent to them automatically.
+                  <strong>{agentSignupCredential.name}</strong> is now a dealer with their own account and admin panel
+                  {agentSignupCredential.trialEndsAt ? `, on a 7-day free trial till ${new Date(agentSignupCredential.trialEndsAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}` : ''}.
+                  Their WhatsApp welcome has a link to set their own password.
                 </p>
                 <div style={S.credBox}>
                   <div style={S.credRow}>
-                    <span style={S.credLabel}>Email</span>
-                    <span style={S.credValue}>{agentSignupCredential.email}</span>
+                    <span style={S.credLabel}>Login ID</span>
+                    <span style={S.credValue}>{agentSignupCredential.phone}</span>
                   </div>
                   <div style={S.credDivider} />
                   <div style={S.credRow}>
-                    <span style={S.credLabel}>Temp Password</span>
-                    <span style={{ ...S.credValue, ...S.credPassword }}>{agentSignupCredential.password}</span>
+                    <span style={S.credLabel}>Set-password link</span>
+                    <span style={{ ...S.credValue, fontSize: '11px', wordBreak: 'break-all' }}>{agentSignupCredential.setupUrl}</span>
                   </div>
                 </div>
-                <p style={S.modalNote}>WhatsApp notification already sent. Save this as backup.</p>
+                <p style={S.modalNote}>Already sent on WhatsApp. Share the link only if it didn't arrive; it works once.</p>
                 <button style={S.modalClose} onClick={() => setAgentSignupCredential(null)}>Done</button>
               </div>
             </div>

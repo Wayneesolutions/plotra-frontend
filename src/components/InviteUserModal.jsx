@@ -10,7 +10,8 @@ export default function InviteUserModal({ onClose }) {
   const [form, setForm] = useState({ name: '', email: '', phone: '' });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  const [credential, setCredential] = useState(null);
+  const [result, setResult] = useState(null); // { sentVia, setupUrl, who }
+  const [copied, setCopied] = useState(false);
 
   const setField = (field) => (e) => setForm((p) => ({ ...p, [field]: e.target.value }));
 
@@ -19,17 +20,18 @@ export default function InviteUserModal({ onClose }) {
     setSubmitting(true);
     setError(null);
     try {
+      if (!form.phone && !form.email) {
+        setError('Add their WhatsApp number or email.');
+        return;
+      }
       const res = await apiClient.post('/api/v1/dashboard/users/invite', {
         name: form.name,
-        email: form.email,
+        email: form.email || undefined,
         phone: form.phone || undefined,
       });
-      setCredential({
-        email: res.data.user.email,
-        password: res.data.temporaryPassword,
-      });
+      setResult({ sentVia: res.data.sentVia, setupUrl: res.data.setupUrl, who: form.name });
     } catch (err) {
-      setError(err.response?.data?.error?.message || 'Failed to invite this team member.');
+      setError(err.response?.data?.error?.message || 'Failed to add this sub-dealer.');
     } finally {
       setSubmitting(false);
     }
@@ -43,29 +45,41 @@ export default function InviteUserModal({ onClose }) {
         <div style={S.head}>
           <div>
             <p style={S.eyebrow}>Team</p>
-            <h3 style={S.title}>Invite a Team Member</h3>
+            <h3 style={S.title}>Add a Sub-dealer</h3>
           </div>
           <button onClick={onClose} style={S.closeBtn}>✕</button>
         </div>
 
         <div style={S.body}>
-          {credential ? (
+          {result ? (
             <div>
               <p style={S.successText}>
-                Account created for <strong>{credential.email}</strong>. Share this temporary
-                password with them directly — it will not be shown again.
+                <strong>{result.who}</strong> is added as your sub-dealer.{' '}
+                {result.sentVia
+                  ? `A link to set their own password was sent ${result.sentVia === 'email' ? 'by email' : result.sentVia === 'whatsapp' ? 'on WhatsApp' : 'on WhatsApp and by email'}.`
+                  : 'Share this one-time link with them so they can set their password.'}
               </p>
-              <div style={S.credBox}>
-                <span style={S.credLabel}>Temporary Password</span>
-                <span style={S.credValue}>{credential.password}</span>
-              </div>
+              {result.setupUrl && (
+                <div style={S.credBox}>
+                  <span style={S.credLabel}>Set-password link (works once, 7 days)</span>
+                  <span style={{ ...S.credValue, fontSize: '12px', wordBreak: 'break-all' }}>{result.setupUrl}</span>
+                  <button
+                    type="button"
+                    onClick={() => { navigator.clipboard?.writeText(result.setupUrl).then(() => setCopied(true)).catch(() => {}); }}
+                    style={{ ...S.doneBtn, background: '#f1f5f9', color: '#0c1b2e', marginTop: '8px', padding: '8px' }}
+                  >
+                    {copied ? 'Copied' : 'Copy link'}
+                  </button>
+                </div>
+              )}
               <button onClick={onClose} style={S.doneBtn}>Done</button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} style={S.form}>
               <p style={S.hint}>
-                They'll be added as an <strong>agent</strong> under your account, with their own
-                login — able to add and manage listings, but not billing or team management.
+                They'll be added as a <strong>sub-dealer</strong> under your account, with their own
+                login — able to add and manage listings, but not billing or team management. No password
+                is shared: they get a link to set their own.
               </p>
 
               {error && <div style={S.errorBox}>{error}</div>}
@@ -75,17 +89,17 @@ export default function InviteUserModal({ onClose }) {
                 <input style={S.input} type="text" required value={form.name} onChange={setField('name')} placeholder="e.g. Ramanpreet Kaur" />
               </label>
               <label style={S.field}>
-                <span style={S.label}>Email</span>
-                <input style={S.input} type="email" required value={form.email} onChange={setField('email')} placeholder="agent@example.com" />
+                <span style={S.label}>WhatsApp number</span>
+                <input style={S.input} type="tel" value={form.phone} onChange={setField('phone')} placeholder="e.g. 9876543210" />
+                <span style={S.fieldNote}>Their login ID. They can also send listings by WhatsApp from this number.</span>
               </label>
               <label style={S.field}>
-                <span style={S.label}>Phone (optional)</span>
-                <input style={S.input} type="tel" value={form.phone} onChange={setField('phone')} placeholder="e.g. 9876543210" />
-                <span style={S.fieldNote}>Add their WhatsApp number to let them create listings by texting Plotraa directly.</span>
+                <span style={S.label}>Email (optional)</span>
+                <input style={S.input} type="email" value={form.email} onChange={setField('email')} placeholder="name@example.com" />
               </label>
 
               <button type="submit" disabled={submitting} style={{ ...S.submitBtn, opacity: submitting ? 0.7 : 1 }}>
-                {submitting ? 'Sending invite…' : 'Send Invite'}
+                {submitting ? 'Adding…' : 'Add Sub-dealer'}
               </button>
             </form>
           )}
