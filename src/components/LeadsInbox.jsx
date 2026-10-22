@@ -14,6 +14,26 @@ export default function LeadsInbox({ bare = false }) {
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // Dealer (owner) can hand a lead to a sub-dealer.
+  const storedUser = JSON.parse(localStorage.getItem('pve_user') || 'null');
+  const isDealer = storedUser?.role === 'owner';
+  const [team, setTeam] = useState([]);
+
+  useEffect(() => {
+    if (!isDealer) return;
+    apiClient.get('/api/v1/dashboard/users')
+      .then((res) => setTeam((res.data.users || []).filter((u) => u.role === 'agent')))
+      .catch(() => {});
+  }, [isDealer]);
+
+  const assignTo = async (id, userId) => {
+    try {
+      await apiClient.patch(`/api/v1/dashboard/leads/${id}/assign`, { user_id: userId || null });
+      fetchLeads(filter);
+    } catch (err) {
+      alert(err.response?.data?.error?.message || 'Failed to assign lead.');
+    }
+  };
 
   const fetchLeads = useCallback(async (status) => {
     try {
@@ -81,8 +101,11 @@ export default function LeadsInbox({ bare = false }) {
                   Interested in: <strong>{lead.listing.title}</strong> — {lead.listing.address}
                 </div>
               )}
+              {lead.details && (
+                <div style={styles.leadListing}>{lead.details}</div>
+              )}
               <div style={styles.leadMeta}>
-                <span>Source: {lead.source}</span>
+                <span>Source: {lead.source === 'seller_lead' ? 'Plotraa (property owner)' : lead.source}</span>
                 <span>{new Date(lead.created_at).toLocaleString()}</span>
               </div>
               <div style={styles.leadActions}>
@@ -93,6 +116,17 @@ export default function LeadsInbox({ bare = false }) {
                 >
                   {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
+                {isDealer && team.length > 0 && (
+                  <select
+                    value={lead.assigned_to || ''}
+                    onChange={(e) => assignTo(lead.id, e.target.value)}
+                    style={styles.statusSelect}
+                    title="Give this lead to a sub-dealer"
+                  >
+                    <option value="">Me (dealer)</option>
+                    {team.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+                  </select>
+                )}
                 {lead.phone && (
                   <a
                     href={`https://wa.me/${lead.phone.replace(/\D/g, '')}`}

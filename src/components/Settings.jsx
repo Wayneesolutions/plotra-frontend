@@ -96,7 +96,6 @@ export default function Settings({ bare = false }) {
 
   useEffect(() => {
     if (storedUser?.role !== 'owner') return;
-    loadAgentSignups();
   }, [storedUser?.role]);
 
   const handleApproveSignup = async (id) => {
@@ -226,7 +225,11 @@ export default function Settings({ bare = false }) {
     setInviteError(null);
     setInviteResult(null);
     try {
-      const res = await apiClient.post('/api/v1/dashboard/users/invite', inviteForm);
+      const res = await apiClient.post('/api/v1/dashboard/users/invite', {
+        name: inviteForm.name,
+        phone: inviteForm.phone || undefined,
+        email: inviteForm.email || undefined,
+      });
       setInviteResult(res.data);
       setInviteForm({ name: '', email: '', phone: '' });
       loadTeamUsers();
@@ -333,27 +336,28 @@ export default function Settings({ bare = false }) {
 
         {storedUser?.role === 'owner' && (
           <section style={styles.card}>
-            <h3 style={styles.cardTitle}>Invite a Team Member</h3>
+            <h3 style={styles.cardTitle}>Add a Sub-dealer</h3>
             <p style={styles.cardHelp}>
-              Adds an agent under your account. They get their own login and can optionally connect their
-              own WhatsApp number for listing intake, same as you did above.
+              Adds a sub-dealer under your account. They log in with their WhatsApp number (or email) and get a
+              link to set their own password. With a WhatsApp number they can also send listings straight away.
             </p>
 
             {inviteResult && (
               <div style={styles.currentPhoneBox}>
-                ✅ Invited <strong>{inviteResult.user.email}</strong>. Temporary password:{' '}
-                <code style={styles.codeBadge}>{inviteResult.temporaryPassword}</code> (also emailed, if SMTP is configured).
+                ✅ Added <strong>{inviteResult.user.name}</strong>.{' '}
+                {inviteResult.sentVia ? 'A set-password link was sent to them.' : 'Share this one-time set-password link with them:'}
+                {inviteResult.setupUrl && <code style={{ ...styles.codeBadge, display: 'block', marginTop: '6px', wordBreak: 'break-all' }}>{inviteResult.setupUrl}</code>}
               </div>
             )}
             {inviteError && <div style={styles.banner}>⚠️ {inviteError}</div>}
 
             <form onSubmit={handleInviteSubmit} style={{ ...styles.form, flexDirection: 'column' }}>
               <input required placeholder="Name" value={inviteForm.name} onChange={(e) => setInviteForm({ ...inviteForm, name: e.target.value })} style={styles.input} />
-              <input required type="email" placeholder="Email" value={inviteForm.email} onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })} style={styles.input} />
-              <input type="tel" placeholder="Phone (optional)" value={inviteForm.phone} onChange={(e) => setInviteForm({ ...inviteForm, phone: e.target.value })} style={styles.input} />
-              <span style={styles.fieldNote}>Add their WhatsApp number to let them create listings by texting Plotraa directly.</span>
+              <input type="tel" placeholder="WhatsApp number" value={inviteForm.phone} onChange={(e) => setInviteForm({ ...inviteForm, phone: e.target.value })} style={styles.input} />
+              <input type="email" placeholder="Email (optional)" value={inviteForm.email} onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })} style={styles.input} />
+              <span style={styles.fieldNote}>WhatsApp number or email is needed; the number is their login ID and lets them send listings on WhatsApp.</span>
               <button type="submit" disabled={inviteSubmitting} style={{ ...styles.submitBtn, alignSelf: 'flex-start' }}>
-                {inviteSubmitting ? 'Inviting…' : 'Invite'}
+                {inviteSubmitting ? 'Adding…' : 'Add Sub-dealer'}
               </button>
             </form>
 
@@ -370,7 +374,7 @@ export default function Settings({ bare = false }) {
                     <div key={u.id} style={styles.numberRow}>
                       <div>
                         <strong>{u.name}</strong>
-                        <span style={styles.numberLabel}> — {u.email}</span>
+                        <span style={styles.numberLabel}> — {u.role === 'owner' ? 'Dealer' : 'Sub-dealer'}{u.email && !/@wa-signup\.plotra\.internal$/.test(u.email) ? ` · ${u.email}` : ''}</span>
                       </div>
                       {editingUserId === u.id ? (
                         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
@@ -399,58 +403,8 @@ export default function Settings({ bare = false }) {
           </section>
         )}
 
-        {storedUser?.role === 'owner' && (
-          <section style={styles.card}>
-            <h3 style={styles.cardTitle}>Pending Agent Signups</h3>
-            <p style={styles.cardHelp}>
-              Prospective agents who texted "join as agent" on WhatsApp and finished providing
-              their details. Approving creates their login and makes their number immediately
-              live for listing intake — no separate activation step.
-            </p>
-
-            {signupCredential && (
-              <div style={styles.currentPhoneBox}>
-                ✅ Approved <strong>{signupCredential.name}</strong>. Dashboard login (optional):{' '}
-                {signupCredential.email} / <code style={styles.codeBadge}>{signupCredential.password}</code>
-              </div>
-            )}
-            {signupError && <div style={styles.banner}>⚠️ {signupError}</div>}
-
-            {signupsLoading ? (
-              <p style={styles.cardHelp}>Loading…</p>
-            ) : agentSignups.length === 0 ? (
-              <p style={styles.cardHelp}>No pending signups.</p>
-            ) : (
-              <div style={styles.numberList}>
-                {agentSignups.map((s) => (
-                  <div key={s.id} style={styles.numberRow}>
-                    <div>
-                      <strong>{s.name}</strong>
-                      <span style={styles.numberLabel}> — {s.phone}</span>
-                      <div style={styles.signupAddress}>{s.address}</div>
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button
-                        onClick={() => handleApproveSignup(s.id)}
-                        disabled={signupActionLoading === s.id}
-                        style={{ ...styles.linkBtn, color: '#16a34a', opacity: signupActionLoading === s.id ? 0.6 : 1 }}
-                      >
-                        {signupActionLoading === s.id ? '…' : 'Approve'}
-                      </button>
-                      <button
-                        onClick={() => handleRejectSignup(s.id)}
-                        disabled={signupActionLoading === s.id}
-                        style={{ ...styles.linkBtn, color: '#dc2626', opacity: signupActionLoading === s.id ? 0.6 : 1 }}
-                      >
-                        Reject
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        )}
+        {/* WhatsApp joiners are approved as dealers by the Plotraa team now;
+            dealers add their own sub-dealers above. */}
 
         {maxWhatsappNumbers >= 1 && (
           <section style={styles.card}>

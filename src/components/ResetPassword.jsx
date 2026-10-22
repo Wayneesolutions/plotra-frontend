@@ -12,7 +12,10 @@ export default function ResetPassword() {
   const [message, setMessage] = useState(null);
   const [done, setDone] = useState(false);
 
-  const token = new URLSearchParams(window.location.search).get('token');
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('token');
+  // New dealers / sub-dealers arrive here from their WhatsApp welcome link.
+  const isSetup = params.get('setup') === '1';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -53,7 +56,12 @@ export default function ResetPassword() {
           <img src={plotraaLogo} alt="Plotraa — Ek Text. Ek Listing." style={{ height: '104px', width: 'auto' }} />
         </div>
 
-        <h1 style={S.title}>Set a new password</h1>
+        <h1 style={S.title}>{isSetup ? 'Set your password' : 'Set a new password'}</h1>
+        {isSetup && (
+          <p style={{ margin: '0 0 12px', color: '#475569', fontSize: '14px', lineHeight: 1.5 }}>
+            Welcome to Plotraa! Choose a password for your panel. You'll log in with your WhatsApp number (or email) and this password.
+          </p>
+        )}
 
         {message && (
           <div style={{

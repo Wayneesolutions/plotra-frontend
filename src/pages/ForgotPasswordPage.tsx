@@ -22,7 +22,7 @@ export default function ForgotPasswordPage() {
       subtitle={
         stage === "reset"
           ? "Minimum 8 characters. Use something you don't reuse elsewhere."
-          : "We'll email you a secure reset link."
+          : "We'll send a secure reset link to your email, or on WhatsApp if you use your number."
       }
       footer={
         <Link to="/login" className="text-xs font-semibold text-primary">
@@ -50,10 +50,10 @@ export default function ForgotPasswordPage() {
         >
           <AuthField
             name="email"
-            label="Email"
-            type="email"
+            label="Email or WhatsApp number"
+            type="text"
             required
-            placeholder="you@business.in"
+            placeholder="you@business.in or 98765 43210"
           />
           <Button type="submit" variant="hero" size="lg" className="w-full" disabled={submitting}>
             {submitting ? "Sending…" : "Send reset link"} <ArrowRight />
