@@ -5,6 +5,7 @@ import { API_BASE_URL } from '../api/config';
 import RentVsBuyCalculator from './RentVsBuyCalculator.jsx';
 import AgentProfileCard from './AgentProfileCard.jsx';
 import { InteractiveSatellite, InteractiveStreetView } from './PropertyMapMedia.jsx';
+import FrontPhotoBlurEditor from './FrontPhotoBlurEditor.jsx';
 import AdSlot from './AdSlot.jsx';
 import plotraaLogo from '../assets/plotraa-logo-horizontal.png';
 import { Seo } from './Seo';
@@ -113,16 +114,17 @@ export default function PropertyView() {
   const [locationSaved, setLocationSaved] = useState(false);
   const [mapKey, setMapKey] = useState(0);
 
-  // Dealer-chosen blur areas (signboards / house number) on the live street
-  // view. Editable only before approval; blurDraft is what's on screen,
-  // blurSaved flags that the draft matches what's stored.
+  // Dealer-chosen blur boxes (signboards / house number) on the fixed front
+  // photo, as fractions of the photo. Editable only before approval; the
+  // server bakes them into the photo buyers see.
   const [blurDraft, setBlurDraft] = useState([]);
+  const [frontPhotoFailed, setFrontPhotoFailed] = useState(false);
   const [blurDirty, setBlurDirty] = useState(false);
   const [savingBlur, setSavingBlur] = useState(false);
   const [blurMessage, setBlurMessage] = useState(null); // { ok: boolean, text }
 
   useEffect(() => {
-    setBlurDraft(data?.streetView?.blurRegions || []);
+    setBlurDraft(data?.streetView?.blurRects || []);
     setBlurDirty(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data?.streetView?.panoId]);
@@ -234,9 +236,9 @@ export default function PropertyView() {
     try {
       const res = await axios.patch(`${API_BASE_URL}/api/v1/public/listings/${slug}/blur-regions`, {
         panoId: data.streetView.panoId,
-        regions: blurDraft,
+        rects: blurDraft,
       });
-      setData((prev) => ({ ...prev, streetView: { ...prev.streetView, blurRegions: res.data.blurRegions } }));
+      setData((prev) => ({ ...prev, streetView: { ...prev.streetView, blurRects: res.data.blurRects, version: res.data.version } }));
       setBlurDirty(false);
       setBlurMessage({ ok: true, text: blurDraft.length ? 'Saved. These areas will be blurred on the live page.' : 'Saved. Nothing will be blurred.' });
     } catch (err) {
@@ -305,12 +307,13 @@ export default function PropertyView() {
   // forward on its own for buyers.
   const showSatellite  = canAdjustLocation && hasSatellite;
   // Before approval: the dealer's movable Street View, to check the spot.
-  // Live: the same panorama, but locked to the one spot facing the property
-  // (streetView = panorama id + heading from the backend, never the exact
-  // coordinates). Buyers can look up, down and along the house; they cannot
-  // walk away from it. Nothing is blurred.
+  // Live: ONE fixed front photo with the dealer's boxes blurred into the
+  // image by the server (/front-view.jpg). No live panorama for buyers: it
+  // could be turned/zoomed around the street and CSS blur boxes over it
+  // drifted off the signboard on big screens and when zooming.
   const showStreetview = canAdjustLocation && hasStreetview;
-  const showLiveStreet = !canAdjustLocation && !!streetView?.panoId;
+  const showLiveStreet = !canAdjustLocation && !!streetView?.frontPhoto && !frontPhotoFailed;
+  const frontPhotoUrl = `${API_BASE_URL}/api/v1/public/listings/${slug}/front-view.jpg?v=${streetView?.version || ''}`;
   const bothImages     = showSatellite && showStreetview;
   const showHeroSection = canAdjustLocation || showLiveStreet;
   const photos        = media?.photo_urls || [];
@@ -398,15 +401,17 @@ export default function PropertyView() {
           </div>
         )}
         {showLiveStreet && (
-          <div style={{ ...S.heroSlot, height: '340px' }}>
-            <InteractiveStreetView
-              panoId={streetView.panoId}
-              initialHeading={streetView.heading}
-              blurRegions={streetView.blurRegions || []}
-              locked
+          <div style={{ ...S.heroSlot, height: 'auto', maxWidth: '640px', margin: '0 auto' }}>
+            {/* Whole photo, never cropped or zoomed: the blur is part of the image. */}
+            <img
+              src={frontPhotoUrl}
               alt={seo.streetAlt}
+              width={640}
+              height={480}
+              onError={() => setFrontPhotoFailed(true)}
+              style={{ width: '100%', height: 'auto', aspectRatio: '4 / 3', display: 'block' }}
             />
-            <div style={S.heroBadge}>📸 Street View · drag to look around the property</div>
+            <div style={S.heroBadge}>📸 Front view</div>
           </div>
         )}
         {canAdjustLocation && !hasSatellite && !hasStreetview && (
@@ -429,25 +434,26 @@ export default function PropertyView() {
         <section style={S.blurEditor}>
           <h3 style={S.blurTitle}>Hide signboards or the house number (optional)</h3>
           <p style={S.blurHelp}>
-            Happy with the pin? Mark anything on the front of the property you don't want buyers to read, such as a
-            signboard or an address. Those areas are blurred on the live page. This can't be changed once the listing is live.
+            Happy with the pin? This is the photo buyers will see. Mark anything you don't want them to read, such as a
+            signboard or an address: those areas are blurred into the photo itself. This can't be changed once the listing is live.
           </p>
-          <div style={{ position: 'relative', width: '100%', height: '360px', borderRadius: '12px', overflow: 'hidden', background: '#000' }}>
-            <InteractiveStreetView
-              panoId={streetView.panoId}
-              initialHeading={streetView.heading}
-              blurRegions={blurDraft}
-              editable
-              onRegionsChange={(next) => { setBlurDraft(next); setBlurDirty(true); setBlurMessage(null); }}
-              locked
-              alt={seo.streetAlt}
-            />
-          </div>
+          <FrontPhotoBlurEditor
+            key={streetView.panoId}
+            src={`${API_BASE_URL}/api/v1/public/listings/${slug}/front-frame.jpg?p=${encodeURIComponent(streetView.panoId)}`}
+            rects={blurDraft}
+            onChange={(next) => { setBlurDraft(next); setBlurDirty(true); setBlurMessage(null); }}
+            alt={seo.streetAlt}
+          />
           <div style={S.blurActions}>
             <button onClick={handleSaveBlur} disabled={savingBlur || !blurDirty} style={{ ...S.locationSaveBtn, flex: 'none', padding: '10px 16px', fontSize: '14px', opacity: savingBlur || !blurDirty ? 0.5 : 1 }}>
               {savingBlur ? 'Saving…' : 'Save hidden areas'}
             </button>
             <span style={S.blurCount}>{blurDraft.length === 0 ? 'No areas hidden' : `${blurDraft.length} area${blurDraft.length > 1 ? 's' : ''} hidden`}</span>
+            {!blurDirty && streetView?.version && (
+              <a href={`${API_BASE_URL}/api/v1/public/listings/${slug}/front-view.jpg?v=${streetView.version}`} target="_blank" rel="noreferrer" style={{ fontSize: '13px', color: '#2563eb' }}>
+                See what buyers get
+              </a>
+            )}
           </div>
           {blurMessage && <div style={{ ...(blurMessage.ok ? S.locationSavedMsg : S.locationErrorMsg), position: 'static', marginTop: '8px' }}>{blurMessage.text}</div>}
         </section>
