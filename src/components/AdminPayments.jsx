@@ -117,7 +117,10 @@ export default function AdminPayments({ showToast }) {
     .filter((a) => !statusFilter || a.payment_status === statusFilter)
     .sort((a, b) => {
       if (!sortByDueDate) return 0;
-      return new Date(a.next_due_date) - new Date(b.next_due_date);
+      // Rows without a due date go last.
+      const da = a.next_due_date ? new Date(a.next_due_date).getTime() : Infinity;
+      const db = b.next_due_date ? new Date(b.next_due_date).getTime() : Infinity;
+      return da - db;
     });
 
   return (
@@ -258,7 +261,14 @@ export default function AdminPayments({ showToast }) {
                       </td>
                       <td style={S.td}>{a.package_name || '—'}</td>
                       <td style={S.td}>{fmtDate(a.last_payment_date)}</td>
-                      <td style={S.td}>{fmtDate(a.next_due_date)}</td>
+                      <td style={S.td}>
+                        {fmtDate(a.next_due_date)}
+                        {a.next_due_kind === 'trial_end' && (
+                          <div style={S.subText}>
+                            {a.billing_status === 'trial' ? `Trial ends${a.trial_days_left != null ? ` · ${a.trial_days_left}d left` : ''}` : 'Trial ended'}
+                          </div>
+                        )}
+                      </td>
                       <td style={S.td}>
                         <span style={{ ...S.statusBadge, ...(STATUS_COLORS[a.payment_status] || STATUS_COLORS.unpaid) }}>
                           {STATUS_LABELS[a.payment_status] || a.payment_status}
