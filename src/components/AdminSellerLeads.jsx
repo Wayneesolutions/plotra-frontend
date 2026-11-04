@@ -115,7 +115,7 @@ export default function AdminSellerLeads({ showToast }) {
                 <span style={{ ...S.pill, ...(PILL[l.status] || {}) }}>{l.status}</span>
               </div>
               <div style={S.meta}>
-                {[l.property_type, l.size_text, [l.locality, l.city].filter(Boolean).join(', '), l.expected_price && `Expects ${l.expected_price}`]
+                {[l.listing_type === 'rent' ? 'Rent out' : l.listing_type === 'lease' ? 'Lease out' : null, l.property_type, l.size_text, [l.locality, l.city].filter(Boolean).join(', '), l.expected_price && `Expects ${l.expected_price}`]
                   .filter(Boolean).join(' · ') || 'No property details given'}
               </div>
               {l.description && <div style={{ ...S.meta, color: '#334155' }}>{l.description}</div>}

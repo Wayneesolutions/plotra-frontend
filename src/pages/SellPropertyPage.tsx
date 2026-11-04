@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteNav } from "@/components/plotra/site-nav";
@@ -7,7 +7,14 @@ import { SiteFooter } from "@/components/plotra/site-footer";
 import { PageSeo } from "@/components/Seo";
 import { ApiError, submitSellProperty } from "@/lib/plotra-api";
 
-const PROPERTY_TYPES = ["Plot", "House / Villa", "Apartment / Flat", "Commercial", "Agricultural land", "Other"];
+const PROPERTY_TYPES = ["Plot", "House / Villa", "Independent floor", "Apartment / Flat", "Room / PG", "Shop / Showroom", "Office", "Warehouse / Godown", "Commercial", "Agricultural land", "Other"];
+
+// Sell, rent out or lease out (Nov 2026).
+const PURPOSES: { value: "sale" | "rent" | "lease"; label: string }[] = [
+  { value: "sale", label: "Sell" },
+  { value: "rent", label: "Rent out" },
+  { value: "lease", label: "Lease out" },
+];
 
 const fieldClass =
   "mt-2 w-full rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground outline-none transition-all duration-500 focus:border-primary focus:shadow-[var(--shadow-glow)]";
@@ -16,6 +23,14 @@ export default function SellPropertyPage() {
   const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  // /sell-property?type=rent opens on "Rent out" (link sent on WhatsApp to an
+  // owner who said they want to rent out).
+  const [searchParams] = useSearchParams();
+  const initialType = searchParams.get("type");
+  const [purpose, setPurpose] = useState<"sale" | "rent" | "lease">(
+    initialType === "rent" || initialType === "lease" ? initialType : "sale",
+  );
+  const rental = purpose !== "sale";
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -29,6 +44,7 @@ export default function SellPropertyPage() {
         phone: get("phone"),
         email: get("email"),
         propertyType: get("propertyType"),
+        listingType: purpose,
         city: get("city"),
         locality: get("locality"),
         expectedPrice: get("expectedPrice"),
@@ -64,8 +80,10 @@ export default function SellPropertyPage() {
             </div>
           ) : (
             <>
-              <p className="label-eyebrow text-accent">Sell your property</p>
-              <h1 className="mt-3 font-display text-4xl font-bold text-ink">Want to sell? Tell us about it.</h1>
+              <p className="label-eyebrow text-accent">Sell or rent out your property</p>
+              <h1 className="mt-3 font-display text-4xl font-bold text-ink">
+                {rental ? "Want to rent it out? Tell us about it." : "Want to sell? Tell us about it."}
+              </h1>
               <p className="mt-3 text-sm text-muted-foreground">
                 Share a few details and we will match you with a verified dealer who will reach out to you.
               </p>
@@ -76,6 +94,24 @@ export default function SellPropertyPage() {
                     {error}
                   </div>
                 ) : null}
+                <div>
+                  <span className="label-eyebrow text-muted-foreground">I want to</span>
+                  <div className="mt-2 grid grid-cols-3 gap-2 rounded-xl border border-border bg-card p-1">
+                    {PURPOSES.map((p) => (
+                      <button
+                        key={p.value}
+                        type="button"
+                        onClick={() => setPurpose(p.value)}
+                        aria-pressed={purpose === p.value}
+                        className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                          purpose === p.value ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="block">
                     <span className="label-eyebrow text-muted-foreground">Your name *</span>
@@ -116,8 +152,10 @@ export default function SellPropertyPage() {
                   </label>
                 </div>
                 <label className="block">
-                  <span className="label-eyebrow text-muted-foreground">Expected price (optional)</span>
-                  <input name="expectedPrice" placeholder="e.g. ₹85 lakh" maxLength={100} className={fieldClass} />
+                  <span className="label-eyebrow text-muted-foreground">
+                    {rental ? "Expected rent per month (optional)" : "Expected price (optional)"}
+                  </span>
+                  <input name="expectedPrice" placeholder={rental ? "e.g. ₹18,000/month" : "e.g. ₹85 lakh"} maxLength={100} className={fieldClass} />
                 </label>
                 <label className="block">
                   <span className="label-eyebrow text-muted-foreground">Anything else (optional)</span>

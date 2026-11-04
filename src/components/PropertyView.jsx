@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { API_BASE_URL } from '../api/config';
 import RentVsBuyCalculator from './RentVsBuyCalculator.jsx';
+import { formatListingPrice, listingTypeOf, isRental, LISTING_TYPE_LABEL, LISTING_TYPE_BADGE } from '../utils/listingPrice';
 import AgentProfileCard from './AgentProfileCard.jsx';
 import { InteractiveSatellite, InteractiveStreetView } from './PropertyMapMedia.jsx';
 import FrontPhotoBlurEditor from './FrontPhotoBlurEditor.jsx';
@@ -27,26 +28,29 @@ function formatIndianPrice(price) {
 // Missing size or location degrade gracefully instead of leaving gaps.
 function buildListingSeo(listing, dealer, locationLabel) {
   const size = (listing.plot_area || '').trim();
-  const type = (listing.property_type || 'Property').trim();
+  const type = (listing.property_subtype || listing.property_type || 'Property').trim();
   const loc = locationLabel || null;
+  // "for Sale" / "for Rent" / "for Lease" (Nov 2026).
+  const forWord = { sale: 'Sale', rent: 'Rent', lease: 'Lease' }[listingTypeOf(listing)];
+  const forLower = forWord.toLowerCase();
 
   const base = [size, type].filter(Boolean).join(' ');
   const inLoc = loc ? ` in ${loc}` : '';
-  const titleCore = `${base} for Sale${inLoc}`;
+  const titleCore = `${base} for ${forWord}${inLoc}`;
   const title = `${titleCore} | Plotraa`.length > 60 ? titleCore : `${titleCore} | Plotraa`;
 
   const lowerBase = [size, type.toLowerCase()].filter(Boolean).join(' ');
-  const price = formatIndianPrice(listing.price);
+  const price = isRental(listing) ? formatListingPrice(listing, { withDeposit: false }) : formatIndianPrice(listing.price);
   const dealerName = dealer?.businessName || dealer?.business_name || dealer?.name || 'the dealer';
   const description =
-    `${lowerBase.charAt(0).toUpperCase()}${lowerBase.slice(1)} for sale${inLoc}${price ? ` at ${price}` : ''}. ` +
+    `${lowerBase.charAt(0).toUpperCase()}${lowerBase.slice(1)} for ${forLower}${inLoc}${price ? ` at ${price}` : ''}. ` +
     `See photos, satellite view and plot boundary, and contact ${dealerName} on WhatsApp.`;
 
   return {
     title,
     description,
-    h1: size && loc ? `${base} for sale${inLoc}` : listing.title,
-    photoAlt: (n) => `${lowerBase} for sale${inLoc} – photo ${n}`,
+    h1: size && loc ? `${base} for ${forLower}${inLoc}` : listing.title,
+    photoAlt: (n) => `${lowerBase} for ${forLower}${inLoc} – photo ${n}`,
     satelliteAlt: `Satellite view and plot boundary of ${lowerBase}${inLoc}`,
     streetAlt: `Street view of ${lowerBase}${inLoc}`,
   };
@@ -283,11 +287,25 @@ export default function PropertyView() {
   // circumstance, including a stale/cached response.
   const showBuilderSection = !!builderProfile && ['Flat', 'Commercial'].includes(listing.property_type);
 
-  const formattedPrice = listing.price != null
+  const rental = isRental(listing);
+  const formattedPrice = rental
+    ? formatListingPrice(listing)
+    : listing.price != null
     ? new Intl.NumberFormat('en-IN', {
         style: 'currency', currency: 'INR', maximumFractionDigits: 0,
       }).format(listing.price)
     : null;
+  // Rent / lease details shown under the header (only what the dealer gave).
+  const rentalFacts = rental ? [
+    ['Deposit', formatListingPrice({ listing_type: 'sale', price: listing.security_deposit })],
+    ['Maintenance', listing.maintenance_charges ? `${formatListingPrice({ listing_type: 'sale', price: listing.maintenance_charges })}/month` : null],
+    ['Furnishing', listing.furnishing ? listing.furnishing.replace(/^./, (c) => c.toUpperCase()) : null],
+    ['For', listing.preferred_tenant ? listing.preferred_tenant.replace(/^./, (c) => c.toUpperCase()) : null],
+    ['Available from', listing.available_from],
+    ['Lease term', listing.lease_term],
+    ['Lock-in', listing.lock_in],
+    ['Yearly increase', listing.rent_escalation_percent != null ? `${listing.rent_escalation_percent}%` : null],
+  ].filter(([, v]) => v) : [];
 
   const waMeLink = dealer?.whatsappDigits
     ? `https://wa.me/${dealer.whatsappDigits}?text=${encodeURIComponent(
@@ -462,8 +480,8 @@ export default function PropertyView() {
       {/* ══ ANCHOR STRIP (price + area + type) ══════════════════ */}
       <div style={S.anchor}>
         <div style={S.anchorItem}>
-          <span style={S.anchorLbl}>Price</span>
-          <span style={S.anchorVal}>{formattedPrice || 'On request'}</span>
+          <span style={S.anchorLbl}>{rental ? (listingTypeOf(listing) === 'lease' ? 'Lease Rent' : 'Rent') : 'Price'}</span>
+          <span style={S.anchorVal}>{(rental ? formatListingPrice(listing, { withDeposit: false }) : formattedPrice) || 'On request'}</span>
         </div>
         <div style={S.anchorDivider} />
         <div style={S.anchorItem}>
@@ -473,7 +491,7 @@ export default function PropertyView() {
         <div style={S.anchorDivider} />
         <div style={S.anchorItem}>
           <span style={S.anchorLbl}>Type</span>
-          <span style={S.anchorVal}>{listing.property_type}</span>
+          <span style={S.anchorVal}>{listing.property_subtype || listing.property_type}</span>
         </div>
       </div>
 
@@ -483,13 +501,24 @@ export default function PropertyView() {
         {/* Property header */}
         <div style={S.propHead}>
           <div style={S.chipRow}>
-            <span style={S.typeChip}>{listing.property_type}</span>
+            <span style={{ ...S.typeChip, ...LISTING_TYPE_BADGE[listingTypeOf(listing)] }}>{LISTING_TYPE_LABEL[listingTypeOf(listing)]}</span>
+            <span style={S.typeChip}>{listing.property_subtype || listing.property_type}</span>
             <span style={S.statusChip}>
               <span style={{ color: '#059669', fontSize: '8px' }}>●</span> Available
             </span>
           </div>
           <h1 style={S.propTitle}>{seo.h1}</h1>
           <p style={S.propAddr}>📍 {getDisplayArea(listing)}</p>
+          {rentalFacts.length > 0 && (
+            <div style={S.rentalFacts}>
+              {rentalFacts.map(([label, value]) => (
+                <div key={label} style={S.rentalFact}>
+                  <span style={S.rentalFactLbl}>{label}</span>
+                  <span style={S.rentalFactVal}>{value}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Agent profile — rating, experience, RERA (no name) */}
@@ -711,7 +740,7 @@ export default function PropertyView() {
                       <span style={S.comparePill}>★ {p.builder_rating.toFixed(1)}</span>
                     )}
                     <span style={S.comparePrice}>
-                      {p.price != null ? `₹${Number(p.price).toLocaleString('en-IN')}` : 'On request'}
+                      {formatListingPrice(p) || 'On request'}
                     </span>
                   </div>
                 </a>
@@ -720,12 +749,15 @@ export default function PropertyView() {
           </div>
         )}
 
-        {/* NEW — Rent vs Buy Calculator (Phase 6) */}
-        <RentVsBuyCalculator
-          tenantId={listing.tenant_id}
-          propertyId={listing.id}
-          defaultPrice={listing.price}
-        />
+        {/* NEW — Rent vs Buy Calculator (Phase 6) — sale listings only;
+            a rental has no purchase price to compare against. */}
+        {!rental && (
+          <RentVsBuyCalculator
+            tenantId={listing.tenant_id}
+            propertyId={listing.id}
+            defaultPrice={listing.price}
+          />
+        )}
 
         {/* Sponsored ad slot — always shows (falls back to default/house ad) */}
         <AdSlot position="calculator_result" />
@@ -885,6 +917,10 @@ function domainOf(url) {
    Styles
    ══════════════════════════════════════════════════ */
 const S = {
+  rentalFacts: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px', marginTop: '14px' },
+  rentalFact: { display: 'flex', flexDirection: 'column', gap: '2px', padding: '10px 12px', borderRadius: '10px', background: '#f8fafc', border: '1px solid #e2e8f0' },
+  rentalFactLbl: { fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' },
+  rentalFactVal: { fontSize: '14px', fontWeight: 700, color: '#0c1b2e' },
   root: {
     width: '100%', maxWidth: '720px', margin: '0 auto',
     backgroundColor: '#ffffff', minHeight: '100vh',

@@ -113,6 +113,8 @@ export type SellPropertyInput = {
   phone: string;
   email?: string;
   propertyType?: string;
+  /** 'sale' (default), 'rent' (rent out) or 'lease' (lease out). */
+  listingType?: "sale" | "rent" | "lease";
   city?: string;
   locality?: string;
   expectedPrice?: string;
@@ -128,6 +130,7 @@ export function submitSellProperty(input: SellPropertyInput) {
       phone: input.phone,
       email: input.email || undefined,
       property_type: input.propertyType || undefined,
+      listing_type: input.listingType || undefined,
       city: input.city || undefined,
       locality: input.locality || undefined,
       expected_price: input.expectedPrice || undefined,

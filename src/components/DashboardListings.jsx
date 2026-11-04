@@ -9,6 +9,7 @@ import OpsPanel from './OpsPanel.jsx';
 import Analytics from './Analytics.jsx';
 import Settings from './Settings.jsx';
 import plotraaLogo from '../assets/plotraa-logo-horizontal.png';
+import { formatListingPrice, listingTypeOf, LISTING_TYPE_LABEL, LISTING_TYPE_BADGE } from '../utils/listingPrice';
 
 export default function DashboardListings() {
   const navigate   = useNavigate();
@@ -26,10 +27,7 @@ export default function DashboardListings() {
   const [showCreateModal, setShowCreate]  = useState(false);
   const [activeTracerListing, setTracer]  = useState(null);
   const [builderModalListing, setBuilderModalListing] = useState(null); // Flat listings only — see the button below
-  const [formData, setFormData]           = useState({
-    title: '', raw_address: '', price: '',
-    plot_area: '', property_type: 'Plot', description: '',
-  });
+  const [formData, setFormData]           = useState({ title: '', raw_address: '', price: '', plot_area: '', property_type: 'Plot', description: '', listing_type: 'sale', monthly_rent: '', security_deposit: '', furnishing: '' });
   const [submitting, setSubmitting]       = useState(false);
   const [editListing, setEditListing] = useState(null);
   const [copiedSlug, setCopiedSlug]       = useState(null);
@@ -38,8 +36,8 @@ export default function DashboardListings() {
   // text, not a separate field, so q searches title/address together).
   // Applied on submit (Enter or the Search button), not live-as-you-type,
   // to avoid firing a request per keystroke.
-  const [filters, setFilters] = useState({ q: '', min_price: '', max_price: '', property_type: '' });
-  const [filterInputs, setFilterInputs] = useState({ q: '', min_price: '', max_price: '', property_type: '' });
+  const [filters, setFilters] = useState({ q: '', min_price: '', max_price: '', property_type: '', listing_type: '' });
+  const [filterInputs, setFilterInputs] = useState({ q: '', min_price: '', max_price: '', property_type: '', listing_type: '' });
 
   // Per-listing WhatsApp attribution — only makes sense for a plan with
   // more than one WhatsApp number to assign FROM (plans.max_whatsapp_numbers,
@@ -139,6 +137,7 @@ export default function DashboardListings() {
       if (withFilters.min_price) params.min_price = withFilters.min_price;
       if (withFilters.max_price) params.max_price = withFilters.max_price;
       if (withFilters.property_type) params.property_type = withFilters.property_type;
+      if (withFilters.listing_type) params.listing_type = withFilters.listing_type;
 
       const r = await apiClient.get('/api/v1/dashboard/listings', { params });
       setListings(r.data.listings || []);
@@ -161,7 +160,7 @@ export default function DashboardListings() {
   };
 
   const clearFilters = () => {
-    const empty = { q: '', min_price: '', max_price: '', property_type: '' };
+    const empty = { q: '', min_price: '', max_price: '', property_type: '', listing_type: '' };
     setFilterInputs(empty);
     setFilters(empty);
     fetchListings({ withFilters: empty });
@@ -185,9 +184,17 @@ export default function DashboardListings() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await apiClient.post('/api/v1/dashboard/listings', formData);
+      const rental = formData.listing_type !== 'sale';
+      const nul = (v) => (v === '' ? null : v);
+      await apiClient.post('/api/v1/dashboard/listings', {
+        ...formData,
+        price: rental ? null : nul(formData.price),
+        monthly_rent: rental ? nul(formData.monthly_rent) : null,
+        security_deposit: rental ? nul(formData.security_deposit) : null,
+        furnishing: rental ? nul(formData.furnishing) : null,
+      });
       setShowCreate(false);
-      setFormData({ title: '', raw_address: '', price: '', plot_area: '', property_type: 'Plot', description: '' });
+      setFormData({ title: '', raw_address: '', price: '', plot_area: '', property_type: 'Plot', description: '', listing_type: 'sale', monthly_rent: '', security_deposit: '', furnishing: '' });
       fetchListings();
     } catch (err) {
       alert(err.response?.data?.error?.message || 'Error creating listing.');
@@ -529,7 +536,7 @@ export default function DashboardListings() {
           <input
             type="number"
             name="min_price"
-            placeholder="Min budget (₹)"
+            placeholder={filterInputs.listing_type === 'rent' || filterInputs.listing_type === 'lease' ? 'Min rent/month (₹)' : 'Min budget (₹)'}
             value={filterInputs.min_price}
             onChange={handleFilterInputChange}
             style={{ ...S.filterInput, flex: 1, minWidth: '120px' }}
@@ -537,11 +544,22 @@ export default function DashboardListings() {
           <input
             type="number"
             name="max_price"
-            placeholder="Max budget (₹)"
+            placeholder={filterInputs.listing_type === 'rent' || filterInputs.listing_type === 'lease' ? 'Max rent/month (₹)' : 'Max budget (₹)'}
             value={filterInputs.max_price}
             onChange={handleFilterInputChange}
             style={{ ...S.filterInput, flex: 1, minWidth: '120px' }}
           />
+          <select
+            name="listing_type"
+            value={filterInputs.listing_type}
+            onChange={handleFilterInputChange}
+            style={{ ...S.filterInput, flex: 1, minWidth: '130px' }}
+          >
+            <option value="">Sale, rent &amp; lease</option>
+            <option value="sale">For sale</option>
+            <option value="rent">For rent</option>
+            <option value="lease">For lease</option>
+          </select>
           <select
             name="property_type"
             value={filterInputs.property_type}
@@ -555,7 +573,7 @@ export default function DashboardListings() {
             <option value="Commercial">Commercial</option>
           </select>
           <button type="submit" style={S.filterSearchBtn}>Search</button>
-          {(filters.q || filters.min_price || filters.max_price || filters.property_type) && (
+          {(filters.q || filters.min_price || filters.max_price || filters.property_type || filters.listing_type) && (
             <button type="button" onClick={clearFilters} style={S.filterClearBtn}>Clear</button>
           )}
         </form>
@@ -565,12 +583,12 @@ export default function DashboardListings() {
           <div style={S.empty}>
             <div style={S.emptyIconWrap}>🏗</div>
             <h4 style={S.emptyTitle}>
-              {(filters.q || filters.min_price || filters.max_price || filters.property_type)
+              {(filters.q || filters.min_price || filters.max_price || filters.property_type || filters.listing_type)
                 ? 'No listings match these filters'
                 : 'No properties yet'}
             </h4>
             <p style={S.emptySub}>
-              {(filters.q || filters.min_price || filters.max_price || filters.property_type)
+              {(filters.q || filters.min_price || filters.max_price || filters.property_type || filters.listing_type)
                 ? 'Try widening your search or clearing the filters.'
                 : 'Add your first listing to get started.'}
             </p>
@@ -605,7 +623,10 @@ export default function DashboardListings() {
                       </span>
                       {isActive ? 'Active' : 'Pending'}
                     </span>
-                    <span style={S.typePill}>{item.property_type}</span>
+                    <span style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                      <span style={{ ...S.typePill, ...LISTING_TYPE_BADGE[listingTypeOf(item)] }}>{LISTING_TYPE_LABEL[listingTypeOf(item)]}</span>
+                      <span style={S.typePill}>{item.property_subtype || item.property_type}</span>
+                    </span>
                   </div>
 
                   {/* Title */}
@@ -615,9 +636,9 @@ export default function DashboardListings() {
                   {/* Meta */}
                   <div style={S.metaGrid}>
                     <div style={S.metaBlock}>
-                      <span style={S.metaLbl}>Price</span>
+                      <span style={S.metaLbl}>{listingTypeOf(item) === 'sale' ? 'Price' : 'Rent'}</span>
                       <span className="pve-card-price" style={S.metaPrice}>
-                        {item.price != null && !isNaN(Number(item.price)) ? `₹${Number(item.price).toLocaleString('en-IN')}` : '—'}
+                        {formatListingPrice(item, { withDeposit: false }) || '—'}
                       </span>
                     </div>
                     <div style={S.metaBlock}>
@@ -766,16 +787,53 @@ export default function DashboardListings() {
                   value={formData.raw_address} onChange={handleInputChange} required style={S.fi} />
               </MField>
 
-              <div style={S.row2}>
-                <MField label="Price (₹)">
-                  <input type="number" name="price" placeholder="e.g. 4500000"
-                    value={formData.price} onChange={handleInputChange} required style={S.fi} />
-                </MField>
-                <MField label="Plot Area">
-                  <input type="text" name="plot_area" placeholder="e.g. 250 Sq Yards"
-                    value={formData.plot_area} onChange={handleInputChange} style={S.fi} />
-                </MField>
-              </div>
+              <MField label="Listing For">
+                <select name="listing_type" value={formData.listing_type} onChange={handleInputChange} style={S.fi}>
+                  <option value="sale">Sale</option>
+                  <option value="rent">Rent</option>
+                  <option value="lease">Lease</option>
+                </select>
+              </MField>
+
+              {formData.listing_type === 'sale' ? (
+                <div style={S.row2}>
+                  <MField label="Price (₹)">
+                    <input type="number" name="price" placeholder="e.g. 4500000 (empty = on request)"
+                      value={formData.price} onChange={handleInputChange} style={S.fi} />
+                  </MField>
+                  <MField label="Plot Area">
+                    <input type="text" name="plot_area" placeholder="e.g. 250 Sq Yards"
+                      value={formData.plot_area} onChange={handleInputChange} style={S.fi} />
+                  </MField>
+                </div>
+              ) : (
+                <>
+                  <div style={S.row2}>
+                    <MField label={formData.listing_type === 'lease' ? 'Lease Rent / Month (₹)' : 'Monthly Rent (₹)'}>
+                      <input type="number" name="monthly_rent" placeholder="e.g. 18000"
+                        value={formData.monthly_rent} onChange={handleInputChange} required style={S.fi} />
+                    </MField>
+                    <MField label="Security Deposit (₹)">
+                      <input type="number" name="security_deposit" placeholder="e.g. 36000"
+                        value={formData.security_deposit} onChange={handleInputChange} style={S.fi} />
+                    </MField>
+                  </div>
+                  <div style={S.row2}>
+                    <MField label="Area / Size">
+                      <input type="text" name="plot_area" placeholder="e.g. 1200 sq ft, 2 BHK"
+                        value={formData.plot_area} onChange={handleInputChange} style={S.fi} />
+                    </MField>
+                    <MField label="Furnishing">
+                      <select name="furnishing" value={formData.furnishing} onChange={handleInputChange} style={S.fi}>
+                        <option value="">Not specified</option>
+                        <option value="unfurnished">Unfurnished</option>
+                        <option value="semi-furnished">Semi-furnished</option>
+                        <option value="furnished">Furnished</option>
+                      </select>
+                    </MField>
+                  </div>
+                </>
+              )}
 
               <MField label="Property Type">
                 <select name="property_type" value={formData.property_type}
