@@ -22,6 +22,18 @@ export default function PropertyEditModal({ listing, onClose, onSaved, onDeleted
     price: listing.price || '',
     plot_area: listing.plot_area || '',
     property_type: listing.property_type || 'Plot',
+    // Sale / rent / lease (Nov 2026).
+    listing_type: listing.listing_type || 'sale',
+    monthly_rent: listing.monthly_rent ?? '',
+    security_deposit: listing.security_deposit ?? '',
+    maintenance_charges: listing.maintenance_charges ?? '',
+    furnishing: listing.furnishing || '',
+    preferred_tenant: listing.preferred_tenant || '',
+    available_from: listing.available_from || '',
+    lease_term: listing.lease_term || '',
+    lock_in: listing.lock_in || '',
+    rent_escalation_percent: listing.rent_escalation_percent ?? '',
+    property_subtype: listing.property_subtype || '',
     description: listing.description || '',
     status: listing.status === 'pending' ? 'active' : listing.status,
   });
@@ -39,7 +51,25 @@ export default function PropertyEditModal({ listing, onClose, onSaved, onDeleted
     setSaving(true);
     setError(null);
     try {
-      await apiClient.patch(`/api/v1/dashboard/listings/${listing.id}`, form);
+      const isRental = form.listing_type !== 'sale';
+      // Empty inputs go as null (clears the value); a rental never sends a
+      // sale price and a sale never sends rent fields.
+      const nul = (v) => (v === '' ? null : v);
+      const payload = {
+        ...form,
+        price: isRental ? null : nul(form.price),
+        monthly_rent: isRental ? nul(form.monthly_rent) : null,
+        security_deposit: isRental ? nul(form.security_deposit) : null,
+        maintenance_charges: isRental ? nul(form.maintenance_charges) : null,
+        rent_escalation_percent: form.listing_type === 'lease' ? nul(form.rent_escalation_percent) : null,
+        furnishing: nul(form.furnishing),
+        preferred_tenant: nul(form.preferred_tenant),
+        available_from: nul(form.available_from),
+        lease_term: form.listing_type === 'lease' ? nul(form.lease_term) : null,
+        lock_in: form.listing_type === 'lease' ? nul(form.lock_in) : null,
+        property_subtype: nul(form.property_subtype),
+      };
+      await apiClient.patch(`/api/v1/dashboard/listings/${listing.id}`, payload);
       onSaved();
     } catch (err) {
       setError(err.response?.data?.error?.message || 'Failed to save changes.');
@@ -101,28 +131,112 @@ export default function PropertyEditModal({ listing, onClose, onSaved, onDeleted
             <input type="text" name="raw_address" value={form.raw_address} onChange={handleChange} required style={S.fi} />
           </MField>
 
-          <div style={S.row2}>
-            <MField label="Price (₹)">
-              <input type="number" name="price" value={form.price} onChange={handleChange} required style={S.fi} />
-            </MField>
-            <MField label="Plot Area">
-              <input type="text" name="plot_area" value={form.plot_area} onChange={handleChange} style={S.fi} />
-            </MField>
-          </div>
+          <MField label="Listing For">
+            <div style={S.segment}>
+              {[['sale', 'Sale'], ['rent', 'Rent'], ['lease', 'Lease']].map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setForm((p) => ({ ...p, listing_type: value }))}
+                  style={{ ...S.segBtn, ...(form.listing_type === value ? S.segBtnOn : {}) }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </MField>
+
+          {form.listing_type === 'sale' ? (
+            <div style={S.row2}>
+              <MField label="Price (₹)">
+                <input type="number" name="price" value={form.price} onChange={handleChange} placeholder="Leave empty for 'on request'" style={S.fi} />
+              </MField>
+              <MField label="Plot Area">
+                <input type="text" name="plot_area" value={form.plot_area} onChange={handleChange} style={S.fi} />
+              </MField>
+            </div>
+          ) : (
+            <>
+              <div style={S.row2}>
+                <MField label={form.listing_type === 'lease' ? 'Lease Rent / Month (₹)' : 'Monthly Rent (₹)'}>
+                  <input type="number" name="monthly_rent" value={form.monthly_rent} onChange={handleChange} required style={S.fi} />
+                </MField>
+                <MField label="Security Deposit (₹)">
+                  <input type="number" name="security_deposit" value={form.security_deposit} onChange={handleChange} style={S.fi} />
+                </MField>
+              </div>
+              <div style={S.row2}>
+                <MField label="Maintenance / Month (₹)">
+                  <input type="number" name="maintenance_charges" value={form.maintenance_charges} onChange={handleChange} style={S.fi} />
+                </MField>
+                <MField label="Area / Size">
+                  <input type="text" name="plot_area" value={form.plot_area} onChange={handleChange} style={S.fi} />
+                </MField>
+              </div>
+              <div style={S.row2}>
+                <MField label="Furnishing">
+                  <select name="furnishing" value={form.furnishing} onChange={handleChange} style={S.fi}>
+                    <option value="">Not specified</option>
+                    <option value="unfurnished">Unfurnished</option>
+                    <option value="semi-furnished">Semi-furnished</option>
+                    <option value="furnished">Furnished</option>
+                  </select>
+                </MField>
+                <MField label="Available From">
+                  <input type="text" name="available_from" value={form.available_from} onChange={handleChange} placeholder="e.g. Immediately, 1 Dec" style={S.fi} />
+                </MField>
+              </div>
+              {form.listing_type === 'rent' ? (
+                <MField label="Preferred Tenant">
+                  <select name="preferred_tenant" value={form.preferred_tenant} onChange={handleChange} style={S.fi}>
+                    <option value="">Any / not specified</option>
+                    <option value="family">Family</option>
+                    <option value="bachelors">Bachelors</option>
+                    <option value="company">Company</option>
+                    <option value="any">Anyone</option>
+                  </select>
+                </MField>
+              ) : (
+                <div style={S.row3}>
+                  <MField label="Lease Term">
+                    <input type="text" name="lease_term" value={form.lease_term} onChange={handleChange} placeholder="e.g. 9 years" style={S.fi} />
+                  </MField>
+                  <MField label="Lock-in">
+                    <input type="text" name="lock_in" value={form.lock_in} onChange={handleChange} placeholder="e.g. 3 years" style={S.fi} />
+                  </MField>
+                  <MField label="Yearly Increase %">
+                    <input type="number" name="rent_escalation_percent" value={form.rent_escalation_percent} onChange={handleChange} style={S.fi} />
+                  </MField>
+                </div>
+              )}
+            </>
+          )}
 
           <div style={S.row2}>
             <MField label="Property Type">
               <select name="property_type" value={form.property_type} onChange={handleChange} style={S.fi}>
                 <option value="Plot">Plot</option>
-                <option value="Villa">Villa</option>
+                <option value="Flat">Flat</option>
+                <option value="Villa">Villa / House</option>
                 <option value="Commercial">Commercial</option>
               </select>
             </MField>
+            <MField label="Kind (optional)">
+              <select name="property_subtype" value={form.property_subtype} onChange={handleChange} style={S.fi}>
+                <option value="">Not specified</option>
+                {['Independent House', 'Independent Floor', 'Flat', 'Room', 'PG', 'Shop', 'Showroom', 'SCO', 'Office', 'Warehouse', 'Factory', 'Land', 'Plot', 'Other'].map((k) => (
+                  <option key={k} value={k}>{k}</option>
+                ))}
+              </select>
+            </MField>
+          </div>
+
+          <div style={S.row2}>
             <MField label="Status">
               <select name="status" value={form.status} onChange={handleChange} style={S.fi}>
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
-                <option value="sold">Sold</option>
+                <option value="sold">{form.listing_type === 'sale' ? 'Sold' : form.listing_type === 'lease' ? 'Leased out' : 'Rented out'}</option>
               </select>
             </MField>
           </div>
@@ -184,6 +298,10 @@ const S = {
   banner: { margin: '14px 24px 0', padding: '10px 14px', borderRadius: '10px', fontSize: '13px', backgroundColor: '#fff5f5', color: '#c53030', border: '1px solid #fed7d7' },
   form: { display: 'flex', flexDirection: 'column', gap: '16px', padding: '20px 24px' },
   row2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' },
+  row3: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px' },
+  segment: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px', background: '#f1f5f9', padding: '4px', borderRadius: '10px' },
+  segBtn: { padding: '9px 10px', borderRadius: '8px', border: 'none', background: 'transparent', color: '#475569', fontWeight: '700', fontSize: '13px', cursor: 'pointer' },
+  segBtnOn: { background: '#ffffff', color: '#0c1b2e', boxShadow: '0 1px 4px rgba(6,12,24,0.12)' },
   fi: { padding: '11px 13px', fontSize: '14px', border: '1.5px solid #e2e8f0', borderRadius: '9px', width: '100%', color: '#0c1b2e', backgroundColor: '#fafbfd' },
   footRow: { display: 'flex', gap: '10px', alignItems: 'center', paddingTop: '4px' },
   deleteBtn: { padding: '10px 16px', borderRadius: '9px', border: '1.5px solid #fca5a5', background: '#fff', color: '#dc2626', fontWeight: '700', fontSize: '13px', cursor: 'pointer', marginRight: 'auto' },

@@ -13,6 +13,7 @@ import Cities from './Cities.jsx';
 import CityPicker from './CityPicker.jsx';
 import { InteractiveSatellite } from './PropertyMapMedia.jsx';
 import plotraIcon from '../assets/plotra-icon.png';
+import { formatListingPrice, listingTypeOf, LISTING_TYPE_LABEL } from '../utils/listingPrice';
 
 const TABS = [
   { label: 'Pending Requests', icon: '📋', desc: 'Approve or reject new dealer signups' },
@@ -997,8 +998,8 @@ export default function AdminPanel() {
                             </a>
                           </td>
                           <td style={S.td}>{l.tenant_business_name}</td>
-                          <td style={S.td}>{l.property_type}</td>
-                          <td style={S.td}>{l.price != null ? `₹${Number(l.price).toLocaleString('en-IN')}` : '—'}</td>
+                          <td style={S.td}>{l.property_subtype || l.property_type}<div style={{ fontSize: '11px', color: '#64748b' }}>{LISTING_TYPE_LABEL[listingTypeOf(l)]}</div></td>
+                          <td style={S.td}>{formatListingPrice(l, { withDeposit: false }) || '—'}</td>
                           <td style={S.td}>
                             <span style={{ ...S.statusBadge, ...(l.status === 'active' ? S.statusActive : S.statusInactive) }}>
                               {l.status}

@@ -74,9 +74,11 @@ export default function ChatWidget() {
     setActivateError(message || 'Your activation code is no longer valid. Please enter your current code.');
   };
 
-  const handleSend = async (e) => {
-    e.preventDefault();
-    const text = input.trim();
+  // `override` = a quick-reply chip's value (e.g. the Sell / Rent / Lease
+  // choice), sent exactly like a typed message.
+  const handleSend = async (e, override) => {
+    e?.preventDefault();
+    const text = (override ?? input).trim();
     if (!text || sending) return;
 
     setMessages((prev) => [...prev, { role: 'user', text }]);
@@ -88,7 +90,7 @@ export default function ChatWidget() {
         session_id: sessionIdRef.current,
         tenant_code: code,
       });
-      setMessages((prev) => [...prev, { role: 'assistant', text: res.data.reply, listing: res.data.listing }]);
+      setMessages((prev) => [...prev, { role: 'assistant', text: res.data.reply, listing: res.data.listing, quickReplies: res.data.quick_replies }]);
     } catch (err) {
       if (err.response?.data?.error?.code === 'INVALID_CODE') {
         handleInvalidCode(err.response.data.error.message);
@@ -194,6 +196,21 @@ export default function ChatWidget() {
                   <a href={m.listing.link} target="_blank" rel="noreferrer" style={S.listingLinkAnchor}>
                     View listing preview →
                   </a>
+                </div>
+              )}
+              {m.quickReplies?.length > 0 && i === messages.length - 1 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '10px' }}>
+                  {m.quickReplies.map((q) => (
+                    <button
+                      key={q.value}
+                      type="button"
+                      disabled={sending}
+                      onClick={() => handleSend(null, q.value)}
+                      style={{ padding: '6px 12px', borderRadius: '999px', border: '1.5px solid #FF6B4D', background: '#fff', color: '#FF6B4D', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
+                    >
+                      {q.label}
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
