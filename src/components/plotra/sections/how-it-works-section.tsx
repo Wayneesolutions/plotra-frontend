@@ -52,7 +52,7 @@ export function HowItWorksSection({ asPage = false }: { asPage?: boolean }) {
           <p className="label-eyebrow text-primary">How it works</p>
           <Heading className="text-balance-tight mt-4 max-w-2xl font-display text-4xl font-bold text-ink sm:text-6xl">
             {asPage
-              ? "How Plotraa works: one WhatsApp message in, a live listing out"
+              ? "How Plotraa works: from one WhatsApp message to a live listing"
               : "One message in. A live listing out."}
           </Heading>
           {asPage ? (

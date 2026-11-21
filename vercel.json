@@ -1,5 +1,6 @@
 {
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/(dashboard|admin|login|forgot-password|reset-password|blog-admin|widget|showcase|p)(/.*)?", "destination": "/app.html" },
+    { "source": "/blog/:slug", "destination": "/app.html" }
   ]
 }

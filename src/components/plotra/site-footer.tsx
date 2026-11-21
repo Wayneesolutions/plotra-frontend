@@ -1,5 +1,14 @@
 import { Link } from "react-router-dom";
 import { PlotraLockup } from "@/components/plotra/logo";
+import {
+  ADDRESS_LINE,
+  COMPANY,
+  COPYRIGHT_NAME,
+  EMAIL,
+  INSTAGRAM_URL,
+  PHONE_DISPLAY,
+  WHATSAPP_URL,
+} from "@/seo/site-info.js";
 
 function InstagramIcon({ className }: { className?: string }) {
   return (
@@ -28,14 +37,21 @@ const columns = [
       { label: "Showcase reel", href: "/#showcase" },
       { label: "Featured listings", href: "/#listings" },
       { label: "Pricing", href: "/pricing" },
+      { label: "WhatsApp listing", href: "/features/whatsapp-property-listing" },
+      { label: "Lead management", href: "/features/lead-management" },
+      { label: "Plotraa vs portals", href: "/plotraa-vs-property-portals" },
       { label: "Dealer dashboard", href: "/dashboard" },
     ],
   },
   {
     title: "Company",
     links: [
+      { label: "About", href: "/about" },
       { label: "Team", href: "/team" },
+      { label: "FAQ", href: "/faq" },
       { label: "Blog", href: "/blog" },
+      { label: "Ludhiana", href: "/property-dealer-software-ludhiana" },
+      { label: "Mohali & Kharar", href: "/property-dealer-software-mohali-kharar" },
       { label: "Sell your property", href: "/sell-property" },
       { label: "Request access", href: "/request-access" },
       { label: "Sign in", href: "/login" },
@@ -53,10 +69,9 @@ const columns = [
   {
     title: "Contact",
     links: [
-      { label: "info@plotraa.com", href: "mailto:info@plotraa.com" },
-      { label: "+91 83600 98455", href: "tel:+918360098455" },
-      { label: "Instagram", href: "https://www.instagram.com/plotraa/" },
-      { label: "Ludhiana, Punjab", href: "/#listings" },
+      { label: `WhatsApp: ${PHONE_DISPLAY}`, href: WHATSAPP_URL },
+      { label: EMAIL, href: `mailto:${EMAIL}` },
+      { label: "Instagram", href: INSTAGRAM_URL },
     ],
   },
 ];
@@ -71,6 +86,13 @@ export function SiteFooter() {
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-ink-foreground/60">
               The WhatsApp-native real estate CRM built for Punjab property dealers.
             </p>
+            <address className="mt-4 max-w-xs text-sm not-italic leading-relaxed text-ink-foreground/60">
+              Plotraa — a product of {COMPANY}
+              <br />
+              {ADDRESS_LINE}
+              <br />
+              WhatsApp: {PHONE_DISPLAY} · {EMAIL}
+            </address>
           </div>
 
           {columns.map((col) => (
@@ -93,7 +115,7 @@ export function SiteFooter() {
         </div>
 
         <div className="mt-14 flex flex-col gap-4 border-t border-white/10 pt-6 text-xs text-ink-foreground/50 sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} Plotraa Technologies. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} {COPYRIGHT_NAME}. All rights reserved.</p>
           <div className="flex items-center gap-6">
             <Link
               to="/legal?section=privacy-policy"
@@ -108,7 +130,7 @@ export function SiteFooter() {
               Terms
             </Link>
             <a
-              href="https://www.instagram.com/plotraa/"
+              href={INSTAGRAM_URL}
               target="_blank"
               rel="noreferrer"
               aria-label="Plotraa on Instagram"

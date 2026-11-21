@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { OG_IMAGE, SEO_PAGES, SITE_URL } from "@/seo/pages.js";
+import { OG_IMAGE, SEO_PAGES, SITE_URL, resolveJsonLd } from "@/seo/pages.js";
+import { getPrerenderData } from "@/lib/prerender-data";
 
 const DEFAULT_TITLE = "Plotraa — WhatsApp-native real estate CRM";
 
@@ -63,7 +64,15 @@ export function Seo({ title, description, path, jsonLd, image = OG_IMAGE, noinde
 }
 
 /** Convenience wrapper for the fixed marketing pages defined in seo/pages.js. */
-export function PageSeo({ path }: { path: keyof typeof SEO_PAGES }) {
-  const page = SEO_PAGES[path];
-  return <Seo title={page.title} description={page.description} path={path} jsonLd={page.jsonLd} />;
+export function PageSeo({ path }: { path: string }) {
+  const page = (SEO_PAGES as Record<string, { title: string; description: string; jsonLd: unknown }>)[path];
+  if (!page) return null;
+  return (
+    <Seo
+      title={page.title}
+      description={page.description}
+      path={path}
+      jsonLd={resolveJsonLd(page, getPrerenderData())}
+    />
+  );
 }

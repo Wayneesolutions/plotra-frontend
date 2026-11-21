@@ -9,6 +9,10 @@ import {
   planLimitLine,
   type PublicPlan,
 } from "@/lib/plans-api";
+import { getPrerenderData } from "@/lib/prerender-data";
+import { pricingFacts, inr } from "@/content/pricing-facts.js";
+import { FaqList, LastUpdated } from "@/components/plotra/content-blocks";
+import { PHONE_DISPLAY } from "@/seo/site-info.js";
 
 /**
  * Plans come from the backend (admin panel → Plans). Only plans that are
@@ -20,8 +24,11 @@ import {
  * plan name an H3. On the home page the section keeps H2 / H3 / H4.
  */
 export function PricingSection({ asPage = false }: { asPage?: boolean }) {
-  const [plans, setPlans] = useState<PublicPlan[]>([]);
-  const [state, setState] = useState<"loading" | "ready" | "error">("loading");
+  // Start from the plans baked in at build time (prerender), so the server
+  // HTML already contains every price, then refresh from the live API.
+  const initial = getPrerenderData().plans;
+  const [plans, setPlans] = useState<PublicPlan[]>(initial ?? []);
+  const [state, setState] = useState<"loading" | "ready" | "error">(initial?.length ? "ready" : "loading");
 
   useEffect(() => {
     let cancelled = false;
@@ -51,8 +58,8 @@ export function PricingSection({ asPage = false }: { asPage?: boolean }) {
               <h1 className="text-balance-tight mt-4 font-display text-4xl font-bold text-ink sm:text-5xl">
                 Plotraa pricing for property dealers
               </h1>
-              <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-                Straightforward monthly plans for property dealers and teams. No lock-in.
+              <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+                {pricingAnswer(plans)}
               </p>
             </>
           ) : (
@@ -150,7 +157,95 @@ export function PricingSection({ asPage = false }: { asPage?: boolean }) {
             </div>
           </div>
         ))}
+
+        {asPage && plans.length ? <ComparisonTable plans={plans} /> : null}
+        {asPage ? <PricingQuestions /> : null}
+        {asPage ? (
+          <div className="mt-10 text-center">
+            <LastUpdated prefix="Prices in INR, per month." />
+          </div>
+        ) : null}
       </div>
     </section>
+  );
+}
+
+/** Plain-text answer under the /pricing H1 — computed from the plan data so
+ *  it always matches the cards. */
+function pricingAnswer(plans: PublicPlan[]) {
+  const f = pricingFacts(plans);
+  let text = `Plotraa has monthly plans for single dealers and dealer teams. Basic starts at ${inr(f.basicFrom)} a month for 1 user.`;
+  if (f.leadsFrom) {
+    text += ` Plans with buyer leads start at ${inr(f.leadsFrom)} a month`;
+    text += f.leadsIncluded ? ` and include ${f.leadsIncluded} leads.` : ".";
+  }
+  return `${text} There is no lock-in.`;
+}
+
+const ROWS: { label: string; value: (p: PublicPlan) => string }[] = [
+  { label: "Price per month", value: (p) => inr(p.price_inr) },
+  { label: "Users", value: (p) => (p.max_users ? String(p.max_users) : findFeature(p, /users? included|^\d+ users?$/i) ?? "—") },
+  { label: "WhatsApp numbers", value: (p) => findFeature(p, /whatsapp numbers?$/i)?.replace(/whatsapp numbers?/i, "").trim() || "—" },
+  { label: "Listings per month", value: (p) => findFeature(p, /listings\/month/i)?.replace(/listings\/month/i, "").trim() || "—" },
+  { label: "Full dashboard", value: (p) => (findFeature(p, /full dashboard/i) ? "Yes" : "—") },
+  { label: "Lead inbox", value: (p) => (findFeature(p, /lead inbox/i) ? "Yes" : "—") },
+  { label: "Buyer leads per month", value: (p) => (p.included_leads ? String(p.included_leads) : "—") },
+];
+
+function findFeature(plan: PublicPlan, re: RegExp) {
+  return plan.features.find((f) => re.test(f)) ?? null;
+}
+
+function ComparisonTable({ plans }: { plans: PublicPlan[] }) {
+  const ordered = groupPlansByCategory(plans).flatMap((g) => g.plans);
+  return (
+    <div className="mt-20">
+      <h2 className="text-center font-display text-2xl font-bold text-ink sm:text-3xl">Compare Plotraa plans</h2>
+      <div className="mt-8 overflow-x-auto rounded-2xl border border-border">
+        <table className="w-full min-w-[48rem] text-left text-sm">
+          <thead className="bg-lavender text-ink">
+            <tr>
+              <th scope="col" className="px-4 py-3 font-semibold">Feature</th>
+              {ordered.map((p) => (
+                <th key={p.key} scope="col" className="px-4 py-3 font-semibold">
+                  {p.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {ROWS.map((row) => (
+              <tr key={row.label}>
+                <th scope="row" className="px-4 py-3 font-semibold text-ink">
+                  {row.label}
+                </th>
+                {ordered.map((p) => (
+                  <td key={p.key} className="px-4 py-3 text-foreground/80">
+                    {row.value(p)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function PricingQuestions() {
+  const items = [
+    { id: "contract", q: "Is there a contract?", a: "No. Plans are monthly with no lock-in." },
+    {
+      id: "how-to-start",
+      q: "How do I start?",
+      a: `Request access at plotraa.com/request-access or WhatsApp ${PHONE_DISPLAY}.`,
+    },
+  ];
+  return (
+    <div className="mx-auto mt-20 max-w-4xl">
+      <h2 className="mb-6 text-center font-display text-2xl font-bold text-ink sm:text-3xl">Pricing questions</h2>
+      <FaqList items={items} />
+    </div>
   );
 }

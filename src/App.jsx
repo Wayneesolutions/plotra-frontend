@@ -1,5 +1,6 @@
 import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import NotFoundPage from './pages/NotFoundPage.tsx';
 import DashboardListings from './components/DashboardListings.jsx';
 import PropertyView from './components/PropertyView.jsx';
 import PrivateRoute from './components/PrivateRoute.jsx';
@@ -25,10 +26,25 @@ const ShowcaseListingPage = lazy(() => import('./pages/ShowcaseListingPage.tsx')
 const BlogPage = lazy(() => import('./pages/BlogPage.tsx'));
 const BlogPostPage = lazy(() => import('./pages/BlogPostPage.tsx'));
 const BlogAdminPage = lazy(() => import('./pages/BlogAdminPage.tsx'));
+// SEO / AI-search pages (see src/content/)
+const FaqPage = lazy(() => import('./pages/FaqPage.tsx'));
+const AboutPage = lazy(() => import('./pages/AboutPage.tsx'));
+const ContentPage = lazy(() => import('./pages/ContentPage.tsx'));
 
-export default function App() {
+// Paths of the long-form SEO pages rendered by ContentPage (src/content/pages.ts).
+export const CONTENT_PAGE_PATHS = [
+  '/features/whatsapp-property-listing',
+  '/features/lead-management',
+  '/property-dealer-software-ludhiana',
+  '/property-dealer-software-mohali-kharar',
+  '/plotraa-vs-property-portals',
+];
+
+/** Route table without a router — wrapped by BrowserRouter in the browser
+ *  and by StaticRouter in src/entry-server.tsx (build-time prerender). */
+export function AppRoutes() {
   return (
-    <BrowserRouter>
+    <>
       <ScrollToTop />
       <Suspense fallback={null}>
         <Routes>
@@ -41,6 +57,11 @@ export default function App() {
           <Route path="/how-it-works" element={<HowItWorksPage />} />
           <Route path="/legal" element={<LegalPage />} />
           <Route path="/team" element={<TeamPage />} />
+          <Route path="/faq" element={<FaqPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          {CONTENT_PAGE_PATHS.map((p) => (
+            <Route key={p} path={p} element={<ContentPage path={p} />} />
+          ))}
           <Route path="/showcase/:id" element={<ShowcaseListingPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPassword />} />
@@ -93,10 +114,19 @@ export default function App() {
               "Web Chat Widget" section */}
           <Route path="/widget" element={<ChatWidgetPage />} />
 
-          {/* Unauthenticated users hitting unknown routes → landing page */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* Unknown routes show a real "Page not found" page (the web
+              server also returns HTTP 404 for them — see deploy/nginx) */}
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Suspense>
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppRoutes />
     </BrowserRouter>
   );
 }

@@ -6,6 +6,7 @@ import { PageSeo } from "@/components/Seo";
 import { fetchBlogPosts, type BlogListResponse } from "@/lib/blog-api";
 import { formatBlogDate } from "@/lib/blog-content";
 import { cn } from "@/lib/utils";
+import { getPrerenderData } from "@/lib/prerender-data";
 
 const PAGE_SIZE = 12;
 
@@ -14,8 +15,11 @@ export default function BlogPage() {
   const tag = searchParams.get("tag") ?? "";
   const page = Math.max(1, Number(searchParams.get("page")) || 1);
 
-  const [data, setData] = useState<BlogListResponse | null>(null);
-  const [state, setState] = useState<"loading" | "ready" | "error">("loading");
+  // Post list baked in at build time / by the server, so the HTML already
+  // lists every post title for crawlers. Refreshed from the API on load.
+  const preloaded = !tag && page === 1 ? getPrerenderData().blogList ?? null : null;
+  const [data, setData] = useState<BlogListResponse | null>(preloaded);
+  const [state, setState] = useState<"loading" | "ready" | "error">(preloaded ? "ready" : "loading");
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
