@@ -11,6 +11,7 @@ const links = [
   { label: "Sell property", to: "/sell-property" },
   { label: "Pricing", to: "/pricing" },
   { label: "Blog", to: "/blog" },
+  { label: "FAQ", to: "/faq" },
 ];
 
 export function SiteNav() {

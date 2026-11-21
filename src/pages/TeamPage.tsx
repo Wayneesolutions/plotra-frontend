@@ -31,8 +31,9 @@ export default function TeamPage() {
               Meet the team behind Plotraa
             </h1>
             <p className="mt-5 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Plotraa is built by Wayne E Solutions, a small team based in Ludhiana, Punjab,
-              building the WhatsApp-native CRM property dealers actually use.
+              Plotraa is built by Wayne E Solutions, a software and digital marketing company in
+              Model Town, Ludhiana, Punjab, building the WhatsApp-native CRM property dealers
+              actually use. <Link to="/about" className="font-semibold text-primary hover:underline">More about Plotraa</Link>.
             </p>
           </Reveal>
         </div>

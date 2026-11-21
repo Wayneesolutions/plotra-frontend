@@ -5,6 +5,7 @@ import { SiteFooter } from "@/components/plotra/site-footer";
 import { PopImage, MetaPill } from "@/components/plotra/media";
 import { Reveal } from "@/lib/motion";
 import { listings } from "@/lib/plotra-data";
+import { Seo } from "@/components/Seo";
 
 export default function ShowcaseListingPage() {
   const { id } = useParams();
@@ -18,6 +19,13 @@ export default function ShowcaseListingPage() {
 
   return (
     <main className="overflow-x-clip">
+      {/* Demo listings: crawlable (robots.txt allows /showcase/) but not indexed */}
+      <Seo
+        title={`${listing.title} — sample Plotraa listing`}
+        description="A sample Plotraa listing page, shown to dealers as a demo of what buyers see."
+        path={`/showcase/${listing.id}`}
+        noindex
+      />
       <SiteNav />
 
       <section className="bg-lavender px-5 pb-16 pt-32 sm:px-8 sm:pt-40">
@@ -81,7 +89,7 @@ export default function ShowcaseListingPage() {
                 Listed by {listing.dealer} on Plotraa
               </p>
               <a
-                href="https://wa.me/918360098455?text=Hi%2C%20I%27d%20like%20to%20know%20more%20about%20Plotraa"
+                href="https://wa.me/919395190000?text=Hi%2C%20I%27d%20like%20to%20know%20more%20about%20Plotraa"
                 target="_blank"
                 rel="noreferrer"
                 className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-transform duration-300 hover:scale-[1.02]"

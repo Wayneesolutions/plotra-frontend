@@ -1,104 +1,215 @@
 // Single source of truth for per-page SEO (title, description, JSON-LD).
 // Used in two places:
-//   1. vite.config.js (seoPrerender plugin) — writes a static
-//      dist/<route>/index.html per page so crawlers that don't run JS
-//      (WhatsApp, LinkedIn, Bing, ChatGPT etc.) still get the right <head>.
+//   1. scripts/prerender.mjs — writes dist/<route>/index.html per page with
+//      the full page body AND these <head> tags, so crawlers that don't run
+//      JS (ChatGPT, Claude, Perplexity, WhatsApp, Bing…) see real content.
 //   2. src/components/Seo.tsx — keeps <head> correct during client-side
 //      navigation inside the SPA.
-// Plain JS on purpose so vite.config.js (Node) can import it directly.
+// Plain JS on purpose so Node scripts can import it directly.
+//
+// jsonLd may be an array, or a function (data) => array, where data is the
+// build-time prerender data ({ plans, blogList }) — used for price facts.
 
-export const SITE_URL = 'https://plotraa.com';
+import {
+  SITE_URL,
+  BRAND,
+  COMPANY,
+  COMPANY_URL,
+  EMAIL,
+  PHONE_SCHEMA,
+  ADDRESS,
+  SAME_AS,
+  CITIES_SERVED,
+  CONTENT_UPDATED_ISO,
+} from './site-info.js';
+import { faqItems, faqJsonLd, HOME_FAQ_IDS } from '../content/faq.js';
+import { pricingFacts } from '../content/pricing-facts.js';
+import { CONTENT_PAGES } from '../content/pages.js';
+
+export { SITE_URL };
 export const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
 
 const ORG_ID = `${SITE_URL}/#organization`;
+const SOFTWARE_ID = `${SITE_URL}/#software`;
 
-const breadcrumb = (name, path) => ({
+const breadcrumb = (name, path, parent) => ({
   '@type': 'BreadcrumbList',
   itemListElement: [
     { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE_URL}/` },
-    { '@type': 'ListItem', position: 2, name, item: `${SITE_URL}${path}` },
+    ...(parent ? [{ '@type': 'ListItem', position: 2, name: parent.name, item: `${SITE_URL}${parent.path}` }] : []),
+    { '@type': 'ListItem', position: parent ? 3 : 2, name, item: `${SITE_URL}${path}` },
   ],
 });
 
-export const SEO_PAGES = {
-  '/': {
-    title: 'WhatsApp Real Estate CRM for Property Dealers | Plotraa',
-    description:
-      'List a property by sending a WhatsApp message. Plotraa creates a shareable listing with satellite imagery and plot boundary, and tracks every buyer lead.',
-    jsonLd: [
+export const HOW_IT_WORKS_STEPS = [
+  { name: 'Send the property on WhatsApp', text: 'Send the size, location, price (optional) and photos to your Plotraa WhatsApp number.' },
+  { name: 'Plotraa builds the listing', text: 'Plotraa reads the message and builds the listing.' },
+  { name: 'Check the map pin', text: 'Check the map pin and correct it if needed.' },
+  { name: 'Share one link', text: 'Share one link with buyers on WhatsApp.' },
+  { name: 'Track enquiries', text: 'See every enquiry in your dashboard.' },
+];
+
+const homeJsonLd = (data = {}) => {
+  const f = pricingFacts(data.plans);
+  return [
+    {
+      '@type': 'Organization',
+      '@id': ORG_ID,
+      name: BRAND,
+      alternateName: ['Plotraa real estate CRM', 'Plotraa.com'],
+      url: `${SITE_URL}/`,
+      logo: `${SITE_URL}/plotraa-logo.png`,
+      slogan: 'Ek Text. Ek Listing.',
+      description:
+        'Plotraa is WhatsApp-first real estate software for property dealers in India. Dealers list a property with one WhatsApp message and track every buyer enquiry in one dashboard.',
+      disambiguatingDescription:
+        'Real estate software for property dealers in Punjab, India. Not related to the Plotra comics app.',
+      email: EMAIL,
+      telephone: PHONE_SCHEMA,
+      address: {
+        '@type': 'PostalAddress',
+        streetAddress: ADDRESS.street,
+        addressLocality: ADDRESS.city,
+        addressRegion: ADDRESS.region,
+        addressCountry: ADDRESS.countryCode,
+      },
+      areaServed: [...CITIES_SERVED, 'Punjab', 'India'],
+      parentOrganization: { '@type': 'Organization', name: COMPANY, url: COMPANY_URL },
+      contactPoint: {
+        '@type': 'ContactPoint',
+        contactType: 'sales',
+        telephone: PHONE_SCHEMA,
+        email: EMAIL,
+        availableLanguage: ['en', 'hi', 'pa'],
+      },
+      sameAs: SAME_AS,
+    },
+    {
+      '@type': 'WebSite',
+      '@id': `${SITE_URL}/#website`,
+      url: `${SITE_URL}/`,
+      name: BRAND,
+      publisher: { '@id': ORG_ID },
+      inLanguage: 'en-IN',
+    },
+    {
+      '@type': 'SoftwareApplication',
+      '@id': SOFTWARE_ID,
+      name: BRAND,
+      url: `${SITE_URL}/`,
+      applicationCategory: 'BusinessApplication',
+      applicationSubCategory: 'Real Estate CRM',
+      operatingSystem: 'Web, WhatsApp',
+      description:
+        'WhatsApp real estate CRM for property dealers: list a property with one WhatsApp message, share a listing link with map location, and track buyer leads.',
+      offers: {
+        '@type': 'AggregateOffer',
+        priceCurrency: 'INR',
+        lowPrice: String(f.basicFrom),
+        highPrice: String(f.highPrice),
+        offerCount: String(f.planCount),
+        url: `${SITE_URL}/pricing`,
+      },
+      publisher: { '@id': ORG_ID },
+    },
+  ];
+};
+
+const contentPageEntries = Object.fromEntries(
+  Object.entries(CONTENT_PAGES).map(([path, page]) => {
+    const isFeature = path.startsWith('/features/');
+    return [
+      path,
       {
-        '@type': 'Organization',
-        '@id': ORG_ID,
-        name: 'Plotraa',
-        url: `${SITE_URL}/`,
-        logo: `${SITE_URL}/plotraa-logo.png`,
-        parentOrganization: { '@type': 'Organization', name: 'Wayne E Solutions' },
-        address: {
-          '@type': 'PostalAddress',
-          addressLocality: 'Ludhiana',
-          addressRegion: 'Punjab',
-          addressCountry: 'IN',
+        title: page.title,
+        description: page.description,
+        jsonLd: (data = {}) => {
+          const items = faqItems(data.plans).filter((it) => page.faqIds.includes(it.id));
+          return [
+            {
+              '@type': 'WebPage',
+              url: `${SITE_URL}${path}`,
+              name: page.title,
+              description: page.description,
+              dateModified: CONTENT_UPDATED_ISO,
+              about: { '@id': SOFTWARE_ID },
+              ...(page.place ? { spatialCoverage: { '@type': 'Place', name: page.place } } : {}),
+            },
+            breadcrumb(page.breadcrumb, path, isFeature ? { name: 'Features', path: '/how-it-works' } : undefined),
+            ...(items.length ? [faqJsonLd(items)] : []),
+          ];
         },
       },
-      {
-        '@type': 'WebSite',
-        '@id': `${SITE_URL}/#website`,
-        url: `${SITE_URL}/`,
-        name: 'Plotraa',
-        publisher: { '@id': ORG_ID },
-        inLanguage: 'en-IN',
-      },
-      {
-        '@type': 'SoftwareApplication',
-        name: 'Plotraa',
-        url: `${SITE_URL}/`,
-        applicationCategory: 'BusinessApplication',
-        applicationSubCategory: 'Real estate CRM',
-        operatingSystem: 'Web, WhatsApp',
-        description:
-          'WhatsApp-native real estate CRM for property dealers: list a property by WhatsApp message, get a shareable listing with satellite imagery and plot boundary, and manage buyer leads.',
-        publisher: { '@id': ORG_ID },
-      },
+    ];
+  }),
+);
+
+export const SEO_PAGES = {
+  '/': {
+    title: 'Plotraa – WhatsApp Real Estate CRM for Property Dealers',
+    description:
+      'Plotraa is WhatsApp-first software for property dealers in Punjab. Send one WhatsApp message, get a shareable listing with photos and a map, and track every buyer lead.',
+    jsonLd: (data = {}) => [
+      ...homeJsonLd(data),
+      faqJsonLd(faqItems(data.plans).filter((it) => HOME_FAQ_IDS.includes(it.id))),
     ],
   },
   '/how-it-works': {
-    title: 'How Plotraa Works: WhatsApp to Property Listing in Minutes',
+    title: 'How Plotraa Works: WhatsApp Message to Property Listing',
     description:
-      "Send plot size, location and price on WhatsApp. Plotraa's AI builds a property page with satellite imagery and boundary, and sends every buyer lead to you.",
+      'See how Plotraa works: send property details on WhatsApp, Plotraa builds a listing with photos and map location, you share one link and track buyer enquiries.',
     jsonLd: [
       {
         '@type': 'HowTo',
         name: 'How to list a property on Plotraa using WhatsApp',
-        step: [
-          { '@type': 'HowToStep', position: 1, name: 'Send the property', text: 'Text plot size, location and price to your Plotraa WhatsApp number.' },
-          { '@type': 'HowToStep', position: 2, name: 'Plotraa understands it', text: 'AI extracts location, price, plot size and property type, then pulls satellite imagery for the parcel.' },
-          { '@type': 'HowToStep', position: 3, name: 'Listing goes live', text: 'A property page is generated with photos, boundary, nearby landmarks and your business name.' },
-          { '@type': 'HowToStep', position: 4, name: 'Share with buyers', text: 'Forward one link. Every open, enquiry and callback request lands in your Plotraa lead inbox.' },
-        ],
+        step: HOW_IT_WORKS_STEPS.map((s, i) => ({ '@type': 'HowToStep', position: i + 1, name: s.name, text: s.text })),
       },
       breadcrumb('How It Works', '/how-it-works'),
     ],
   },
   '/pricing': {
-    title: 'Plotraa Pricing: Real Estate CRM Plans for Dealers',
+    title: 'Plotraa Pricing 2026: Plans for Property Dealers (Monthly)',
     description:
-      'Monthly Plotraa plans for property dealers in two categories: Basic and Basic with Leads. WhatsApp listings, AI property extraction, lead inbox and team access. No lock-in.',
-    jsonLd: [breadcrumb('Pricing', '/pricing')],
+      'Plotraa pricing for property dealers in India: monthly plans for one dealer or a team, with or without buyer leads. No lock-in. See what each plan includes.',
+    jsonLd: [
+      {
+        '@type': 'WebPage',
+        url: `${SITE_URL}/pricing`,
+        name: 'Plotraa pricing',
+        dateModified: CONTENT_UPDATED_ISO,
+        about: { '@id': SOFTWARE_ID },
+      },
+      breadcrumb('Pricing', '/pricing'),
+    ],
   },
   '/team': {
-    title: 'About Plotraa: The Team Behind the WhatsApp Property CRM',
+    title: 'Plotraa Team – Built in Ludhiana by Wayne E Solutions',
     description:
-      'Plotraa is built by Wayne E Solutions, a small team in Ludhiana, Punjab, building the WhatsApp-native CRM that property dealers actually use every day.',
+      'Meet the Plotraa team. Plotraa is built by Wayne E Solutions, a software and digital marketing company in Model Town, Ludhiana, Punjab.',
+    jsonLd: [breadcrumb('Team', '/team')],
+  },
+  '/about': {
+    title: 'About Plotraa – WhatsApp Real Estate Software from Ludhiana',
+    description:
+      'Plotraa is real estate software for property dealers in Punjab, built by Wayne E Solutions in Ludhiana. Our story, who we serve and how to reach us.',
     jsonLd: [
       {
         '@type': 'AboutPage',
-        url: `${SITE_URL}/team`,
-        name: 'About Plotraa: The Team Behind the WhatsApp Property CRM',
+        url: `${SITE_URL}/about`,
+        name: 'About Plotraa',
         about: { '@id': ORG_ID },
+        dateModified: CONTENT_UPDATED_ISO,
       },
-      breadcrumb('Team', '/team'),
+      breadcrumb('About', '/about'),
     ],
   },
+  '/faq': {
+    title: 'Plotraa FAQ – WhatsApp Real Estate CRM Questions Answered',
+    description:
+      'Answers about Plotraa: how WhatsApp listing works, pricing, team plans, buyer leads, cities served and how to get started.',
+    jsonLd: (data = {}) => [faqJsonLd(faqItems(data.plans), CONTENT_UPDATED_ISO), breadcrumb('FAQ', '/faq')],
+  },
+  ...contentPageEntries,
   '/legal': {
     title: 'Plotraa Legal: Terms, Privacy, Refund and Cookie Policies',
     description:
@@ -128,22 +239,35 @@ export const SEO_PAGES = {
   },
 };
 
+/** Pages that get a "Not found" HTML + noindex (used for dist/404.html). */
+export const NOT_FOUND_PAGE = {
+  title: 'Page not found | Plotraa',
+  description: 'This page does not exist on plotraa.com.',
+  jsonLd: [],
+  noindex: true,
+};
+
+/** Resolve a page's JSON-LD array (static array or function of data). */
+export function resolveJsonLd(page, data) {
+  const ld = typeof page.jsonLd === 'function' ? page.jsonLd(data || {}) : page.jsonLd;
+  return Array.isArray(ld) ? ld : [];
+}
+
 const esc = (s) =>
   String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 /**
  * Build the <head> tags for a page as an HTML string (used at build time).
  * Every tag carries data-seo so the runtime <Seo> component can swap them.
- * Pass canonical=false for the SPA fallback HTML (dist/index.html is also
- * served for /p/:slug, /dashboard etc., so it must not claim a canonical).
  */
-export function renderHeadHtml(page, path, { canonical = true } = {}) {
+export function renderHeadHtml(page, path, { canonical = true, data } = {}) {
   const url = `${SITE_URL}${path}`;
+  const jsonLd = resolveJsonLd(page, data);
   const tags = [
     `<title>${esc(page.title)}</title>`,
     `<meta data-seo name="description" content="${esc(page.description)}">`,
     canonical ? `<link data-seo rel="canonical" href="${url}">` : '',
-    `<meta data-seo name="robots" content="index, follow">`,
+    `<meta data-seo name="robots" content="${page.noindex ? 'noindex, follow' : 'index, follow'}">`,
     `<meta data-seo property="og:type" content="website">`,
     `<meta data-seo property="og:site_name" content="Plotraa">`,
     `<meta data-seo property="og:title" content="${esc(page.title)}">`,
@@ -151,10 +275,10 @@ export function renderHeadHtml(page, path, { canonical = true } = {}) {
     canonical ? `<meta data-seo property="og:url" content="${url}">` : '',
     `<meta data-seo property="og:image" content="${OG_IMAGE}">`,
     `<meta data-seo name="twitter:card" content="summary_large_image">`,
-    page.jsonLd?.length
+    jsonLd.length
       ? `<script data-seo type="application/ld+json">${JSON.stringify({
           '@context': 'https://schema.org',
-          '@graph': page.jsonLd,
+          '@graph': jsonLd,
         }).replace(/</g, '\\u003c')}</script>`
       : '',
   ];

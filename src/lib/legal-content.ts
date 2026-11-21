@@ -233,7 +233,7 @@ export const legalSections: LegalSection[] = [
 <h2 id="general-support"><strong>7.1 General Support</strong></h2>
 <ul>
 <li><p>Email: info@plotraa.com</p></li>
-<li><p>Phone: +91 83600 98455</p></li>
+<li><p>WhatsApp: +91 93951 90000</p></li>
 <li><p>Instagram: <a href="https://www.instagram.com/plotraa/" target="_blank" rel="noreferrer">@plotraa</a></p></li>
 </ul>
 <h2 id="grievance-officer"><strong>7.2 Grievance Officer</strong></h2>

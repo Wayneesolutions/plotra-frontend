@@ -20,6 +20,9 @@ import { Reveal, useCountUp, useMagnetic, useParallax } from "@/lib/motion";
 import { listings, media } from "@/lib/plotra-data";
 import { cn } from "@/lib/utils";
 import { PageSeo } from "@/components/Seo";
+import { FaqList } from "@/components/plotra/content-blocks";
+import { faqItems, HOME_FAQ_IDS } from "@/content/faq.js";
+import { getPrerenderData } from "@/lib/prerender-data";
 
 export default function LandingPage() {
   return (
@@ -29,11 +32,13 @@ export default function LandingPage() {
       <Hero />
       <Bridge />
       <HowItWorksSection />
+      <WhoUsesPlotraa />
       <ShowcaseSection />
       <ListingsSection />
       <SatelliteStory />
       <Trust />
       <PricingSection />
+      <HomeFaq />
       <FinalCta />
       <SiteFooter />
     </main>
@@ -47,7 +52,7 @@ function Hero() {
     <section className="relative min-h-[100svh] w-full overflow-hidden bg-ink">
       <img
         src={media.heroAerial}
-        alt="Aerial view of residential plots for sale in a developing Punjab neighbourhood"
+        alt="Plotraa turns a WhatsApp message into a property listing"
         width={1920}
         height={1080}
         className="absolute inset-0 size-full scale-110 object-cover kenburns"
@@ -65,6 +70,9 @@ function Hero() {
           </Reveal>
 
           <h1 className="text-balance-tight mt-7 font-display text-[13vw] font-bold text-ink-foreground sm:text-6xl lg:text-[5.2rem]">
+            <span className="mb-3 block font-sans text-base font-semibold uppercase tracking-[0.2em] text-accent sm:text-lg">
+              Plotraa:
+            </span>
             {["List a property", "by simply sending", "a WhatsApp message."].map((line, i) => (
               <Reveal key={line} delay={i * 140} className="block">
                 <span className={cn(i === 2 && "text-primary")}>{line}</span>
@@ -74,10 +82,10 @@ function Hero() {
 
           <Reveal delay={420}>
             <p className="mt-6 max-w-lg text-base leading-relaxed text-ink-foreground/75 sm:text-lg">
-              Plotraa is a WhatsApp-native real estate CRM for property dealers. Send the plot size,
-              location and price on WhatsApp and Plotraa turns it into a professional, shareable
-              property listing with satellite imagery, a traced plot boundary and a live page buyers
-              can open instantly.
+              Plotraa is a WhatsApp real estate CRM for property dealers and agents in Punjab and
+              Chandigarh. You send plot size, location, price and photos as a normal WhatsApp
+              message, and Plotraa turns it into a listing page you can share with buyers. Every
+              enquiry lands in one dashboard, so no lead is lost in chats.
             </p>
           </Reveal>
 
@@ -153,6 +161,67 @@ function Bridge() {
   );
 }
 
+function WhoUsesPlotraa() {
+  const who = [
+    "Property dealers who post in many WhatsApp groups and lose track of listings.",
+    "Dealer offices with 2–5 agents who need to see who listed what.",
+    "Colony and plot sellers in Ludhiana, Mohali, Kharar, Jalandhar and Patiala who want one clean link per property.",
+  ];
+  const linkCls = "font-semibold text-primary underline-offset-4 hover:underline";
+  return (
+    <section className="bg-background px-5 py-20 sm:px-8 sm:py-24">
+      <div className="mx-auto max-w-5xl">
+        <Reveal>
+          <p className="label-eyebrow text-primary">Built for dealers</p>
+          <h2 className="text-balance-tight mt-4 font-display text-4xl font-bold text-ink sm:text-5xl">
+            Who uses Plotraa
+          </h2>
+        </Reveal>
+        <ul className="mt-8 grid gap-5 md:grid-cols-3">
+          {who.map((w) => (
+            <li key={w} className="rounded-3xl border border-border bg-card p-6 text-sm leading-relaxed text-foreground">
+              <Check className="mb-3 size-5 text-accent" />
+              {w}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-8 max-w-3xl text-base leading-relaxed text-muted-foreground">
+          Comparing tools? Read our guide to the{" "}
+          <Link to="/blog/best-crm-for-property-dealers-india" className={linkCls}>
+            best CRM for property dealers in India
+          </Link>
+          . Plotraa is built in{" "}
+          <Link to="/property-dealer-software-ludhiana" className={linkCls}>
+            Ludhiana
+          </Link>{" "}
+          and works with dealers in{" "}
+          <Link to="/property-dealer-software-mohali-kharar" className={linkCls}>
+            Mohali &amp; Kharar
+          </Link>
+          .
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function HomeFaq() {
+  const items = faqItems(getPrerenderData().plans).filter((it) => HOME_FAQ_IDS.includes(it.id));
+  return (
+    <section className="bg-lavender px-5 py-20 sm:px-8 sm:py-24">
+      <div className="mx-auto max-w-4xl">
+        <h2 className="text-balance-tight font-display text-4xl font-bold text-ink sm:text-5xl">Plotraa FAQ</h2>
+        <div className="mt-8">
+          <FaqList items={items} />
+        </div>
+        <Link to="/faq" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-primary">
+          See all questions <ArrowRight className="size-4" />
+        </Link>
+      </div>
+    </section>
+  );
+}
+
 function SatelliteStory() {
   return (
     <section className="relative overflow-hidden bg-lavender px-5 py-24 sm:px-8 sm:py-32">
@@ -160,7 +229,7 @@ function SatelliteStory() {
         <div className="relative">
           <PopImage
             src={media.satellitePlot}
-            alt="Satellite view of a plot with its boundary traced by Plotraa"
+            alt="Plotraa listing with plot location on satellite map"
             ratio="aspect-square"
             parallax={0.06}
             className="shadow-[var(--shadow-float)]"

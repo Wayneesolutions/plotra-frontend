@@ -1,3 +1,30 @@
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
 User-agent: *
 Allow: /
 Disallow: /login
@@ -7,6 +34,5 @@ Disallow: /dashboard
 Disallow: /admin
 Disallow: /blog-admin
 Disallow: /widget
-Disallow: /showcase/
 
 Sitemap: https://plotraa.com/sitemap.xml

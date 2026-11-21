@@ -7,14 +7,32 @@ import { Seo } from "@/components/Seo";
 import { BlogApiError, fetchBlogPost, type BlogPost } from "@/lib/blog-api";
 import { formatBlogDate, htmlToText } from "@/lib/blog-content";
 import { SITE_URL } from "@/seo/pages.js";
+import { getPrerenderData } from "@/lib/prerender-data";
+import { fetchBlogPosts, type BlogPostSummary } from "@/lib/blog-api";
 
 export default function BlogPostPage() {
   const { slug = "" } = useParams();
-  const [post, setPost] = useState<BlogPost | null>(null);
-  const [state, setState] = useState<"loading" | "ready" | "missing" | "error">("loading");
+  // The backend server-renders /blog/:slug and passes the post along, so the
+  // first render already has it (no "Loading…" flash, same text as the HTML).
+  const preloaded = getPrerenderData().blogPost;
+  const initialPost = preloaded && preloaded.slug === slug ? preloaded : null;
+  const [post, setPost] = useState<BlogPost | null>(initialPost);
+  const [state, setState] = useState<"loading" | "ready" | "missing" | "error">(initialPost ? "ready" : "loading");
   const [attempt, setAttempt] = useState(0);
+  const [related, setRelated] = useState<BlogPostSummary[]>([]);
 
   useEffect(() => {
+    let cancelled = false;
+    fetchBlogPosts({ limit: 8 })
+      .then((res) => !cancelled && setRelated(res.posts.filter((p) => p.slug !== slug).slice(0, 3)))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [slug]);
+
+  useEffect(() => {
+    if (initialPost && attempt === 0 && post?.slug === slug) return;
     let cancelled = false;
     setState("loading");
     setPost(null);
@@ -85,6 +103,9 @@ export default function BlogPostPage() {
             ...(post.image_url ? { image: post.image_url } : {}),
             datePublished: post.created_at,
             dateModified: post.updated_at,
+            author: { "@type": "Organization", name: "Plotraa", url: `${SITE_URL}/` },
+            inLanguage: "en-IN",
+            url: `${SITE_URL}${path}`,
             keywords: post.tags.join(", "),
             mainEntityOfPage: `${SITE_URL}${path}`,
             publisher: { "@id": `${SITE_URL}/#organization` },
@@ -111,7 +132,12 @@ export default function BlogPostPage() {
             {post.title}
           </h1>
           <p className="mt-4 text-sm text-muted-foreground">
-            <time dateTime={post.created_at}>{formatBlogDate(post.created_at)}</time>
+            By Plotraa Team · Published <time dateTime={post.created_at}>{formatBlogDate(post.created_at)}</time>
+            {post.updated_at && formatBlogDate(post.updated_at) !== formatBlogDate(post.created_at) ? (
+              <>
+                {" "}· Updated <time dateTime={post.updated_at}>{formatBlogDate(post.updated_at)}</time>
+              </>
+            ) : null}
           </p>
         </div>
 
@@ -139,6 +165,24 @@ export default function BlogPostPage() {
               ))}
             </ul>
           ) : null}
+
+          <aside className="mt-14 rounded-3xl bg-lavender p-7" aria-labelledby="related-guides">
+            <h2 id="related-guides" className="font-display text-xl font-bold text-ink">Related guides</h2>
+            <ul className="mt-4 space-y-2 text-sm">
+              {related.map((r) => (
+                <li key={r.id}>
+                  <Link to={`/blog/${r.slug}`} className="font-semibold text-indigo-deep hover:text-primary">
+                    {r.title}
+                  </Link>
+                </li>
+              ))}
+              <li>
+                <Link to="/pricing" className="font-semibold text-indigo-deep hover:text-primary">
+                  Plotraa pricing for property dealers
+                </Link>
+              </li>
+            </ul>
+          </aside>
         </div>
       </article>
 
